@@ -8,35 +8,65 @@ function register() {
 
 	var wsUri = 'ws://' + location.host + '/room';
 
-	kurento = KurentoBasicRoom(wsUri, function(error, kurento) {
+	kurento = KurentoRoom(wsUri, function(error, kurento) {
 
 		if (error)
 			return console.log(error);
 
-		kurento.addEventListener("room-connected", function(event) {
-
-			document.getElementById('room-name').innerText = room.name;
-
-			document.getElementById('join').style.display = 'none';
-			document.getElementById('room').style.display = 'block';
-
-			participants.addLocalParticipant(event.localStream);
+		var localStream = kurento.Stream({
+			audio : true,
+			video : true,
+			data : true,
+			name : userName
 		});
 
-		kurento.addEventListener("stream-added", function(streamEvent) {
-
-			participants.addParticipant(streamEvent.stream);
+		room = kurento.Room({
+			name : roomName,
+			userName : userName
 		});
 
-		kurento.addEventListener("stream-removed", function(streamEvent) {
+		localStream.addEventListener("access-accepted", function() {
 
-			participants.removeParticipant(streamEvent.stream);
+			var subscribeToStreams = function(streams) {
+				for ( var index in streams) {
+					var stream = streams[index];
+					if (localStream.getID() !== stream.getID()) {
+						room.subscribe(stream);
+					}
+				}
+			};
+
+			room.addEventListener("room-connected", function(roomEvent) {
+				room.publish(localStream);
+				subscribeToStreams(roomEvent.streams);
+
+				document.getElementById('room-name').innerText = room.name;
+
+				document.getElementById('join').style.display = 'none';
+				document.getElementById('room').style.display = 'block';
+
+				participants.addLocalParticipant(localStream);
+			});
+
+			room.addEventListener("stream-subscribed", function(streamEvent) {
+				participants.addParticipant(streamEvent.stream);
+			});
+
+			room.addEventListener("stream-added", function(streamEvent) {
+				var streams = [];
+				streams.push(streamEvent.stream);
+				subscribeToStreams(streams);
+			});
+
+			room.addEventListener("stream-removed", function(streamEvent) {
+				participants.removeParticipant(streamEvent.stream);
+			});
+
+			room.connect();
 		});
 
-		kurento.joinRoom({
-			userName : userName,
-			roomName : roomName,
-		});
+		localStream.init();
+
 	});
 }
 
