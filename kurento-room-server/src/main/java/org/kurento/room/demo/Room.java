@@ -15,7 +15,9 @@
 package org.kurento.room.demo;
 
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -26,8 +28,8 @@ import org.kurento.client.Continuation;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
 import org.kurento.commons.exception.KurentoException;
-import org.kurento.jsonrpc.Session;
 import org.kurento.jsonrpc.message.Request;
+import org.kurento.room.demo.RoomManager.ParticipantSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +68,7 @@ public class Room implements Closeable {
 		return name;
 	}
 
-	public RoomParticipant join(String userName, Session session) {
+	public RoomParticipant join(String userName, ParticipantSession session) {
 
 		checkClosed();
 
@@ -192,6 +194,14 @@ public class Room implements Closeable {
 		} else {
 			log.warn("Closing a yet closed room {}", this.name);
 		}
+	}
+
+	public List<String> getParticipantNames() {
+		List<String> participantNames = new ArrayList<>();
+		for (final RoomParticipant participant : getParticipants()) {
+			participantNames.add(participant.getName());
+		}
+		return participantNames;
 	}
 
 	public void execute(Runnable task) {

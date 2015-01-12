@@ -14,20 +14,23 @@
  */
 package org.kurento.room.demo;
 
+import static org.kurento.room.demo.ThreadLogUtils.updateThreadName;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 import org.kurento.client.Continuation;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
-import org.kurento.jsonrpc.Session;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.jsonrpc.message.Response;
+import org.kurento.room.demo.RoomManager.ParticipantSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +50,7 @@ public class RoomParticipant implements Closeable {
 	private final String name;
 	private final Room room;
 
-	private final Session session;
+	private final ParticipantSession session;
 	private final MediaPipeline pipeline;
 
 	private WebRtcEndpoint receivingEndpoint;
@@ -59,7 +62,7 @@ public class RoomParticipant implements Closeable {
 
 	private volatile boolean closed;
 
-	public RoomParticipant(String name, Room room, Session session,
+	public RoomParticipant(String name, Room room, ParticipantSession session,
 			MediaPipeline pipeline) {
 
 		this.pipeline = pipeline;
@@ -91,7 +94,7 @@ public class RoomParticipant implements Closeable {
 	/**
 	 * @return the session
 	 */
-	public Session getSession() {
+	public ParticipantSession getSession() {
 		return session;
 	}
 
@@ -365,5 +368,27 @@ public class RoomParticipant implements Closeable {
 		} else if (!room.equals(other.room))
 			return false;
 		return true;
+	}
+
+	public void leaveFromRoom() throws IOException, InterruptedException,
+			ExecutionException {
+
+		final Room room = getRoom();
+
+		final String threadName = Thread.currentThread().getName();
+
+		if (!room.isClosed()) {
+
+			room.execute(new Runnable() {
+				public void run() {
+					updateThreadName("room>" + threadName);
+					room.leave(RoomParticipant.this);
+					updateThreadName("room");
+				}
+			});
+		} else {
+			log.warn("Trying to leave from room {} but it is closed",
+					room.getName());
+		}
 	}
 }
