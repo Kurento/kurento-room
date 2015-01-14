@@ -46,6 +46,14 @@ function register() {
 				}
 			};
 
+			var playVideo = function(stream){
+				var elementId = "video-" + stream.getID();
+				var div = document.createElement('div');
+				div.setAttribute("id", elementId);
+				document.getElementById("participants").appendChild(div);
+				stream.play(elementId);
+			}
+
 			room.addEventListener("room-connected", function(roomEvent) {
 
 				document.getElementById('room-header').innerText = 'ROOM \"' + room.name+'\"';
@@ -54,24 +62,26 @@ function register() {
 
 				room.publish(localStream);
 				subscribeToStreams(roomEvent.streams);
+
+				for(i=0; i<roomEvent.streams.length; i++){
+					playVideo(roomEvent.streams[i]);
+				}
 			});
 
 			room.addEventListener("stream-subscribed", function(streamEvent) {
-
-				var stream = streamEvent.stream;
-
-				var elementId = "video-" + stream.getID();
-				var div = document.createElement('div');
-				div.setAttribute("id", elementId);
-				document.getElementById("participants").appendChild(div);
-
-				stream.play(elementId);
+				// We don't do anything because video element is created when
+				// stream-added event is received
 			});
 
 			room.addEventListener("stream-added", function(streamEvent) {
+
+				var stream = streamEvent.stream;
+
 				var streams = [];
-				streams.push(streamEvent.stream);
+				streams.push(stream);
 				subscribeToStreams(streams);
+
+				playVideo(stream);
 			});
 
 			room.addEventListener("stream-removed", function(streamEvent) {
