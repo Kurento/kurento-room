@@ -92,6 +92,10 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 				throws IOException {
 			session.sendRequest(request, continuation);
 		}
+
+		public Session getSession() {
+			return session;
+		}
 	}
 
 	@Autowired
@@ -100,6 +104,9 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	@Override
 	public void handleRequest(final Transaction transaction,
 			final Request<JsonObject> request) throws Exception {
+
+		updateThreadName(HANDLER_THREAD_NAME + "_"
+				+ transaction.getSession().getSessionId());
 
 		final ParticipantSessionJsonRpc participantSession = getParticipantSession(transaction
 				.getSession());
@@ -131,7 +138,14 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 
 	private void leaveRoom(final ParticipantSessionJsonRpc participantSession)
 			throws IOException, InterruptedException, ExecutionException {
-		roomManager.leaveRoom(participantSession.getRoomParticipant());
+		RoomParticipant roomParticipant = participantSession
+				.getRoomParticipant();
+		if (roomParticipant != null) {
+			roomManager.leaveRoom(roomParticipant);
+			removeParticipantForSession(participantSession);
+		} else {
+			log.warn("User is trying to leave from room but session has no info about user");
+		}
 	}
 
 	private void joinRoom(final Transaction transaction,
@@ -152,14 +166,24 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 					@Override
 					public void result(Throwable error,
 							List<String> participants) {
+
 						try {
-							transaction.sendResponse(participants);
+							if (error != null) {
+								log.error("Exception processing joinRoom",
+										error);
+
+								if (error instanceof RoomManagerException) {
+									RoomManagerException e = (RoomManagerException) error;
+									transaction.sendError(e.getCode(),
+											e.getMessage(), null);
+								} else {
+									transaction.sendError(error);
+								}
+							} else {
+								transaction.sendResponse(participants);
+							}
 						} catch (IOException e) {
-							log.error("Exception sending participant list from room '"
-									+ roomName
-									+ "' to new user '"
-									+ userName
-									+ "'");
+							log.error("Exception responding to user", e);
 						}
 					}
 				});
@@ -227,16 +251,24 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 		return participantSession;
 	}
 
+	private void removeParticipantForSession(
+			ParticipantSessionJsonRpc participantSession) {
+		log.info("Removing participantInfo about "
+				+ participantSession.getName());
+		participantSession.getSession().getAttributes()
+				.remove(PARTICIPANT_SESSION_ATTRIBUTE);
+	}
+
 	@Override
 	public void afterConnectionClosed(Session session, String status)
 			throws Exception {
 
-		RoomParticipant user = getParticipantSession(session)
+		RoomParticipant participant = getParticipantSession(session)
 				.getRoomParticipant();
 
-		if (user != null) {
-			updateThreadName(user.getName() + "|wsclosed");
-			roomManager.leaveRoom(user);
+		if (participant != null) {
+			updateThreadName(participant.getName() + "|wsclosed");
+			roomManager.leaveRoom(participant);
 			updateThreadName(HANDLER_THREAD_NAME);
 		}
 	}

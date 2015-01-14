@@ -72,6 +72,12 @@ public class Room implements Closeable {
 
 		checkClosed();
 
+		if (participants.containsKey(userName)) {
+			throw new RoomManagerException(
+					RoomManager.EXISTING_USER_IN_ROOM_ERROR_CODE, "User "
+							+ userName + " exists in room " + name);
+		}
+
 		if (pipeline == null) {
 			log.info("ROOM {}: Creating MediaPipeline", userName);
 			pipeline = kurento.createMediaPipeline();

@@ -22,6 +22,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 import org.kurento.client.Continuation;
@@ -54,6 +55,8 @@ public class RoomParticipant implements Closeable {
 	private final MediaPipeline pipeline;
 
 	private WebRtcEndpoint receivingEndpoint;
+	private CountDownLatch endPointLatch = new CountDownLatch(1);
+
 	private final ConcurrentMap<String, WebRtcEndpoint> sendingEndpoints = new ConcurrentHashMap<>();
 
 	private BlockingQueue<Request<JsonObject>> messages = new ArrayBlockingQueue<>(
@@ -69,7 +72,6 @@ public class RoomParticipant implements Closeable {
 		this.name = name;
 		this.session = session;
 		this.room = room;
-		this.receivingEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
 
 		this.senderThread = new Thread("sender:" + name) {
 			public void run() {
@@ -82,6 +84,11 @@ public class RoomParticipant implements Closeable {
 		};
 
 		this.senderThread.start();
+	}
+
+	public void createWebRtcEndpoint() {
+		this.receivingEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
+		endPointLatch.countDown();
 	}
 
 	/**
@@ -99,6 +106,11 @@ public class RoomParticipant implements Closeable {
 	}
 
 	public WebRtcEndpoint getReceivingEndpoint() {
+		try {
+			endPointLatch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 		return receivingEndpoint;
 	}
 
@@ -114,6 +126,7 @@ public class RoomParticipant implements Closeable {
 	/**
 	 * @param sender
 	 * @param sdpOffer
+	 * @throws InterruptedException
 	 * @throws IOException
 	 */
 	public String receiveVideoFrom(RoomParticipant sender, String sdpOffer) {
@@ -124,13 +137,6 @@ public class RoomParticipant implements Closeable {
 		log.trace("USER {}: SdpOffer for {} is {}", this.name,
 				sender.getName(), sdpOffer);
 
-		return this.createSdpResponseForUser(sender, sdpOffer);
-
-	}
-
-	private String createSdpResponseForUser(RoomParticipant sender,
-			String sdpOffer) {
-
 		WebRtcEndpoint receivingEndpoint = sender.getReceivingEndpoint();
 		if (receivingEndpoint == null) {
 			log.warn(
@@ -139,13 +145,13 @@ public class RoomParticipant implements Closeable {
 			return null;
 		}
 
-		if (sender.getName().equals(name)) {
+		if (sender.getName().equals(this.name)) {
 			// FIXME: Use another message type for receiving sdp offer
 			log.debug("PARTICIPANT {}: configuring loopback", this.name);
 			return receivingEndpoint.processOffer(sdpOffer);
 		}
 
-		if (sendingEndpoints.get(sender.getName()) != null) {
+		if (this.sendingEndpoints.get(sender.getName()) != null) {
 			log.warn(
 					"PARTICIPANT {}: There is a sending endpoint to user {} when trying to create another one",
 					this.name, sender.getName());
@@ -155,9 +161,9 @@ public class RoomParticipant implements Closeable {
 		log.debug("PARTICIPANT {}: Creating a sending endpoint to user {}",
 				this.name, sender.getName());
 
-		WebRtcEndpoint sendingEndpoint = new WebRtcEndpoint.Builder(pipeline)
-				.build();
-		WebRtcEndpoint oldSendingEndpoint = sendingEndpoints.putIfAbsent(
+		WebRtcEndpoint sendingEndpoint = new WebRtcEndpoint.Builder(
+				this.pipeline).build();
+		WebRtcEndpoint oldSendingEndpoint = this.sendingEndpoints.putIfAbsent(
 				sender.getName(), sendingEndpoint);
 
 		if (oldSendingEndpoint != null) {
@@ -189,9 +195,9 @@ public class RoomParticipant implements Closeable {
 						"Exception connecting receiving endpoint to sending endpoint",
 						e);
 				sendingEndpoint.release(new Continuation<Void>() {
+
 					@Override
 					public void onSuccess(Void result) throws Exception {
-
 					}
 
 					@Override
@@ -201,12 +207,13 @@ public class RoomParticipant implements Closeable {
 				});
 			}
 
-			sendingEndpoints.remove(sender.getName());
+			this.sendingEndpoints.remove(sender.getName());
 
-			releaseEndpoint(sender.getName(), sendingEndpoint);
+			this.releaseEndpoint(sender.getName(), sendingEndpoint);
 		}
 
 		return null;
+
 	}
 
 	/**

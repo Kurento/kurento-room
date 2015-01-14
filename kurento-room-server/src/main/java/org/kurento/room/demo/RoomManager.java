@@ -46,6 +46,7 @@ public class RoomManager {
 	private static final int SDP_ERROR_CODE = 101;
 	private static final int USER_NOT_FOUND_ERROR_CODE = 102;
 	private static final int ROOM_CLOSED_ERROR_CODE = 103;
+	public static final int EXISTING_USER_IN_ROOM_ERROR_CODE = 104;
 
 	private final Logger log = LoggerFactory.getLogger(RoomManager.class);
 
@@ -185,13 +186,28 @@ public class RoomManager {
 				public void run() {
 					updateThreadName("room> user:" + userName);
 
-					List<String> participantNames = room.getParticipantNames();
+					try {
 
-					final RoomParticipant user = room.join(userName, session);
+						List<String> participantNames = room
+								.getParticipantNames();
 
-					session.setParticipant(user);
+						final RoomParticipant user = room.join(userName,
+								session);
 
-					cont.result(null, participantNames);
+						session.setParticipant(user);
+
+						cont.result(null, participantNames);
+
+						executor.submit(new Runnable() {
+							@Override
+							public void run() {
+								user.createWebRtcEndpoint();
+							}
+						});
+
+					} catch (RoomManagerException e) {
+						cont.result(e, null);
+					}
 
 					updateThreadName("room");
 				}
