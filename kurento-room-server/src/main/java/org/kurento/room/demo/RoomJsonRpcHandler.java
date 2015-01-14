@@ -48,8 +48,8 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	private static final String LEAVE_ROOM_METHOD = "leaveRoom";
 
 	private static final String JOIN_ROOM_METHOD = "joinRoom";
-	private static final String JOIN_ROOM_NAME_PARAM = "name";
-	private static final String JOIN_ROOM_ROOMID_PARAM = "room";
+	private static final String JOIN_ROOM_USER_PARAM = "user";
+	private static final String JOIN_ROOM_ROOM_PARAM = "room";
 
 	private static final String RECEIVE_VIDEO_METHOD = "receiveVideoFrom";
 	private static final String RECEIVE_VIDEO_SDPOFFER_PARAM = "sdpOffer";
@@ -153,10 +153,10 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 			final ParticipantSessionJsonRpc participantSession)
 			throws IOException, InterruptedException, ExecutionException {
 
-		final String roomName = request.getParams().get(JOIN_ROOM_ROOMID_PARAM)
+		final String roomName = request.getParams().get(JOIN_ROOM_ROOM_PARAM)
 				.getAsString();
 
-		final String userName = request.getParams().get(JOIN_ROOM_NAME_PARAM)
+		final String userName = request.getParams().get(JOIN_ROOM_USER_PARAM)
 				.getAsString();
 
 		transaction.startAsync();

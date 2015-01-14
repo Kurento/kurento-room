@@ -4,7 +4,7 @@ function Room(kurento, options) {
 
 	var that = this;
 
-	that.name = options.name;
+	that.name = options.room;
 
 	var ee = new EventEmitter();
 	var streams = {};
@@ -21,8 +21,8 @@ function Room(kurento, options) {
 	this.connect = function() {
 
 		kurento.sendRequest('joinRoom',{
-			name : options.userName, // FIXME: User name should go in stream
-			room : options.name
+			user : options.user,
+			room : options.room
 		}, function(error,response){
 			if(error){
 				console.error(error);
@@ -43,7 +43,7 @@ function Room(kurento, options) {
 		for (var i = 0; i < length; i++) {
 			var userName =participants[i];
 			var stream = new Stream(kurento, false, {
-				name : userName
+				user : userName
 			});
 			streams[userName] = stream;
 			roomEvent.streams.push(stream);
@@ -65,7 +65,7 @@ function Room(kurento, options) {
 
 	this.onNewParticipant = function(msg) {
 		var stream = new Stream(kurento, false, {
-			name : msg.name
+			user : msg.name
 		});
 		streams[msg.name] = stream;
 		ee.emitEvent('stream-added', [ {
@@ -109,6 +109,17 @@ function Room(kurento, options) {
 
 // Stream --------------------------------
 
+/* options:
+   name: XXX
+   data: true (Maybe this is based on webrtc)
+   audio: true, video: true, url: "file:///..." > Player
+   screen: true > Desktop (implicit video:true, audio:false)
+   audio: true, video: true > Webcam
+
+   stream.hasAudio();
+   stream.hasVideo();
+   stream.hasData();
+*/
 function Stream(kurento, local, options) {
 
 	var that = this;
@@ -119,7 +130,7 @@ function Stream(kurento, local, options) {
 	var sdpOffer;
 	var wrStream;
 	var wp;
-	var id = options.name;
+	var id = options.user;
 	var videoElements = [];
 	var elements = [];
 

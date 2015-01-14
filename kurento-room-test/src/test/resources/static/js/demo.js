@@ -7,8 +7,8 @@ window.onload = function() {
 
 function register() {
 
-	var name = document.getElementById('name').value;
-	var roomName = document.getElementById('roomName').value;
+	var userId = document.getElementById('name').value;
+	var roomId = document.getElementById('roomName').value;
 
 	var wsUri = 'ws://' + location.host + '/room';
 
@@ -21,18 +21,12 @@ function register() {
 			audio : true,
 			video : true,
 			data : true,
-			name : name
+			user: userId
 		});
 
-		// L: La room se crea SIEMPRE en el servidor y el cliente se conecta
-		// var room = KurentoRoom.Room({
-		// token : "af54/=gopknosdvmgiufhgadf=="
-		// });
-
-		// K: Crea la room desde el cliente
 		room = kurento.Room({
-			name : roomName,
-			userName : name // FIXME: user name should go in stream attributes
+			room : roomId,
+			user : userId
 		});
 
 		localStream.addEventListener("access-accepted", function() {
@@ -95,7 +89,7 @@ function register() {
 
 			var element = document.getElementById("myVideo");
 			var video = document.createElement('div');
-			video.id = "video-"+name;
+			video.id = "video-"+userId;
 			element.appendChild(video);
 
 			localStream.play(video.id);
