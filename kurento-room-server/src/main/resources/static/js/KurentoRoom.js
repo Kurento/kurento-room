@@ -8,6 +8,7 @@ function Room(kurento, options) {
 
 	var ee = new EventEmitter();
 	var streams = {};
+	var connected = false;
 
 	this.addEventListener = function(eventName, listener) {
 		ee.addListener(eventName, listener);
@@ -26,6 +27,7 @@ function Room(kurento, options) {
 			if(error){
 				console.error(error);
 			} else {
+				connected = true;
 				onExistingParticipants(response.value);
 			}
 		});
@@ -84,12 +86,16 @@ function Room(kurento, options) {
 
 	this.leave = function() {
 
-		kurento.sendRequest('leaveRoom', 
-		function(error,response){
-			if(error){
-				console.error(error);
-			}
-		});
+		if(connected){
+			kurento.sendRequest('leaveRoom',
+			function(error,response){
+				if(error){
+					console.error(error);
+				} else {
+					connected = false;
+				}
+			});
+		}
 
 		for (var key in streams) {
 			streams[key].dispose();
@@ -114,6 +120,8 @@ function Stream(kurento, local, options) {
 	var wrStream;
 	var wp;
 	var id = options.name;
+	var videoElements = [];
+	var elements = [];
 
 	this.addEventListener = function(eventName, listener) {
 		ee.addListener(eventName, listener);
@@ -132,7 +140,12 @@ function Stream(kurento, local, options) {
 		video.id = 'native-video-' + id;
 		video.autoplay = true;
 		video.controls = false;
-		video.src = URL.createObjectURL(wrStream);
+		if(wrStream){
+			video.src = URL.createObjectURL(wrStream);
+		}
+
+		videoElements.push(video);
+
 		if(local){
 			video.setAttribute("muted","muted");
 		}
@@ -145,7 +158,7 @@ function Stream(kurento, local, options) {
 		container.id = id;
 		document.getElementById(elementId).appendChild(container);
 
-		that.element = container;
+		elements.push(container);
 
 		var name = document.createElement('div');
 		container.appendChild(name);
@@ -249,6 +262,11 @@ function Stream(kurento, local, options) {
 				// FIXME: This avoid to subscribe to your own stream remotely.
 				// Fix this
 				wrStream = wp.pc.getRemoteStreams()[0];
+
+				for(i=0; i<videoElements.length; i++){
+					videoElements[i].src = URL.createObjectURL(wrStream);
+				}
+
 				that.room.emitEvent('stream-subscribed', [ {
 					stream : that
 				} ]);
@@ -260,8 +278,19 @@ function Stream(kurento, local, options) {
 
 	this.dispose = function() {
 		console.log("disposed");
-		if (that.element !== undefined) {
-			that.element.parentNode.removeChild(that.element);
+
+		function disposeElement(element){
+			if(element && element.parentNode){
+				element.parentNode.removeChild(element);
+			}
+		}
+
+		for(i=0; i<elements.length; i++){
+			disposeElement(elements[i]);
+		}
+
+		for(i=0; i<videoElements.length; i++){
+			disposeElement(videoElements[i]);
 		}
 
 		if (wp.pc && wp.pc.signalingState != 'closed')
