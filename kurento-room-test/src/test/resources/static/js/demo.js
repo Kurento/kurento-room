@@ -21,7 +21,7 @@ function register() {
 			audio : true,
 			video : true,
 			data : true,
-			user: userId
+			id: userId
 		});
 
 		room = kurento.Room({
@@ -32,8 +32,8 @@ function register() {
 		localStream.addEventListener("access-accepted", function() {
 
 			var subscribeToStreams = function(streams) {
-				for (var index in streams) {
-					var stream = streams[index];
+				for (var key in streams) {
+					var stream = streams[key];
 					if (localStream.getID() !== stream.getID()) {
 						room.subscribe(stream);
 					}
@@ -41,7 +41,7 @@ function register() {
 			};
 
 			var playVideo = function(stream){
-				var elementId = "video-" + stream.getID();
+				var elementId = "video-" + stream.getGlobalID();
 				var div = document.createElement('div');
 				div.setAttribute("id", elementId);
 				document.getElementById("participants").appendChild(div);
@@ -55,10 +55,12 @@ function register() {
 				document.getElementById('room').style.display = 'block';
 
 				room.publish(localStream);
-				subscribeToStreams(roomEvent.streams);
-
-				for(i=0; i<roomEvent.streams.length; i++){
-					playVideo(roomEvent.streams[i]);
+				for(var i=0; i<roomEvent.participants.length; i++){
+					var streams = roomEvent.participants[i].getStreams();
+					subscribeToStreams(streams);
+					for(key in streams){
+						playVideo(streams[key]);
+					}
 				}
 			});
 
@@ -79,7 +81,7 @@ function register() {
 			});
 
 			room.addEventListener("stream-removed", function(streamEvent) {
-				var element = document.getElementById("video-"+streamEvent.stream.getID());
+				var element = document.getElementById("video-"+streamEvent.stream.getGlobalID());
 				if (element !== undefined) {
 					element.parentNode.removeChild(element);
 				}
@@ -89,7 +91,7 @@ function register() {
 
 			var element = document.getElementById("myVideo");
 			var video = document.createElement('div');
-			video.id = "video-"+userId;
+			video.id = "video-"+localStream.getGlobalID();
 			element.appendChild(video);
 
 			localStream.play(video.id);
@@ -108,7 +110,7 @@ function leaveRoom(){
 	var streams = room.getStreams();
 	for (var index in streams) {
 		var stream = streams[index];
-		var element = document.getElementById("video-"+stream.getID());
+		var element = document.getElementById("video-"+stream.getGlobalID());
 		if (element) {
 			element.parentNode.removeChild(element);
 		}

@@ -43,10 +43,10 @@ import com.google.gson.JsonObject;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 1.0.0
  */
-public class RoomParticipant implements Closeable {
+public class Participant implements Closeable {
 
 	private static final Logger log = LoggerFactory
-			.getLogger(RoomParticipant.class);
+			.getLogger(Participant.class);
 
 	private final String name;
 	private final Room room;
@@ -65,7 +65,7 @@ public class RoomParticipant implements Closeable {
 
 	private volatile boolean closed;
 
-	public RoomParticipant(String name, Room room, ParticipantSession session,
+	public Participant(String name, Room room, ParticipantSession session,
 			MediaPipeline pipeline) {
 
 		this.pipeline = pipeline;
@@ -129,7 +129,7 @@ public class RoomParticipant implements Closeable {
 	 * @throws InterruptedException
 	 * @throws IOException
 	 */
-	public String receiveVideoFrom(RoomParticipant sender, String sdpOffer) {
+	public String receiveVideoFrom(Participant sender, String sdpOffer) {
 
 		log.info("USER {}: Request to receive video from {} in room {}",
 				this.name, sender.getName(), this.room.getName());
@@ -220,7 +220,7 @@ public class RoomParticipant implements Closeable {
 	 * @param sender
 	 *            the participant
 	 */
-	public void cancelSendingVideoTo(final RoomParticipant sender) {
+	public void cancelSendingVideoTo(final Participant sender) {
 		this.cancelSendingVideoTo(sender.getName());
 	}
 
@@ -256,12 +256,12 @@ public class RoomParticipant implements Closeable {
 			public void onSuccess(Void result) throws Exception {
 				log.debug(
 						"PARTICIPANT {}: Released successfully incoming EP for {}",
-						RoomParticipant.this.name, senderName);
+						Participant.this.name, senderName);
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
-				log.warn("PARTICIPANT " + RoomParticipant.this.name
+				log.warn("PARTICIPANT " + Participant.this.name
 						+ ": Could not release sending endpoint for user "
 						+ senderName, cause);
 			}
@@ -309,9 +309,9 @@ public class RoomParticipant implements Closeable {
 				Request<JsonObject> request = messages.take();
 
 				log.debug("Sending message {} to user {}", request,
-						RoomParticipant.this.name);
+						Participant.this.name);
 
-				RoomParticipant.this.session
+				Participant.this.session
 						.sendRequest(
 								request,
 								new org.kurento.jsonrpc.client.Continuation<Response<JsonElement>>() {
@@ -324,7 +324,7 @@ public class RoomParticipant implements Closeable {
 									public void onError(Throwable cause) {
 										log.error(
 												"Exception while sending message to user '"
-														+ RoomParticipant.this.name
+														+ Participant.this.name
 														+ "'", cause);
 									}
 								});
@@ -332,7 +332,7 @@ public class RoomParticipant implements Closeable {
 				return;
 			} catch (Exception e) {
 				log.warn("Exception while sending message to user '"
-						+ RoomParticipant.this.name + "'", e);
+						+ Participant.this.name + "'", e);
 			}
 		}
 	}
@@ -363,7 +363,7 @@ public class RoomParticipant implements Closeable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		RoomParticipant other = (RoomParticipant) obj;
+		Participant other = (Participant) obj;
 		if (name == null) {
 			if (other.name != null)
 				return false;
@@ -389,7 +389,7 @@ public class RoomParticipant implements Closeable {
 			room.execute(new Runnable() {
 				public void run() {
 					updateThreadName("room>" + threadName);
-					room.leave(RoomParticipant.this);
+					room.leave(Participant.this);
 					updateThreadName("room");
 				}
 			});

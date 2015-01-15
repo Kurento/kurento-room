@@ -17,7 +17,8 @@ package org.kurento.room.demo;
 import static org.kurento.room.demo.ThreadLogUtils.updateThreadName;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -71,7 +72,7 @@ public class RoomManager {
 	}
 
 	public static interface ParticipantSession {
-		public void setParticipant(RoomParticipant participant);
+		public void setParticipant(Participant participant);
 
 		public void sendRequest(
 				Request<JsonObject> request,
@@ -116,7 +117,7 @@ public class RoomManager {
 		}
 	}
 
-	public void receiveVideoFrom(final RoomParticipant recvParticipant,
+	public void receiveVideoFrom(final Participant recvParticipant,
 			final String senderParticipantName, final String sdpOffer,
 			final RMContinuation<ReceiveVideoFromResponse> cont) {
 
@@ -127,7 +128,7 @@ public class RoomManager {
 
 				Room room = recvParticipant.getRoom();
 
-				final RoomParticipant senderParticipant = room
+				final Participant senderParticipant = room
 						.getParticipant(senderParticipantName);
 
 				if (senderParticipant != null) {
@@ -171,8 +172,8 @@ public class RoomManager {
 
 	public void joinRoom(String roomName, final String userName,
 			final ParticipantSession session,
-			final RMContinuation<List<String>> cont) throws IOException,
-			InterruptedException, ExecutionException {
+			final RMContinuation<Collection<Participant>> cont)
+			throws IOException, InterruptedException, ExecutionException {
 
 		updateThreadName(userName);
 
@@ -188,20 +189,20 @@ public class RoomManager {
 
 					try {
 
-						List<String> participantNames = room
-								.getParticipantNames();
+						Collection<Participant> participants = new ArrayList<>(
+								room.getParticipants());
 
-						final RoomParticipant user = room.join(userName,
+						final Participant participant = room.join(userName,
 								session);
 
-						session.setParticipant(user);
+						session.setParticipant(participant);
 
-						cont.result(null, participantNames);
+						cont.result(null, participants);
 
 						executor.submit(new Runnable() {
 							@Override
 							public void run() {
-								user.createWebRtcEndpoint();
+								participant.createWebRtcEndpoint();
 							}
 						});
 
@@ -222,7 +223,7 @@ public class RoomManager {
 		}
 	}
 
-	public void leaveRoom(final RoomParticipant user) throws IOException,
+	public void leaveRoom(final Participant user) throws IOException,
 			InterruptedException, ExecutionException {
 
 		final Room room = user.getRoom();

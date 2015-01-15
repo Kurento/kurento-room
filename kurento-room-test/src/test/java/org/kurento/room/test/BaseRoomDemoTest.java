@@ -366,13 +366,13 @@ public class BaseRoomDemoTest extends KurentoTest {
 
 				for (int j = 0; j < activeUsers.length; j++) {
 
-					String videoElementId = "video-user" + j;
+					String videoElementId = "video-" + getUserName(j);
 
 					if (activeUsers[j]) {
 						// log.debug("Finding element video-user" + j
 						// + " in browser for user" + i);
 
-						WebElement video = findElement("user" + i, browser,
+						WebElement video = findElement(getUserName(i), browser,
 								videoElementId);
 						if (video == null) {
 							fail("Video element for user" + j
@@ -382,7 +382,7 @@ public class BaseRoomDemoTest extends KurentoTest {
 						// log.debug("Verifing element video-user" + j
 						// + " is hide in browser for user" + i);
 						try {
-							waitWhileElement("user" + i, browser,
+							waitWhileElement(getUserName(i), browser,
 									videoElementId);
 						} catch (TimeoutException e) {
 							fail(e.getMessage());
@@ -398,6 +398,10 @@ public class BaseRoomDemoTest extends KurentoTest {
 
 		log.debug("Checked active users: [" + sb + "] in " + duration
 				+ " millis");
+	}
+
+	private String getUserName(int i) {
+		return "user" + i + "_webcam";
 	}
 
 }

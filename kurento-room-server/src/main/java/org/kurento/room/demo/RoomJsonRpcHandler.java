@@ -15,7 +15,7 @@
 package org.kurento.room.demo;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 
 import org.kurento.jsonrpc.DefaultJsonRpcHandler;
@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -63,18 +64,18 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 			ParticipantSession {
 
 		private Session session;
-		private RoomParticipant roomParticipant;
+		private Participant roomParticipant;
 
 		public ParticipantSessionJsonRpc(Session session) {
 			this.session = session;
 		}
 
 		@Override
-		public void setParticipant(RoomParticipant roomParticipant) {
+		public void setParticipant(Participant roomParticipant) {
 			this.roomParticipant = roomParticipant;
 		}
 
-		public RoomParticipant getRoomParticipant() {
+		public Participant getRoomParticipant() {
 			return roomParticipant;
 		}
 
@@ -138,8 +139,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 
 	private void leaveRoom(final ParticipantSessionJsonRpc participantSession)
 			throws IOException, InterruptedException, ExecutionException {
-		RoomParticipant roomParticipant = participantSession
-				.getRoomParticipant();
+		Participant roomParticipant = participantSession.getRoomParticipant();
 		if (roomParticipant != null) {
 			roomManager.leaveRoom(roomParticipant);
 			removeParticipantForSession(participantSession);
@@ -162,10 +162,10 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 		transaction.startAsync();
 
 		roomManager.joinRoom(roomName, userName, participantSession,
-				new RMContinuation<List<String>>() {
+				new RMContinuation<Collection<Participant>>() {
 					@Override
 					public void result(Throwable error,
-							List<String> participants) {
+							Collection<Participant> participants) {
 
 						try {
 							if (error != null) {
@@ -180,7 +180,25 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 									transaction.sendError(error);
 								}
 							} else {
-								transaction.sendResponse(participants);
+
+								JsonArray result = new JsonArray();
+
+								for (Participant participant : participants) {
+
+									JsonObject participantJson = new JsonObject();
+									participantJson.addProperty("id",
+											participant.getName());
+									JsonObject stream = new JsonObject();
+									stream.addProperty("id", "webcam");
+									JsonArray streamsArray = new JsonArray();
+									streamsArray.add(stream);
+									participantJson
+											.add("streams", streamsArray);
+
+									result.add(participantJson);
+								}
+
+								transaction.sendResponse(result);
 							}
 						} catch (IOException e) {
 							log.error("Exception responding to user", e);
@@ -193,8 +211,10 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 			final Request<JsonObject> request,
 			final ParticipantSessionJsonRpc participantSession) {
 
-		final String senderName = request.getParams()
-				.get(RECEIVE_VIDEO_SENDER_PARAM).getAsString();
+		String senderName = request.getParams().get(RECEIVE_VIDEO_SENDER_PARAM)
+				.getAsString();
+
+		senderName = senderName.substring(0, senderName.indexOf("_"));
 
 		final String sdpOffer = request.getParams()
 				.get(RECEIVE_VIDEO_SDPOFFER_PARAM).getAsString();
@@ -263,7 +283,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	public void afterConnectionClosed(Session session, String status)
 			throws Exception {
 
-		RoomParticipant participant = getParticipantSession(session)
+		Participant participant = getParticipantSession(session)
 				.getRoomParticipant();
 
 		if (participant != null) {
@@ -277,8 +297,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	public void handleTransportError(Session session, Throwable exception)
 			throws Exception {
 
-		RoomParticipant user = getParticipantSession(session)
-				.getRoomParticipant();
+		Participant user = getParticipantSession(session).getRoomParticipant();
 
 		if (user != null && !user.isClosed()) {
 			log.warn("Transport error", exception);

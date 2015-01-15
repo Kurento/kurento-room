@@ -15,9 +15,7 @@
 package org.kurento.room.demo;
 
 import java.io.Closeable;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +31,7 @@ import org.kurento.room.demo.RoomManager.ParticipantSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -43,11 +42,11 @@ import com.google.gson.JsonObject;
 public class Room implements Closeable {
 
 	private static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
-	private static final String NEW_PARTICIPANT_ARRIVED_METHOD = "newParticipantArrived";
+	private static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
 
 	private final Logger log = LoggerFactory.getLogger(Room.class);
 
-	private final ConcurrentMap<String, RoomParticipant> participants = new ConcurrentHashMap<>();
+	private final ConcurrentMap<String, Participant> participants = new ConcurrentHashMap<>();
 	private final String name;
 
 	private MediaPipeline pipeline;
@@ -68,7 +67,7 @@ public class Room implements Closeable {
 		return name;
 	}
 
-	public RoomParticipant join(String userName, ParticipantSession session) {
+	public Participant join(String userName, ParticipantSession session) {
 
 		checkClosed();
 
@@ -84,7 +83,7 @@ public class Room implements Closeable {
 		}
 
 		log.info("ROOM {}: adding participant {}", userName, userName);
-		final RoomParticipant participant = new RoomParticipant(userName, this,
+		final Participant participant = new Participant(userName, this,
 				session, this.pipeline);
 
 		log.debug(
@@ -92,12 +91,17 @@ public class Room implements Closeable {
 				name, participants.values(), participant.getName());
 
 		JsonObject params = new JsonObject();
-		params.addProperty("name", participant.getName());
+		params.addProperty("id", participant.getName());
+		JsonObject stream = new JsonObject();
+		stream.addProperty("id", "webcam");
+		JsonArray streamsArray = new JsonArray();
+		streamsArray.add(stream);
+		params.add("streams", streamsArray);
 
-		for (final RoomParticipant participant1 : participants.values()) {
+		for (final Participant participant1 : participants.values()) {
 
-			participant1.sendMessage(new Request<>(
-					NEW_PARTICIPANT_ARRIVED_METHOD, params));
+			participant1.sendMessage(new Request<>(PARTICIPANT_JOINED_METHOD,
+					params));
 		}
 
 		participants.put(participant.getName(), participant);
@@ -115,7 +119,7 @@ public class Room implements Closeable {
 		}
 	}
 
-	public void leave(RoomParticipant user) {
+	public void leave(Participant user) {
 
 		checkClosed();
 
@@ -136,7 +140,7 @@ public class Room implements Closeable {
 		final JsonObject params = new JsonObject();
 		params.addProperty("name", name);
 
-		for (final RoomParticipant participant : participants.values()) {
+		for (final Participant participant : participants.values()) {
 
 			participant.cancelSendingVideoTo(name);
 			participant.sendMessage(new Request<>(PARTICIPANT_LEFT_METHOD,
@@ -147,7 +151,7 @@ public class Room implements Closeable {
 	/**
 	 * @return a collection with all the participants in the room
 	 */
-	public Collection<RoomParticipant> getParticipants() {
+	public Collection<Participant> getParticipants() {
 
 		checkClosed();
 
@@ -158,7 +162,7 @@ public class Room implements Closeable {
 	 * @param name
 	 * @return the participant from this session
 	 */
-	public RoomParticipant getParticipant(String name) {
+	public Participant getParticipant(String name) {
 
 		checkClosed();
 
@@ -172,7 +176,7 @@ public class Room implements Closeable {
 
 			executor.shutdown();
 
-			for (final RoomParticipant user : participants.values()) {
+			for (final Participant user : participants.values()) {
 				user.close();
 			}
 
@@ -200,14 +204,6 @@ public class Room implements Closeable {
 		} else {
 			log.warn("Closing a yet closed room {}", this.name);
 		}
-	}
-
-	public List<String> getParticipantNames() {
-		List<String> participantNames = new ArrayList<>();
-		for (final RoomParticipant participant : getParticipants()) {
-			participantNames.add(participant.getName());
-		}
-		return participantNames;
 	}
 
 	public void execute(Runnable task) {
