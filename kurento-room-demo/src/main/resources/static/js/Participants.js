@@ -1,4 +1,4 @@
-function Participant(stream) {
+function AppParticipant(stream) {
 
 	this.stream = stream;
 	this.videoElement;
@@ -31,7 +31,7 @@ function Participant(stream) {
 
 	function playVideo() {
 
-		var elementId = "video-" + stream.getID();
+		var elementId = "video-" + stream.getGlobalID();
 
 		that.videoElement = document.createElement('div');
 		that.videoElement.setAttribute("id", elementId);
@@ -88,7 +88,7 @@ function Participants() {
 
 	this.addParticipant = function(stream) {
 
-		var participant = new Participant(stream);
+		var participant = new AppParticipant(stream);
 
 		participants[stream.getID()] = participant;
 
