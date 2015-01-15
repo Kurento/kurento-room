@@ -61,7 +61,7 @@ public class BaseRoomDemoTest extends KurentoTest {
 
 	private Logger log = LoggerFactory.getLogger(BaseRoomDemoTest.class);
 
-	protected static final String APP_URL = "http://127.0.0.1:8080/";
+	protected static final String APP_URL = "http://127.0.0.1:8080/room.html";
 
 	private static final int TEST_TIMEOUT = 20; // seconds
 

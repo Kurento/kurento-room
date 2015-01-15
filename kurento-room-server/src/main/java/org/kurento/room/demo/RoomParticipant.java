@@ -25,11 +25,13 @@ import org.kurento.client.Continuation;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
+import org.kurento.jsonrpc.Session;
+import org.kurento.jsonrpc.message.Request;
+import org.kurento.jsonrpc.message.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
@@ -45,18 +47,19 @@ public class RoomParticipant implements Closeable {
 	private final String name;
 	private final Room room;
 
-	private final WebSocketSession session;
+	private final Session session;
 	private final MediaPipeline pipeline;
 
 	private WebRtcEndpoint receivingEndpoint;
 	private final ConcurrentMap<String, WebRtcEndpoint> sendingEndpoints = new ConcurrentHashMap<>();
 
-	private BlockingQueue<String> messages = new ArrayBlockingQueue<>(10);
+	private BlockingQueue<Request<JsonObject>> messages = new ArrayBlockingQueue<>(
+			10);
 	private Thread senderThread;
 
 	private volatile boolean closed;
 
-	public RoomParticipant(String name, Room room, WebSocketSession session,
+	public RoomParticipant(String name, Room room, Session session,
 			MediaPipeline pipeline) {
 
 		this.pipeline = pipeline;
@@ -88,7 +91,7 @@ public class RoomParticipant implements Closeable {
 	/**
 	 * @return the session
 	 */
-	public WebSocketSession getSession() {
+	public Session getSession() {
 		return session;
 	}
 
@@ -110,7 +113,7 @@ public class RoomParticipant implements Closeable {
 	 * @param sdpOffer
 	 * @throws IOException
 	 */
-	public void receiveVideoFrom(RoomParticipant sender, String sdpOffer) {
+	public String receiveVideoFrom(RoomParticipant sender, String sdpOffer) {
 
 		log.info("USER {}: Request to receive video from {} in room {}",
 				this.name, sender.getName(), this.room.getName());
@@ -118,19 +121,8 @@ public class RoomParticipant implements Closeable {
 		log.trace("USER {}: SdpOffer for {} is {}", this.name,
 				sender.getName(), sdpOffer);
 
-		final String ipSdpAnswer = this.createSdpResponseForUser(sender,
-				sdpOffer);
+		return this.createSdpResponseForUser(sender, sdpOffer);
 
-		if (ipSdpAnswer != null) {
-			final JsonObject scParams = new JsonObject();
-			scParams.addProperty("id", "receiveVideoAnswer");
-			scParams.addProperty("name", sender.getName());
-			scParams.addProperty("sdpAnswer", ipSdpAnswer);
-
-			log.trace("USER {}: SdpAnswer for {} is {}", this.name,
-					sender.getName(), ipSdpAnswer);
-			this.sendMessage(scParams);
-		}
 	}
 
 	private String createSdpResponseForUser(RoomParticipant sender,
@@ -291,11 +283,11 @@ public class RoomParticipant implements Closeable {
 		senderThread.interrupt();
 	}
 
-	public void sendMessage(JsonObject message) {
-		log.debug("USER {}: Enqueueing message {}", name, message);
+	public void sendMessage(Request<JsonObject> request) {
+		log.debug("USER {}: Enqueueing message {}", name, request);
 		try {
-			messages.put(message.toString());
-			log.debug("USER {}: Enqueued message {}", name, message);
+			messages.put(request);
+			log.debug("USER {}: Enqueued message {}", name, request);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -304,11 +296,28 @@ public class RoomParticipant implements Closeable {
 	private void internalSendMessage() throws InterruptedException {
 		while (true) {
 			try {
-				String message = messages.take();
-				log.debug("Sending message {} to user {}", message,
+				Request<JsonObject> request = messages.take();
+
+				log.debug("Sending message {} to user {}", request,
 						RoomParticipant.this.name);
-				RoomParticipant.this.session.sendMessage(new TextMessage(
-						message));
+
+				RoomParticipant.this.session
+						.sendRequest(
+								request,
+								new org.kurento.jsonrpc.client.Continuation<Response<JsonElement>>() {
+									@Override
+									public void onSuccess(
+											Response<JsonElement> result) {
+									}
+
+									@Override
+									public void onError(Throwable cause) {
+										log.error(
+												"Exception while sending message to user '"
+														+ RoomParticipant.this.name
+														+ "'", cause);
+									}
+								});
 			} catch (InterruptedException e) {
 				return;
 			} catch (Exception e) {

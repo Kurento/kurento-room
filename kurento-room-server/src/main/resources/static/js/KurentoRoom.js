@@ -19,24 +19,27 @@ function Room(kurento, options) {
 
 	this.connect = function() {
 
-		kurento.sendMessage({
-			id : 'joinRoom',
+		kurento.sendRequest('joinRoom',{
 			name : options.userName, // FIXME: User name should go in stream
-			// attributes
-			room : options.name,
+			room : options.name
+		}, function(error,response){
+			if(error){
+				console.error(error);
+			} else {
+				onExistingParticipants(response.value);
+			}
 		});
 	}
 
-	// Request response
-	this.onExistingParticipants = function(msg) {
+	function onExistingParticipants(participants) {
 
 		var roomEvent = {
 			streams : []
 		}
 
-		var length = msg.data.length;
+		var length = participants.length;
 		for (var i = 0; i < length; i++) {
-			var userName = msg.data[i];
+			var userName =participants[i];
 			var stream = new Stream(kurento, false, {
 				name : userName
 			});
@@ -79,20 +82,13 @@ function Room(kurento, options) {
 		}
 	}
 
-	this.receiveVideoResponse = function(msg) {
-		var stream = streams[msg.name];
-		if (stream !== undefined) {
-			stream.processSdpAnswer(msg.sdpAnswer);
-		} else {
-			console.warn("Receiving video response from an unexisting user: "
-					+ msg.name);
-		}
-	}
-
 	this.leave = function() {
 
-		kurento.sendMessage({
-			id : 'leaveRoom'
+		kurento.sendRequest('leaveRoom', 
+		function(error,response){
+			if(error){
+				console.error(error);
+			}
 		});
 
 		for (var key in streams) {
@@ -190,10 +186,15 @@ function Stream(kurento, local, options) {
 
 		var startVideoCallback = function(sdpOfferParam) {
 			sdpOffer = sdpOfferParam;
-			kurento.sendMessage({
-				id : "receiveVideoFrom",
+			kurento.sendRequest("receiveVideoFrom",{
 				sender : id,
 				sdpOffer : sdpOffer
+			}, function(error,response){
+				if(error){
+					console.error(error);
+				} else {
+					that.processSdpAnswer(response.sdpAnswer);
+				}
 			});
 		}
 
@@ -290,6 +291,7 @@ function KurentoRoom(wsUri, callback) {
 	var that = this;
 
 	var userName;
+
 	var ws = new WebSocket(wsUri);
 
 	ws.onopen = function() {
@@ -304,28 +306,22 @@ function KurentoRoom(wsUri, callback) {
 		console.log("Connection Closed");
 	}
 
-	ws.onmessage = function(message) {
+	var options = { request_timeout: 50000 };
+	var rpc = new RpcBuilder(RpcBuilder.packers.JsonRPC, options, ws, function(request)
+	{
+		console.info('Received request: ' + request);
 
-		var parsedMessage = JSON.parse(message.data);
-		console.info('Received message: ' + message.data);
-
-		switch (parsedMessage.id) {
-		case 'existingParticipants':
-			onExistingParticipants(parsedMessage);
-			break;
+		switch (request.method) {
 		case 'newParticipantArrived':
-			onNewParticipant(parsedMessage);
+			onNewParticipant(request.params);
 			break;
 		case 'participantLeft':
-			onParticipantLeft(parsedMessage);
-			break;
-		case 'receiveVideoAnswer':
-			receiveVideoResponse(parsedMessage);
+			onParticipantLeft(request.params);
 			break;
 		default:
-			console.error('Unrecognized message', parsedMessage);
-		}
-	}
+			console.error('Unrecognized request: '+request.method);
+		};
+	});
 
 	function onNewParticipant(msg) {
 		if (room !== undefined) {
@@ -339,23 +335,9 @@ function KurentoRoom(wsUri, callback) {
 		}
 	}
 
-	function onExistingParticipants(msg) {
-		if (room !== undefined) {
-			room.onExistingParticipants(msg);
-		}
-	}
-
-	function receiveVideoResponse(result) {
-		if (room !== undefined) {
-			room.receiveVideoResponse(result);
-		}
-	}
-
-	this.sendMessage = function(message) {
-		var jsonMessage = JSON.stringify(message);
-		console.log('Sending message: ' + jsonMessage);
-		ws.send(jsonMessage);
-		console.log('Sent message: ' + jsonMessage);
+	this.sendRequest = function(method, params, callback) {
+		rpc.encode(method, params, callback);
+		console.log('Sent request: { method:"'+method+"', params: "+ params+" }");
 	}
 
 	this.close = function() {

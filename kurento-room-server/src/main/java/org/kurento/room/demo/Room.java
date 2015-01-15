@@ -26,14 +26,12 @@ import org.kurento.client.Continuation;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
 import org.kurento.commons.exception.KurentoException;
+import org.kurento.jsonrpc.Session;
+import org.kurento.jsonrpc.message.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.socket.WebSocketSession;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 
 /**
  * @author Ivan Gracia (izanmail@gmail.com)
@@ -41,6 +39,10 @@ import com.google.gson.JsonPrimitive;
  * @since 1.0.0
  */
 public class Room implements Closeable {
+
+	private static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
+	private static final String NEW_PARTICIPANT_ARRIVED_METHOD = "newParticipantArrived";
+
 	private final Logger log = LoggerFactory.getLogger(Room.class);
 
 	private final ConcurrentMap<String, RoomParticipant> participants = new ConcurrentHashMap<>();
@@ -64,7 +66,7 @@ public class Room implements Closeable {
 		return name;
 	}
 
-	public RoomParticipant join(String userName, WebSocketSession session) {
+	public RoomParticipant join(String userName, Session session) {
 
 		checkClosed();
 
@@ -77,18 +79,17 @@ public class Room implements Closeable {
 		final RoomParticipant participant = new RoomParticipant(userName, this,
 				session, this.pipeline);
 
-		sendParticipantNames(participant);
-
-		final JsonObject newParticipantMsg = new JsonObject();
-		newParticipantMsg.addProperty("id", "newParticipantArrived");
-		newParticipantMsg.addProperty("name", participant.getName());
-
 		log.debug(
 				"ROOM {}: notifying other participants {} of new participant {}",
 				name, participants.values(), participant.getName());
 
+		JsonObject params = new JsonObject();
+		params.addProperty("name", participant.getName());
+
 		for (final RoomParticipant participant1 : participants.values()) {
-			participant1.sendMessage(newParticipantMsg);
+
+			participant1.sendMessage(new Request<>(
+					NEW_PARTICIPANT_ARRIVED_METHOD, params));
 		}
 
 		participants.put(participant.getName(), participant);
@@ -124,39 +125,15 @@ public class Room implements Closeable {
 		log.debug("ROOM {}: notifying all users that {} is leaving the room",
 				this.name, name);
 
-		final JsonObject participantLeftJson = new JsonObject();
-		participantLeftJson.addProperty("id", "participantLeft");
-		participantLeftJson.addProperty("name", name);
+		final JsonObject params = new JsonObject();
+		params.addProperty("name", name);
+
 		for (final RoomParticipant participant : participants.values()) {
+
 			participant.cancelSendingVideoTo(name);
-			participant.sendMessage(participantLeftJson);
+			participant.sendMessage(new Request<>(PARTICIPANT_LEFT_METHOD,
+					params));
 		}
-	}
-
-	public void sendParticipantNames(RoomParticipant user) {
-
-		checkClosed();
-
-		log.debug("PARTICIPANT {}: sending a list of participants",
-				user.getName());
-
-		final JsonArray participantsArray = new JsonArray();
-		for (final RoomParticipant participant : this.getParticipants()) {
-			log.debug("PARTICIPANT {}: visiting participant", user.getName(),
-					participant.getName());
-			if (!participant.equals(user)) {
-				final JsonElement participantName = new JsonPrimitive(
-						participant.getName());
-				participantsArray.add(participantName);
-			}
-		}
-
-		final JsonObject existingParticipantsMsg = new JsonObject();
-		existingParticipantsMsg.addProperty("id", "existingParticipants");
-		existingParticipantsMsg.add("data", participantsArray);
-		log.debug("PARTICIPANT {}: sending a list of {} participants",
-				user.getName(), participantsArray.size());
-		user.sendMessage(existingParticipantsMsg);
 	}
 
 	/**

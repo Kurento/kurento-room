@@ -15,13 +15,14 @@
 package org.kurento.room.demo;
 
 import org.kurento.client.KurentoClient;
+import org.kurento.jsonrpc.internal.server.config.JsonRpcConfiguration;
+import org.kurento.jsonrpc.server.JsonRpcConfigurer;
+import org.kurento.jsonrpc.server.JsonRpcHandlerRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.context.annotation.Import;
 
 /**
  * @author Ivan Gracia (izanmail@gmail.com)
@@ -29,9 +30,9 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
  * @since 1.0.0
  */
 @Configuration
-@EnableWebSocket
+@Import(JsonRpcConfiguration.class)
 @EnableAutoConfiguration
-public class KurentoRoomServerApp implements WebSocketConfigurer {
+public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	@Bean
 	public RoomManager roomManager() {
@@ -39,8 +40,8 @@ public class KurentoRoomServerApp implements WebSocketConfigurer {
 	}
 
 	@Bean
-	public RoomHandler groupCallHandler() {
-		return new RoomHandler();
+	public RoomJsonRpcHandler groupCallHandler() {
+		return new RoomJsonRpcHandler();
 	}
 
 	@Bean
@@ -49,7 +50,7 @@ public class KurentoRoomServerApp implements WebSocketConfigurer {
 	}
 
 	@Override
-	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+	public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
 		registry.addHandler(groupCallHandler(), "/room");
 	}
 
