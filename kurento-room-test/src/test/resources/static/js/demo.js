@@ -17,16 +17,15 @@ function register() {
 		if (error)
 			return console.log(error);
 
-		var localStream = kurento.Stream({
-			audio : true,
-			video : true,
-			data : true,
-			id: userId
-		});
-
 		room = kurento.Room({
 			room : roomId,
 			user : userId
+		});
+
+		var localStream = kurento.Stream(room, {
+			audio : true,
+			video : true,
+			data : true
 		});
 
 		localStream.addEventListener("access-accepted", function() {
@@ -34,7 +33,7 @@ function register() {
 			var subscribeToStreams = function(streams) {
 				for (var key in streams) {
 					var stream = streams[key];
-					if (localStream.getID() !== stream.getID()) {
+					if (localStream.getGlobalID() !== stream.getGlobalID()) {
 						room.subscribe(stream);
 					}
 				}
@@ -54,13 +53,20 @@ function register() {
 				document.getElementById('join').style.display = 'none';
 				document.getElementById('room').style.display = 'block';
 
-				room.publish(localStream);
-				for(var i=0; i<roomEvent.participants.length; i++){
-					var streams = roomEvent.participants[i].getStreams();
-					subscribeToStreams(streams);
-					for(key in streams){
-						playVideo(streams[key]);
-					}
+				localStream.publish();
+
+//				for(var i=0; i<roomEvent.participants.length; i++){
+//					var streams = roomEvent.participants[i].getStreams();
+//					subscribeToStreams(streams);
+//					for(key in streams){
+//						playVideo(streams[key]);
+//					}
+//				}
+
+				var streams = roomEvent.streams;
+				subscribeToStreams(streams);
+				for(var i=0; i<streams.length; i++){
+					playVideo(streams[i]);
 				}
 			});
 
@@ -87,14 +93,9 @@ function register() {
 				}
 			});
 
+			playVideo(localStream);
+
 			room.connect();
-
-			var element = document.getElementById("myVideo");
-			var video = document.createElement('div');
-			video.id = "video-"+localStream.getGlobalID();
-			element.appendChild(video);
-
-			localStream.play(video.id);
 		});
 
 		localStream.init();

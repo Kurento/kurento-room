@@ -12,6 +12,10 @@ function Room(kurento, options) {
 	var connected = false;
 	var localParticipant;
 
+	this.getLocalParticipant = function(){
+		return localParticipant;
+	}
+
 	this.addEventListener = function(eventName, listener) {
 		ee.addListener(eventName, listener);
 	}
@@ -29,45 +33,46 @@ function Room(kurento, options) {
 			if (error) {
 				console.error(error);
 			} else {
+
 				connected = true;
-				localParticipant = new Participant(kurento, true, { id: options.user });
-				participants[options.user]=localParticipant;
-				onExistingParticipants(response.value);
+
+				var exParticipants = response.value;
+
+				var roomEvent = {
+					participants : [],
+					streams : []
+				}
+
+				var length = exParticipants.length;
+				for (var i = 0; i < length; i++) {
+
+					var participant = new Participant(kurento, false, that,
+							exParticipants[i]);
+
+					participants[participant.getID()] = participant;
+
+					roomEvent.participants.push(participant);
+
+					var streams = participant.getStreams();
+					for (var key in streams) {
+						roomEvent.streams.push(streams[key]);
+					}
+				}
+
+				ee.emitEvent('room-connected', [ roomEvent ]);
 			}
 		});
 	}
 
-	function onExistingParticipants(exParticipants) {
-
-		var roomEvent = {
-			participants : [],
-		}
-
-		var length = exParticipants.length;
-		for (var i = 0; i < length; i++) {
-			var participant = new Participant(kurento, false, exParticipants[i]);
-			participants[participant.getID()] = participant;
-
-			roomEvent.participants.push(participant);
-		}
-
-		ee.emitEvent('room-connected', [ roomEvent ]);
-	}
 
 	this.subscribe = function(stream) {
 		stream.room = that;
 		stream.subscribe();
 	}
 
-	this.publish = function(localStream) {
-		localStream.room = that;
-		localParticipant.addStream(localStream);
-		localStream.publish();
-	}
-
 	this.onParticipantJoined = function(msg) {
 
-		var participant = new Participant(kurento, false, msg);
+		var participant = new Participant(kurento, false, that, msg);
 
 		participants[participant.getID()] = participant;
 
@@ -76,7 +81,7 @@ function Room(kurento, options) {
 		} ]);
 
 		var streams = participant.getStreams();
-		for (var key in streams) {
+		for ( var key in streams) {
 			ee.emitEvent('stream-added', [ {
 				stream : streams[key]
 			} ]);
@@ -95,7 +100,7 @@ function Room(kurento, options) {
 			} ]);
 
 			var streams = participant.getStreams();
-			for (var key in streams) {
+			for ( var key in streams) {
 				ee.emitEvent('stream-removed', [ {
 					stream : streams[key]
 				} ]);
@@ -103,7 +108,10 @@ function Room(kurento, options) {
 
 			participant.dispose();
 		} else {
-			console.error("Participant "+msg.name+" unknown. Participants: "+JSON.stringify(participants));
+			console
+					.error("Participant " + msg.name
+							+ " unknown. Participants: "
+							+ JSON.stringify(participants));
 		}
 	}
 
@@ -119,7 +127,7 @@ function Room(kurento, options) {
 			});
 		}
 
-		for (var key in participants) {
+		for ( var key in participants) {
 			participants[key].dispose();
 		}
 	}
@@ -127,21 +135,24 @@ function Room(kurento, options) {
 	this.getStreams = function() {
 		return streams;
 	}
+
+	localParticipant = new Participant(kurento, true, that, {id:options.user});
+	participants[options.user] = localParticipant;
 }
 
 // Participant --------------------------------
 
-function Participant(kurento, local, options) {
+function Participant(kurento, local, room, options) {
 
 	var that = this;
 	var id = options.id;
 
 	var streams = {};
 
-	if(options.streams){
+	if (options.streams) {
 		for (var i = 0; i < options.streams.length; i++) {
 
-			var stream = new Stream(kurento, false, {
+			var stream = new Stream(kurento, false, room, {
 				id : options.streams[i].id,
 				participant : that
 			});
@@ -150,23 +161,27 @@ function Participant(kurento, local, options) {
 		}
 	}
 
-	function addStream(stream){
+	that.setId = function(newId){
+		id = newId;
+	}
+
+	function addStream(stream) {
 		streams[stream.getID()] = stream;
 	}
 
 	that.addStream = addStream;
 
-	that.getStreams = function(){
+	that.getStreams = function() {
 		return streams;
 	}
 
-	that.dispose = function(){
-		for(var key in streams){
+	that.dispose = function() {
+		for ( var key in streams) {
 			streams[key].dispose();
 		}
 	}
 
-	that.getID = function(){
+	that.getID = function() {
 		return id;
 	}
 }
@@ -180,17 +195,23 @@ function Participant(kurento, local, options) {
  *
  * stream.hasAudio(); stream.hasVideo(); stream.hasData();
  */
-function Stream(kurento, local, options) {
+function Stream(kurento, local, room, options) {
 
 	var that = this;
 
-	this.room = undefined;
+	that.room = room;
 
 	var ee = new EventEmitter();
 	var sdpOffer;
 	var wrStream;
 	var wp;
-	var id = options.id;
+	var id;
+	if(options.id){
+		id = options.id;
+	} else {
+		id = "webcam";
+	}
+
 	var videoElements = [];
 	var elements = [];
 	var participant = options.participant;
@@ -247,14 +268,16 @@ function Stream(kurento, local, options) {
 	}
 
 	this.getGlobalID = function() {
-		if(participant){
-			return participant.getID()+"_"+id;
+		if (participant) {
+			return participant.getID() + "_" + id;
 		} else {
-			return id+"_webcam";
+			return id + "_webcam";
 		}
 	}
 
 	this.init = function() {
+
+		participant.addStream(that);
 
 		var constraints = {
 			audio : true,
@@ -384,7 +407,7 @@ function Stream(kurento, local, options) {
 			})
 		}
 
-		console.log("Stream "+id+" disposed");
+		console.log("Stream " + id + " disposed");
 	}
 }
 
@@ -461,8 +484,9 @@ function KurentoRoom(wsUri, callback) {
 		ws.close();
 	}
 
-	this.Stream = function(options) {
-		return new Stream(that, true, options);
+	this.Stream = function(room, options) {
+		options.participant = room.getLocalParticipant();
+		return new Stream(that, true, room, options);
 	}
 
 	this.Room = function(options) {
