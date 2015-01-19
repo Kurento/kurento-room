@@ -26,15 +26,6 @@ function register() {
 
 		localStream.addEventListener("access-accepted", function() {
 
-			var subscribeToStreams = function(streams) {
-				for (var i=0; i<streams.length; i++) {
-					var stream = streams[i];
-					if (localStream.getGlobalID() !== stream.getGlobalID()) {
-						room.subscribe(stream);
-					}
-				}
-			};
-
 			room.addEventListener("room-connected", function(roomEvent) {
 
 				document.getElementById('room-name').innerText = room.name;
@@ -45,23 +36,12 @@ function register() {
 				participants.addLocalParticipant(localStream);
 
 				var streams = roomEvent.streams;
-				subscribeToStreams(streams);
-
 				for(var i=0; i<streams.length; i++){
 					participants.addParticipant(streams[i]);
 				}
 			});
 
-			room.addEventListener("stream-subscribed", function(streamEvent) {
-				// We don't do anything because video element is created when
-				// stream-added event is received
-			});
-
 			room.addEventListener("stream-added", function(streamEvent) {
-				var streams = [];
-				streams.push(streamEvent.stream);
-				subscribeToStreams(streams);
-
 				participants.addParticipant(streamEvent.stream);
 			});
 

@@ -11,6 +11,7 @@ function Room(kurento, options) {
 	var participants = {};
 	var connected = false;
 	var localParticipant;
+	var subscribeToStreams = options.subscribeToStreams || true;
 
 	this.getLocalParticipant = function(){
 		return localParticipant;
@@ -56,6 +57,9 @@ function Room(kurento, options) {
 					var streams = participant.getStreams();
 					for (var key in streams) {
 						roomEvent.streams.push(streams[key]);
+						if(subscribeToStreams){
+							streams[key].subscribe();
+						}
 					}
 				}
 
@@ -66,7 +70,6 @@ function Room(kurento, options) {
 
 
 	this.subscribe = function(stream) {
-		stream.room = that;
 		stream.subscribe();
 	}
 
@@ -82,9 +85,14 @@ function Room(kurento, options) {
 
 		var streams = participant.getStreams();
 		for ( var key in streams) {
+
 			ee.emitEvent('stream-added', [ {
 				stream : streams[key]
 			} ]);
+
+			if(subscribeToStreams){
+				streams[key].subscribe();
+			}
 		}
 	}
 

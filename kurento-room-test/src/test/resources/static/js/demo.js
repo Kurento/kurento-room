@@ -19,7 +19,8 @@ function register() {
 
 		room = kurento.Room({
 			room : roomId,
-			user : userId
+			user : userId,
+			subscribeToStreams : true
 		});
 
 		var localStream = kurento.Stream(room, {
@@ -29,15 +30,6 @@ function register() {
 		});
 
 		localStream.addEventListener("access-accepted", function() {
-
-			var subscribeToStreams = function(streams) {
-				for (var key in streams) {
-					var stream = streams[key];
-					if (localStream.getGlobalID() !== stream.getGlobalID()) {
-						room.subscribe(stream);
-					}
-				}
-			};
 
 			var playVideo = function(stream){
 				var elementId = "video-" + stream.getGlobalID();
@@ -55,35 +47,14 @@ function register() {
 
 				localStream.publish();
 
-//				for(var i=0; i<roomEvent.participants.length; i++){
-//					var streams = roomEvent.participants[i].getStreams();
-//					subscribeToStreams(streams);
-//					for(key in streams){
-//						playVideo(streams[key]);
-//					}
-//				}
-
-				var streams = roomEvent.streams;
-				subscribeToStreams(streams);
+				var streams = roomEvent.streams;				
 				for(var i=0; i<streams.length; i++){
 					playVideo(streams[i]);
 				}
 			});
 
-			room.addEventListener("stream-subscribed", function(streamEvent) {
-				// We don't do anything because video element is created when
-				// stream-added event is received
-			});
-
 			room.addEventListener("stream-added", function(streamEvent) {
-
-				var stream = streamEvent.stream;
-
-				var streams = [];
-				streams.push(stream);
-				subscribeToStreams(streams);
-
-				playVideo(stream);
+				playVideo(streamEvent.stream);
 			});
 
 			room.addEventListener("stream-removed", function(streamEvent) {
