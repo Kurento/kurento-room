@@ -29,8 +29,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.ElementNotVisibleException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -40,6 +38,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
  * Room demo integration test.
  *
  * @author Micael Gallego (micael.gallego@gmail.com)
+ * @author Boni Garcia (bgarcia@gsyc.es)
  * @since 5.0.0
  */
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -49,33 +48,43 @@ import org.springframework.test.context.web.WebAppConfiguration;
 		+ KurentoServicesTestHelper.APP_HTTP_PORT_DEFAULT)
 public class RoomPerformanceTest extends PerformanceTest {
 
-	private Logger log = LoggerFactory.getLogger(RoomPerformanceTest.class);
+	// Number of nodes
+	private static final String NUM_NODES_PROPERTY = "perf.room.numnodes";
+	private static final int NUM_NODES_DEFAULT = 1;
 
-	private static final int DEFAULT_NODES = 1; // Number of nodes
-	private static final int DEFAULT_NBROWSERS = 4; // Browser per node
-	private static final int DEFAULT_CLIENT_RATE = 1000; // milliseconds
-	private static final int DEFAULT_HOLD_TIME = 10000; // milliseconds
+	// Browser per node
+	private static final String NUM_BROWSERS_PROPERTY = "perf.room.numbrowsers";
+	private static final int NUM_BROWSERS_DEFAULT = 2;
+
+	// Client rate in milliseconds
+	private static final String CLIENT_RATE_PROPERTY = "perf.room.clientrate";
+	private static final int CLIENT_RATE_DEFAULT = 1000;
+
+	// Hold time in milliseconds
+	private static final String HOLD_TIME_PROPERTY = "perf.room.holdtime";
+	private static final int HOLD_TIME_DEFAULT = 10000;
 
 	private static final String ROOM_NAME = "room";
 
-	private int holdTime;
+	private int playTime;
 
 	public RoomPerformanceTest() {
 
-		int numNodes = getProperty("test.webrtcgrid.numnodes", DEFAULT_NODES);
+		int numNodes = getProperty(NUM_NODES_PROPERTY, NUM_NODES_DEFAULT);
 
-		int numBrowsers = getProperty("test.webrtcgrid.numbrowsers",
-				DEFAULT_NBROWSERS);
-
-		holdTime = getProperty("test.webrtcgrid.holdtime", DEFAULT_HOLD_TIME);
+		int numBrowsers = getProperty(NUM_BROWSERS_PROPERTY,
+				NUM_BROWSERS_DEFAULT);
 
 		setNumBrowsersPerNode(numBrowsers);
 
-		setBrowserCreationRate(getProperty("test.webrtcgrid.clientrate",
-				DEFAULT_CLIENT_RATE));
+		setBrowserCreationRate(getProperty(CLIENT_RATE_PROPERTY,
+				CLIENT_RATE_DEFAULT));
 
 		setNodes(getRandomNodes(numNodes, Browser.CHROME, getPathTestFiles()
 				+ "/video/15sec/rgbHD.y4m", null, numBrowsers));
+
+		playTime = getAllBrowsersStartedTime()
+				+ getProperty(HOLD_TIME_PROPERTY, HOLD_TIME_DEFAULT);
 	}
 
 	protected void joinToRoom(BrowserClient browser, String userName,
@@ -111,7 +120,7 @@ public class RoomPerformanceTest extends PerformanceTest {
 
 				log.info("User '{}' joined to room '{}'", userName, ROOM_NAME);
 
-				Thread.sleep(holdTime);
+				Thread.sleep(playTime);
 
 				log.info("User '{}' exiting from room '{}'", userName,
 						ROOM_NAME);
