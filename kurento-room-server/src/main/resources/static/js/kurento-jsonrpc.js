@@ -144,7 +144,7 @@ var packers = _dereq_('./packers');
 var Mapper = _dereq_('./Mapper');
 
 
-const BASE_TIMEOUT = 5000;
+var BASE_TIMEOUT = 5000;
 
 
 function unifyResponseMethods(responseMethods)
