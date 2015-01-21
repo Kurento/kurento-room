@@ -31,24 +31,31 @@ function register() {
 
 		localStream.addEventListener("access-accepted", function() {
 
-			var playVideo = function(stream){
+			var playVideo = function(stream) {
 				var elementId = "video-" + stream.getGlobalID();
 				var div = document.createElement('div');
 				div.setAttribute("id", elementId);
 				document.getElementById("participants").appendChild(div);
 				stream.play(elementId);
+
+				// Check color
+				var videoTag = document.getElementById("native-" + elementId);
+				var userId = stream.getGlobalID();
+				var canvas = document.createElement('CANVAS');
+				checkColor(videoTag, canvas, userId);
 			}
 
 			room.addEventListener("room-connected", function(roomEvent) {
 
-				document.getElementById('room-header').innerText = 'ROOM \"' + room.name+'\"';
+				document.getElementById('room-header').innerText = 'ROOM \"'
+						+ room.name + '\"';
 				document.getElementById('join').style.display = 'none';
 				document.getElementById('room').style.display = 'block';
 
 				localStream.publish();
 
-				var streams = roomEvent.streams;				
-				for(var i=0; i<streams.length; i++){
+				var streams = roomEvent.streams;
+				for (var i = 0; i < streams.length; i++) {
 					playVideo(streams[i]);
 				}
 			});
@@ -58,7 +65,8 @@ function register() {
 			});
 
 			room.addEventListener("stream-removed", function(streamEvent) {
-				var element = document.getElementById("video-"+streamEvent.stream.getGlobalID());
+				var element = document.getElementById("video-"
+						+ streamEvent.stream.getGlobalID());
 				if (element !== undefined) {
 					element.parentNode.removeChild(element);
 				}
@@ -74,15 +82,15 @@ function register() {
 	});
 }
 
-function leaveRoom(){
+function leaveRoom() {
 
 	document.getElementById('join').style.display = 'block';
 	document.getElementById('room').style.display = 'none';
 
 	var streams = room.getStreams();
-	for (var index in streams) {
+	for ( var index in streams) {
 		var stream = streams[index];
-		var element = document.getElementById("video-"+stream.getGlobalID());
+		var element = document.getElementById("video-" + stream.getGlobalID());
 		if (element) {
 			element.parentNode.removeChild(element);
 		}
