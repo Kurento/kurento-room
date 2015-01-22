@@ -6,7 +6,7 @@
 		<groupId>org.kurento</groupId>
 		<artifactId>kurento-parent-pom</artifactId>
 		<version>5.0.5-SNAPSHOT</version>
-    </parent>
+	</parent>
 
 	<groupId>org.kurento.demo</groupId>
 	<artifactId>kurento-room-demo</artifactId>
@@ -129,6 +129,10 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-room-server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-utils-js</artifactId>
 		</dependency>
 	</dependencies>
 
