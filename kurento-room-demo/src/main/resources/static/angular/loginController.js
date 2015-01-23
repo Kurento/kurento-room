@@ -1,4 +1,4 @@
-kurento_room.controller('loginController', function ($scope, ServiceParticipant, $window) {
+kurento_room.controller('loginController', function ($scope, ServiceParticipant, $window, ServiceRoom) {
 
     console.log("controller1 iniciado");
 
@@ -55,6 +55,9 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
 
         });
 
+        //save kurento & roomName in service
+        ServiceRoom.setKurento(kurento);//SE GUARDA UNDEFINDED
+        ServiceRoom.setRoomName($scope.roomName);
         //redirect to call
         $window.location.href = '#/call';
     };

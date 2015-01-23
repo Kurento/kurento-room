@@ -1,12 +1,11 @@
 
-kurento_room.controller('callController', function ($scope, ServiceParticipant, Fullscreen) {
+kurento_room.controller('callController', function ($scope, $window, ServiceParticipant,ServiceRoom, Fullscreen) {
     console.log("callController iniciado");
-//    $scope.roomName = ServiceParticipant.getRoom();
-    $scope.roomName = "Room Name";
+    $scope.roomName = ServiceRoom.getRoomName();
 
     $scope.leaveRoom = function () {
 
-        kurento.leaveRoom();
+        ServiceRoom.getKurento().leaveRoom();
 
         ServiceParticipant.removeParticipants();
 
@@ -15,7 +14,7 @@ kurento_room.controller('callController', function ($scope, ServiceParticipant, 
     };
 
     window.onbeforeunload = function () {
-        kurento.close();
+        ServiceRoom.getKurento().close();
     };
 
 // FullScreen -----------------------------------------------------------------
