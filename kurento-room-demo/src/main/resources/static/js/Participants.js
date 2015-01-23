@@ -1,132 +1,140 @@
 function AppParticipant(stream) {
 
-	this.stream = stream;
-	this.videoElement;
+    this.stream = stream;
+    this.videoElement;
 
-	var that = this;
+    var that = this;
 
-	this.setMain = function() {
+    this.setMain = function () {
 
-		var mainVideo = document.getElementById("main-video");
-		var oldVideo = mainVideo.firstChild;
+        var mainVideo = document.getElementById("main-video");
+        var oldVideo = mainVideo.firstChild;
 
-		stream.playOnlyVideo("main-video");
+        stream.playOnlyVideo("main-video");
 
-		that.videoElement.className += " active-video";
+        that.videoElement.className += " active-video";
 
-		if (oldVideo !== null) {
-			mainVideo.removeChild(oldVideo);
-		}
-	}
+        if (oldVideo !== null) {
+            mainVideo.removeChild(oldVideo);
+        }
+    }
 
-	this.removeMain = function() {
-		$(that.videoElement).removeClass("active-video");
-	}
+    this.removeMain = function () {
+        $(that.videoElement).removeClass("active-video");
+    }
 
-	this.remove = function() {
-		if (that.videoElement !== undefined) {
-			that.videoElement.parentNode.removeChild(that.videoElement);
-		}
-	}
+    this.remove = function () {
+        if (that.videoElement !== undefined) {
+            that.videoElement.parentNode.removeChild(that.videoElement);
+        }
+    }
 
-	function playVideo() {
+    function playVideo() {
 
-		var elementId = "video-" + stream.getGlobalID();
+        var elementId = "video-" + stream.getGlobalID();
 
-		that.videoElement = document.createElement('div');
-		that.videoElement.setAttribute("id", elementId);
-		that.videoElement.className = "video";
+        that.videoElement = document.createElement('div');
+        that.videoElement.setAttribute("id", elementId);
+        that.videoElement.className = "video";
 
-		document.getElementById("participants").appendChild(that.videoElement);
+        document.getElementById("participants").appendChild(that.videoElement);
 
-		that.stream.play(elementId);
-	}
+        that.stream.play(elementId);
+    }
 
-	playVideo();
+    playVideo();
 }
 
 function Participants() {
 
-	var mainParticipant;
-	var localParticipant;
+    var mainParticipant;
+    var localParticipant;
 
-	var participants = {};
+    var participants = {};
+    var roomName;
+    var that = this;
 
-	var that = this;
+    this.getRoomName=function() {
+        console.log("room - getRoom " + roomName);
+        roomName = room.name;
+        return roomName;
+    };
+   
 
-	function updateVideoStyle() {
+    function updateVideoStyle() {
 
-		var MAX_WIDTH = 15;
+        var MAX_WIDTH = 15;
+        roomName = room.name;
+        var numParticipants = Object.keys(room.getStreams()).length;
+        console.log("room" + room.name);
+        var maxParticipantsWithMaxWidth = 95 / MAX_WIDTH;
 
-		var numParticipants = Object.keys(room.getStreams()).length;
+        if (numParticipants > maxParticipantsWithMaxWidth) {
+            $('.video').css({
+                "width": (95 / numParticipants) + "%"
+            });
+        } else {
+            $('.video').css({
+                "width": MAX_WIDTH + "%"
+            });
+        }
+    }
+    ;
 
-		var maxParticipantsWithMaxWidth = 95 / MAX_WIDTH;
+    function updateMainParticipant(participant) {
+        if (mainParticipant !== undefined) {
+            mainParticipant.removeMain();
+        }
+        participant.setMain();
+        mainParticipant = participant;
+    }
 
-		if (numParticipants > maxParticipantsWithMaxWidth) {
-			$('.video').css({
-				"width" : (95 / numParticipants) + "%"
-			});
-		} else {
-			$('.video').css({
-				"width" : MAX_WIDTH + "%"
-			});
-		}
-	}
+    this.addLocalParticipant = function (stream) {
 
-	function updateMainParticipant(participant) {
-		if (mainParticipant !== undefined) {
-			mainParticipant.removeMain();
-		}
-		participant.setMain();
-		mainParticipant = participant;
-	}
+        localParticipant = that.addParticipant(stream);
+    };
 
-	this.addLocalParticipant = function(stream) {
+    this.addParticipant = function (stream) {
 
-		localParticipant = that.addParticipant(stream);
-	}
+        var participant = new AppParticipant(stream);
 
-	this.addParticipant = function(stream) {
+        participants[stream.getID()] = participant;
 
-		var participant = new AppParticipant(stream);
+        updateVideoStyle();
 
-		participants[stream.getID()] = participant;
+        $(participant.videoElement).click(function () {
+            updateMainParticipant(participant);
+        });
 
-		updateVideoStyle();
+        updateMainParticipant(participant);
 
-		$(participant.videoElement).click(function() {
-			updateMainParticipant(participant);
-		});
+        return participant;
+    };
 
-		updateMainParticipant(participant);
+    this.removeParticipant = function (stream) {
 
-		return participant;
-	}
+        var participant = participants[stream.getID()];
+        delete participants[stream.getID()];
 
-	this.removeParticipant = function(stream) {
+        if (mainParticipant === participant) {
+            mainPartipant = localParticipant;
+            localParticipant.setMain();
+        }
 
-		var participant = participants[stream.getID()];
-		delete participants[stream.getID()];
+        participant.remove();
 
-		if (mainParticipant === participant) {
-			mainPartipant = localParticipant;
-			localParticipant.setMain();
-		}
+        updateVideoStyle();
+    };
 
-		participant.remove();
+    this.removeParticipants = function () {
 
-		updateVideoStyle();
-	}
+        for (var index in participants) {
+            var participant = participants[index];
+            participant.remove();
+        }
+    };
 
-	this.removeParticipants = function() {
-
-		for ( var index in participants) {
-			var participant = participants[index];
-			participant.remove();
-		}
-	}
-
-	this.getParticipants = function() {
-		return participants;
-	}
+    this.getParticipants = function () {
+        return participants;
+    };
 }

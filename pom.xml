@@ -48,6 +48,8 @@
 
 	<modules>
 		<module>kurento-room-server</module>
+                <module>kurento-room-demo</module>
+                <module>kurento-room-test</module>
 	</modules>
 
 </project>

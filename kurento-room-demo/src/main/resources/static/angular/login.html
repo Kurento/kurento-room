@@ -1,0 +1,18 @@
+
+<div id="join" class="join">
+    <div id="join-title">Kurento Room</div>
+    <form role="form" ng-submit="register(room)" accept-charset="UTF-8"
+          >
+        <p>
+            <input type="text" name="name" value="" id="name"
+                   placeholder="Username" ng-model="room.userName" required>
+        </p>
+        <p>
+            <input type="text" name="room" value="" id="roomName"
+                   placeholder="Room" ng-model="room.roomName" required>
+        </p>
+        <p class="submit">
+            <input type="submit" name="commit" value="Join room!" id="join">
+        </p>
+    </form>
+</div>
