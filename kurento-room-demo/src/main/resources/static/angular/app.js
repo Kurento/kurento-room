@@ -1,4 +1,4 @@
-var kurento_room = angular.module('kurento_room', ['ngRoute','FBAngular']);
+var kurento_room = angular.module('kurento_room', ['ngRoute','FBAngular','lumx']);
 
 kurento_room.config(function ($routeProvider) {
 

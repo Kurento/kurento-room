@@ -1,0 +1,20 @@
+///*------------------------------------*\
+//    #OBJECTS-PARAGRAPH
+//\*------------------------------------*/
+
+// Paragraph base styles
+.paragraph {
+    p:last-child,
+    ul:last-child {
+        margin-bottom: 0;
+    }
+
+    a {
+        color: $primary-color-1;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
