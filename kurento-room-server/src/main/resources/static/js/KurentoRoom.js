@@ -86,12 +86,14 @@ function Room(kurento, options) {
 		var streams = participant.getStreams();
 		for ( var key in streams) {
 
+			var stream = streams[key];
+
 			ee.emitEvent('stream-added', [ {
-				stream : streams[key]
+				stream : stream
 			} ]);
 
 			if(subscribeToStreams){
-				streams[key].subscribe();
+				stream.subscribe();
 			}
 		}
 	}
@@ -175,6 +177,7 @@ function Participant(kurento, local, room, options) {
 
 	function addStream(stream) {
 		streams[stream.getID()] = stream;
+		room.getStreams()[stream.getID()]=stream;
 	}
 
 	that.addStream = addStream;
@@ -223,6 +226,14 @@ function Stream(kurento, local, room, options) {
 	var videoElements = [];
 	var elements = [];
 	var participant = options.participant;
+
+	this.getWrStream = function() {
+		return wrStream;
+	}
+
+	this.getWebRtcPeer = function() {
+		return wp;
+	}
 
 	this.addEventListener = function(eventName, listener) {
 		ee.addListener(eventName, listener);
