@@ -2,19 +2,21 @@
 <div id="room">
 
     <div id="content">
+
         <div id="main-video">
             <!--<video id="native-video-{{elementId}}" autoplay muted="muted"></video>-->
         </div>
+
         <div id="logo">
             <img src="img/kurento.png" />
         </div>
+
         <div id="room-name">{{roomName}}</div>
-        <div class="action">
-            <a href="" ng-click="leaveRoom()">Exit room</a>
+        <div class="mb">
+            <button class="action btn btn--xl btn--red btn--fab mdi md-call-end " lx-ripple ng-click="leaveRoom()"></button>
+            <button class="action btn btn--xl btn--green btn--fab mdi md-fullscreen" lx-ripple ng-click="goFullscreen()"></button>
         </div>
-        <div class="action">
-            <a href="" ng-click="goFullscreen()">Full Screen</a>
-        </div>
+
         <div id="participants">
             <!--            <div id="video-{{elementId}}" class="video">
                             <div class="participant" id="{{elementId}}">

@@ -157,13 +157,16 @@ video {
 }
 
 .action {
-	background-color: rgba(0, 0, 0, 0.4);
-	color: white;
+/*	background-color: rgba(0, 0, 0, 0.4);
+	color: white;*/
 	float: right;
 	position: relative;
 	display: inline;
-	margin: 1em 1em 1em 0;
-	padding: 0.5em;
+	/*margin: 1em 1em 1em 0;*/
+	/*padding: 0.5em;*/
+        left: 0px;
+	top: 0px;
+	margin: 1em;
 }
 
 #logo {
@@ -188,7 +191,7 @@ video {
 	font-size: 2em;
 }
 
-.action a {
+/*.action a {
 	color: white;
 }
 
@@ -207,10 +210,10 @@ video {
 .action a:hover {
 	text-decoration: none;
 	font-weight: bold;
-}
+}*/
 
 .join {
-  position: relative;;
+  position: relative;
   margin: auto;
   width: 310px;
   text-align: center;
