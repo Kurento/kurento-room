@@ -37,6 +37,15 @@ function AppParticipant(stream) {
         that.videoElement.setAttribute("id", elementId);
         that.videoElement.className = "video";
 
+        var buttonVideo = document.createElement('button');
+        buttonVideo.className = 'action btn btn--m btn--orange btn--fab mdi md-desktop-mac';
+        buttonVideo.setAttribute("ng-click", "");
+        buttonVideo.style.position = "absolute";
+        buttonVideo.style.left = "75%";
+        buttonVideo.style.top = "60%";
+        buttonVideo.style.zIndex = "100";
+        that.videoElement.appendChild(buttonVideo);
+
         document.getElementById("participants").appendChild(that.videoElement);
 
         that.stream.play(elementId);
@@ -54,12 +63,12 @@ function Participants() {
     var roomName;
     var that = this;
 
-    this.getRoomName=function() {
+    this.getRoomName = function () {
         console.log("room - getRoom " + roomName);
         roomName = room.name;
         return roomName;
     };
-   
+
 
     function updateVideoStyle() {
 
