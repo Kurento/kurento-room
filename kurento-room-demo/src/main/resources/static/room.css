@@ -156,18 +156,18 @@ video {
 	align-items: center;
 }
 
-.action {
-/*	background-color: rgba(0, 0, 0, 0.4);
-	color: white;*/
+/*.action {
+	background-color: rgba(0, 0, 0, 0.4);
+	color: white;
 	float: right;
-	position: relative;
+	position: absolute;
 	display: inline;
-	/*margin: 1em 1em 1em 0;*/
-	/*padding: 0.5em;*/
+	margin: 1em 1em 1em 0;
+	padding: 0.5em;
         left: 0px;
 	top: 0px;
 	margin: 1em;
-}
+}*/
 
 #logo {
 	position: absolute;
