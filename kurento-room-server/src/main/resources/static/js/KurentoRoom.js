@@ -177,7 +177,7 @@ function Participant(kurento, local, room, options) {
 
 	function addStream(stream) {
 		streams[stream.getID()] = stream;
-		room.getStreams()[stream.getID()]=stream;
+		room.getStreams()[stream.getGlobalID()] = stream;
 	}
 
 	that.addStream = addStream;
@@ -287,7 +287,7 @@ function Stream(kurento, local, room, options) {
 	}
 
 	this.getGlobalID = function() {
-		if (participant) {
+		if (participant && participant.getID) {
 			return participant.getID() + "_" + id;
 		} else {
 			return id + "_webcam";
