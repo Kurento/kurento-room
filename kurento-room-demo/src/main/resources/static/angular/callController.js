@@ -29,7 +29,27 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
 
     };
 
+    $scope.onOffVolume = function () {
+        var element = document.getElementById("buttonVolume");
+        if (element.classList.contains("md-volume-off")) {
+            element.classList.remove("md-volume-off");
+            element.classList.add("md-volume-up");
+        } else {
+            element.classList.remove("md-volume-up");
+            element.classList.add("md-volume-off");
+        }
+    };
 
+    $scope.onOffVideocam = function () {
+        var element = document.getElementById("buttonVideocam");
+        if (element.classList.contains("md-videocam-off")) {
+            element.classList.remove("md-videocam-off");
+            element.classList.add("md-videocam");
+        } else {
+            element.classList.remove("md-videocam");
+            element.classList.add("md-videocam-off");
+        }
+    };
 });
 
 
