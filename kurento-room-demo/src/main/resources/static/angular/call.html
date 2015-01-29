@@ -19,7 +19,7 @@
             <button class="btn btn--xl btn--orange btn--fab mdi md-desktop-mac" lx-ripple ng-click=""></button> <!--compartir escritorio-->
             <button class="btn btn--xl btn--red btn--fab mdi md-call-end " lx-ripple ng-click="leaveRoom()"></button> <!--colgar-->
             <button class="btn btn--xl btn--green btn--fab mdi md-fullscreen" lx-ripple ng-click="goFullscreen()"></button> <!--fullscreen-->
-            <button class="btn btn--xl btn--blue btn--fab mdi md-chat" lx-ripple ng-click=""></button> <!--chat-->
+            <button class="btn btn--xl btn--blue btn--fab mdi md-chat buttonChat" lx-ripple ng-click=""></button> <!--chat-->
         </div>
 
         <div id="participants">
@@ -69,4 +69,110 @@
             </div>
             <div id="chat-message">Message box</div>
     </div>-->
-</div>
+
+    <div class="toggler" style="margin-top: 7%;width: 20%;height: 93%;" >
+        <div id="effect" class="ui-widget-content ui-corner-all" >
+
+            <div class="grid" style="background-color: #aaa">
+                <div class="grid__col12">
+
+                    <div class="card" >
+                        <strong class="fs-headline display-block">Chat</strong>
+                        <button class="btn btn--s btn--blue btn--icon mdi md-close buttonChat" lx-ripple ng-click="" id="button"></button> <!--cerrar-->
+
+                        <div class="paragraph fs-body-1">
+                            <ul class="list">
+
+                                <li class="list-row list-row--has-primary list-row--has-separator">
+                                    <div class="list-primary-tile">
+                                        <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/1-square.jpg">
+                                    </div>
+
+                                    <div class="list-content-tile list-content-tile--two-lines">
+                                        <strong>User 1</strong>
+                                        <span>.............................</span>
+                                    </div>
+                                </li>
+
+                                <li class="list-row list-row--has-primary list-row--has-separator">
+                                    <div class="list-secondary-tile">
+                                        <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/2-square.jpg">
+                                    </div>
+
+                                    <div class="list-content-tile list-content-tile--two-lines">
+                                        <strong>User 2</strong>
+                                        <span>.............................</span>
+                                    </div>
+                                </li>
+
+                                <li class="list-row list-row--has-primary list-row--has-separator">
+                                    <div class="list-primary-tile">
+                                        <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/1-square.jpg">
+                                    </div>
+
+                                    <div class="list-content-tile list-content-tile--two-lines">
+                                        <strong>User 1</strong>
+                                        <span>.............................</span>
+                                    </div>
+                                </li>
+
+                                <li class="list-row list-row--has-primary list-row--has-separator">
+                                    <div class="list-secondary-tile">
+                                        <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/2-square.jpg">
+                                    </div>
+
+                                    <div class="list-content-tile list-content-tile--two-lines">
+                                        <strong>User 2</strong>
+                                        <span>.............................</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="card__actions">
+                            <lx-text-field label="Message">
+                                <input type="text" ng-model="message">
+                            </lx-text-field>
+                            <button class="btn btn--m btn--green btn--raised" lx-ripple>Send</button>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+
+    <script>
+                $(function () {
+                    // run the currently selected effect
+                    function runEffect() {
+                        // get effect type from
+                        //      var selectedEffect = $( "#effectTypes" ).val();
+                        var selectedEffect = "slide";
+
+                        // most effect types need no options passed by default
+                        var options = {};
+                        // some effects have required parameters
+                        if (selectedEffect === "scale") {
+                            options = {percent: 0};
+                        } else if (selectedEffect === "size") {
+                            options = {to: {width: 200, height: 60}};
+                        }
+
+                        // run the effect
+                        $("#effect").toggle(selectedEffect, options, 500);
+                    }
+                    ;
+
+                    // set effect from select menu value
+                    $(".buttonChat").click(function () {
+                        runEffect();
+                    });
+                    $("#effect").hide();
+                });
+    </script>
