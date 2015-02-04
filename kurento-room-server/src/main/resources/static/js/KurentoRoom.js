@@ -379,11 +379,12 @@ function Stream(kurento, local, room, options) {
 
         console.log('SDP answer received, setting remote description');
 
-        wp.pc.setRemoteDescription(answer, function () {
+        var pc = wp.peerConnection
+        pc.setRemoteDescription(answer, function () {
             if (!local) {
                 // FIXME: This avoid to subscribe to your own stream remotely.
                 // Fix this
-                wrStream = wp.pc.getRemoteStreams()[0];
+                wrStream = pc.getRemoteStreams()[0];
 
                 for (i = 0; i < videoElements.length; i++) {
                     videoElements[i].src = URL.createObjectURL(wrStream);
@@ -414,8 +415,9 @@ function Stream(kurento, local, room, options) {
             disposeElement(videoElements[i]);
         }
 
-        if (wp.pc && wp.pc.signalingState != 'closed')
-            wp.pc.close();
+        var pc = wp.peerConnection
+        if (pc && pc.signalingState != 'closed')
+            pc.close();
 
         if (wrStream) {
             wrStream.getAudioTracks().forEach(function (track) {
