@@ -31,6 +31,7 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
 //		    document.getElementById('room-name').innerText = room.name;
 
                     localStream.publish();
+                    ServiceRoom.setLocalStream(localStream.getWebRtcPeer());
                     ServiceParticipant.addLocalParticipant(localStream);
                     var streams = roomEvent.streams;
                     for (var i = 0; i < streams.length; i++) {
@@ -51,11 +52,12 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
 
             localStream.init();
 
+
         });
 
         //save kurento & roomName in service
-        ServiceRoom.setKurento(kurento);//SE GUARDA UNDEFINDED
-        console.log("KURENTO"+JSON.stringify(kurento));
+        ServiceRoom.setKurento(kurento);
+        console.log("KURENTO" + JSON.stringify(kurento));
         ServiceRoom.setRoomName($scope.roomName);
         //redirect to call
         $window.location.href = '#/call';
