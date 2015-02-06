@@ -2,11 +2,9 @@
 kurento_room.controller('callController', function ($scope, $window, ServiceParticipant, ServiceRoom, Fullscreen) {
     console.log("callController iniciado");
     $scope.roomName = ServiceRoom.getRoomName();
+    $scope.userName = ServiceRoom.getUserName();
     $scope.participants = ServiceParticipant.getParticipants();
-    console.log("SERVICE ROOM " + JSON.stringify(ServiceRoom));
-    console.log("LOCAL STREAM " + JSON.stringify(ServiceRoom.getKurento()));
-    console.log("KURENTO " + JSON.stringify(ServiceRoom.getKurento()));
-    console.log("ROOM NAME " + JSON.stringify(ServiceRoom.getRoomName()));
+    $scope.kurento = ServiceRoom.getKurento();
 
     $scope.leaveRoom = function () {
 
@@ -34,10 +32,7 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
     };
 
     $scope.onOffVolume = function () {
-//        var kurento = ServiceRoom.getKurento();
         var localStream = ServiceRoom.getLocalStream();
-//        var stream = ServiceRoom.getKurento().getStream();
-//        var stream2 = ServiceRoom.getKurento().getStream().getWebRTcPeer();
         var element = document.getElementById("buttonVolume");
         if (element.classList.contains("md-volume-off")) { //on
             element.classList.remove("md-volume-off");
@@ -64,6 +59,16 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
             localStream.videoEnabled = false;
         }
     };
+
+    ///chat
+    $scope.message;
+
+    $scope.sendMessage = function () {
+        console.log($scope.message);
+        var kurento = ServiceRoom.getKurento();
+        kurento.sendMessage($scope.roomName, $scope.userName, $scope.message);
+    };
+
 });
 
 

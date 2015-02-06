@@ -446,6 +446,8 @@ function KurentoRoom(wsUri, callback) {
 
     var userName;
 
+    var messagesChat = [];
+
     var ws = new WebSocket(wsUri);
 
     ws.onopen = function () {
@@ -474,6 +476,10 @@ function KurentoRoom(wsUri, callback) {
             case 'participantLeft':
                 onParticipantLeft(request.params);
                 break;
+            case 'sendMessage':  //CHAT
+                console.log("recibido mensaje " + JSON.stringify(request.params));
+                messagesChat.put(request.params);
+                break;
             default:
                 console.error('Unrecognized request: ' + JSON.stringify(request));
         }
@@ -496,19 +502,19 @@ function KurentoRoom(wsUri, callback) {
         rpc.encode(method, params, callback);
         console.log('Sent request: { method:"' + method + "', params: "
                 + JSON.stringify(params) + " }");
-    }
+    };
 
     this.close = function () {
         if (room !== undefined) {
             room.leave();
         }
         ws.close();
-    }
+    };
 
     this.Stream = function (room, options) {
         options.participant = room.getLocalParticipant();
         return new Stream(that, true, room, options);
-    }
+    };
 
     this.Room = function (options) {
         // FIXME Support more than one room
@@ -516,5 +522,19 @@ function KurentoRoom(wsUri, callback) {
         // FIXME Include name in stream, not in room
         usarName = options.userName;
         return room;
-    }
+    };
+
+    //CHAT
+    this.sendMessage = function (room, user, message) {
+        console.log("user " + user + "send message " + message + "from room " + room);
+
+        this.sendRequest('sendMessage', {message: message, userMessage: user, roomMessage: room}, function (error, response) {
+            if (error) {
+                console.error(error);
+            } else {
+                connected = false;
+            }
+        });
+    };
+
 }

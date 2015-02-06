@@ -57,8 +57,8 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
 
         //save kurento & roomName in service
         ServiceRoom.setKurento(kurento);
-        console.log("KURENTO" + JSON.stringify(kurento));
         ServiceRoom.setRoomName($scope.roomName);
+        ServiceRoom.setUserName($scope.userName);
         //redirect to call
         $window.location.href = '#/call';
     };

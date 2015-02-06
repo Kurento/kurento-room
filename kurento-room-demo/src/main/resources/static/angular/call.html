@@ -79,20 +79,11 @@
             <div>
                 <ul class="list">
 
+                    <!--others-->
+
                     <li class="list-row list-row--has-primary list-row--has-separator">
                         <div class="list-primary-tile">
-                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/1-square.jpg">
-                        </div>
-
-                        <div class="list-content-tile list-content-tile--two-lines">
-                            <strong>User 1</strong>
-                            <span>.............................</span>
-                        </div>
-                    </li>
-
-                    <li class="list-row list-row--has-primary list-row--has-separator">
-                        <div class="list-secondary-tile">
-                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/2-square.jpg">
+                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/images/placeholder/1-square.jpg">
                         </div>
 
                         <div class="list-content-tile list-content-tile--two-lines">
@@ -101,46 +92,14 @@
                         </div>
                     </li>
 
+                    <!--me-->   
                     <li class="list-row list-row--has-primary list-row--has-separator">
-                        <div class="list-primary-tile">
-                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/1-square.jpg">
+                        <div class="list-secondary-tile">
+                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/images/placeholder/2-square.jpg">
                         </div>
 
                         <div class="list-content-tile list-content-tile--two-lines">
                             <strong>User 1</strong>
-                            <span>.............................</span>
-                        </div>
-                    </li>
-
-                    <li class="list-row list-row--has-primary list-row--has-separator">
-                        <div class="list-secondary-tile">
-                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/2-square.jpg">
-                        </div>
-
-                        <div class="list-content-tile list-content-tile--two-lines">
-                            <strong>User 2</strong>
-                            <span>.............................</span>
-                        </div>
-                    </li>
-
-                    <li class="list-row list-row--has-primary list-row--has-separator">
-                        <div class="list-primary-tile">
-                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/1-square.jpg">
-                        </div>
-
-                        <div class="list-content-tile list-content-tile--two-lines">
-                            <strong>User 1</strong>
-                            <span>.............................</span>
-                        </div>
-                    </li>
-
-                    <li class="list-row list-row--has-primary list-row--has-separator">
-                        <div class="list-secondary-tile">
-                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/demo/images/demo/2-square.jpg">
-                        </div>
-
-                        <div class="list-content-tile list-content-tile--two-lines">
-                            <strong>User 2</strong>
                             <span>.............................</span>
                         </div>
                     </li>
@@ -152,7 +111,7 @@
                 <lx-text-field label="Message">
                     <input type="text" ng-model="message">
                 </lx-text-field>
-                <button class="btn btn--m btn--green btn--raised" lx-ripple>Send</button>
+                <button class="btn btn--m btn--green btn--raised" lx-ripple ng-click="sendMessage()">Send</button>
 
             </div>
         </div>
@@ -167,10 +126,8 @@
                     // get effect type from
                     //      var selectedEffect = $( "#effectTypes" ).val();
                     var selectedEffect = "slide";
-
                     // most effect types need no options passed by default
                     var options = {direction: "right"};
-
                     console.log($("#effect").width());
                     if ($("#effect").is(':visible')) {
                         console.log("visible");
@@ -183,11 +140,9 @@
                     $("#effect").toggle(selectedEffect, options, 500);
                 }
                 ;
-
                 // set effect from select menu value
                 $(".buttonChat").click(function () {
                     runEffect();
                 });
                 $("#effect").hide();
-            });
-</script>
+            });</script>

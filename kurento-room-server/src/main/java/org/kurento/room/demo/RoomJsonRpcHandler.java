@@ -43,269 +43,294 @@ import com.google.gson.JsonObject;
  */
 public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(RoomJsonRpcHandler.class);
+    private static final Logger log = LoggerFactory
+            .getLogger(RoomJsonRpcHandler.class);
 
-	private static final String LEAVE_ROOM_METHOD = "leaveRoom";
+    private static final String SENDMESSAGE_ROOM_METHOD = "sendMessage"; //CHAT
+    private static final String SENDMESSAGE_USER_PARAM = "userMessage"; //CHAT
+    private static final String SENDMESSAGE_ROOM_PARAM = "roomMessage"; //CHAT
+    private static final String SENDMESSAGE_MESSAGE_PARAM = "message"; //CHAT
 
-	private static final String JOIN_ROOM_METHOD = "joinRoom";
-	private static final String JOIN_ROOM_USER_PARAM = "user";
-	private static final String JOIN_ROOM_ROOM_PARAM = "room";
+    private static final String LEAVE_ROOM_METHOD = "leaveRoom";
 
-	private static final String RECEIVE_VIDEO_METHOD = "receiveVideoFrom";
-	private static final String RECEIVE_VIDEO_SDPOFFER_PARAM = "sdpOffer";
-	private static final String RECEIVE_VIDEO_SENDER_PARAM = "sender";
+    private static final String JOIN_ROOM_METHOD = "joinRoom";
+    private static final String JOIN_ROOM_USER_PARAM = "user";
+    private static final String JOIN_ROOM_ROOM_PARAM = "room";
 
-	private static final String PARTICIPANT_SESSION_ATTRIBUTE = "user";
+    private static final String RECEIVE_VIDEO_METHOD = "receiveVideoFrom";
+    private static final String RECEIVE_VIDEO_SDPOFFER_PARAM = "sdpOffer";
+    private static final String RECEIVE_VIDEO_SENDER_PARAM = "sender";
 
-	private static final String HANDLER_THREAD_NAME = "handler";
+    private static final String PARTICIPANT_SESSION_ATTRIBUTE = "user";
 
-	private static class ParticipantSessionJsonRpc implements
-			ParticipantSession {
+    private static final String HANDLER_THREAD_NAME = "handler";
 
-		private Session session;
-		private Participant roomParticipant;
+    private static class ParticipantSessionJsonRpc implements
+            ParticipantSession {
 
-		public ParticipantSessionJsonRpc(Session session) {
-			this.session = session;
-		}
+        private Session session;
+        private Participant roomParticipant;
 
-		@Override
-		public void setParticipant(Participant roomParticipant) {
-			this.roomParticipant = roomParticipant;
-		}
+        public ParticipantSessionJsonRpc(Session session) {
+            this.session = session;
+        }
 
-		public Participant getRoomParticipant() {
-			return roomParticipant;
-		}
+        @Override
+        public void setParticipant(Participant roomParticipant) {
+            this.roomParticipant = roomParticipant;
+        }
 
-		public String getName() {
-			if (roomParticipant != null) {
-				return roomParticipant.getName();
-			} else {
-				return "<UnknownParticipant>";
-			}
-		}
+        public Participant getRoomParticipant() {
+            return roomParticipant;
+        }
 
-		@Override
-		public void sendRequest(Request<JsonObject> request,
-				Continuation<Response<JsonElement>> continuation)
-				throws IOException {
-			session.sendRequest(request, continuation);
-		}
+        public String getName() {
+            if (roomParticipant != null) {
+                return roomParticipant.getName();
+            } else {
+                return "<UnknownParticipant>";
+            }
+        }
 
-		public Session getSession() {
-			return session;
-		}
-	}
+        @Override
+        public void sendRequest(Request<JsonObject> request,
+                Continuation<Response<JsonElement>> continuation)
+                throws IOException {
+            session.sendRequest(request, continuation);
+        }
 
-	@Autowired
-	private RoomManager roomManager;
+        public Session getSession() {
+            return session;
+        }
+    }
 
-	@Override
-	public void handleRequest(final Transaction transaction,
-			final Request<JsonObject> request) throws Exception {
+    @Autowired
+    private RoomManager roomManager;
 
-		updateThreadName(HANDLER_THREAD_NAME + "_"
-				+ transaction.getSession().getSessionId());
+    @Override
+    public void handleRequest(final Transaction transaction,
+            final Request<JsonObject> request) throws Exception {
 
-		final ParticipantSessionJsonRpc participantSession = getParticipantSession(transaction
-				.getSession());
+        updateThreadName(HANDLER_THREAD_NAME + "_"
+                + transaction.getSession().getSessionId());
 
-		if (participantSession.getRoomParticipant() != null) {
-			log.debug("Incoming message from user '{}': {}",
-					participantSession.getName(), request);
-		} else {
-			log.debug("Incoming message from new user: {}", request);
-		}
+        final ParticipantSessionJsonRpc participantSession = getParticipantSession(transaction
+                .getSession());
 
-		switch (request.getMethod()) {
-		case RECEIVE_VIDEO_METHOD:
-			receiveVideoFrom(transaction, request, participantSession);
-			break;
-		case JOIN_ROOM_METHOD:
-			joinRoom(transaction, request, participantSession);
-			break;
-		case LEAVE_ROOM_METHOD:
-			leaveRoom(participantSession);
-			break;
-		default:
-			log.error("Unrecognized request {}", request);
-			break;
-		}
+        if (participantSession.getRoomParticipant() != null) {
+            log.debug("Incoming message from user '{}': {}",
+                    participantSession.getName(), request);
+        } else {
+            log.debug("Incoming message from new user: {}", request);
+        }
 
-		updateThreadName(HANDLER_THREAD_NAME);
-	}
+        switch (request.getMethod()) {
+            case RECEIVE_VIDEO_METHOD:
+                receiveVideoFrom(transaction, request, participantSession);
+                break;
+            case JOIN_ROOM_METHOD:
+                joinRoom(transaction, request, participantSession);
+                break;
+            case LEAVE_ROOM_METHOD:
+                leaveRoom(participantSession);
+                break;
+            case SENDMESSAGE_ROOM_METHOD: //CHAT
+                sendMessage(transaction, request, participantSession);
+                break;
+            default:
+                log.error("Unrecognized request {}", request);
+                break;
+        }
 
-	private void leaveRoom(final ParticipantSessionJsonRpc participantSession)
-			throws IOException, InterruptedException, ExecutionException {
-		Participant roomParticipant = participantSession.getRoomParticipant();
-		if (roomParticipant != null) {
-			roomManager.leaveRoom(roomParticipant);
-			removeParticipantForSession(participantSession);
-		} else {
-			log.warn("User is trying to leave from room but session has no info about user");
-		}
-	}
+        updateThreadName(HANDLER_THREAD_NAME);
+    }
 
-	private void joinRoom(final Transaction transaction,
-			final Request<JsonObject> request,
-			final ParticipantSessionJsonRpc participantSession)
-			throws IOException, InterruptedException, ExecutionException {
+    private void leaveRoom(final ParticipantSessionJsonRpc participantSession)
+            throws IOException, InterruptedException, ExecutionException {
+        Participant roomParticipant = participantSession.getRoomParticipant();
+        if (roomParticipant != null) {
+            roomManager.leaveRoom(roomParticipant);
+            removeParticipantForSession(participantSession);
+        } else {
+            log.warn("User is trying to leave from room but session has no info about user");
+        }
+    }
 
-		final String roomName = request.getParams().get(JOIN_ROOM_ROOM_PARAM)
-				.getAsString();
+    private void joinRoom(final Transaction transaction,
+            final Request<JsonObject> request,
+            final ParticipantSessionJsonRpc participantSession)
+            throws IOException, InterruptedException, ExecutionException {
 
-		final String userName = request.getParams().get(JOIN_ROOM_USER_PARAM)
-				.getAsString();
+        final String roomName = request.getParams().get(JOIN_ROOM_ROOM_PARAM)
+                .getAsString();
 
-		transaction.startAsync();
+        final String userName = request.getParams().get(JOIN_ROOM_USER_PARAM)
+                .getAsString();
 
-		roomManager.joinRoom(roomName, userName, participantSession,
-				new RMContinuation<Collection<Participant>>() {
-					@Override
-					public void result(Throwable error,
-							Collection<Participant> participants) {
+        transaction.startAsync();
 
-						try {
-							if (error != null) {
-								log.error("Exception processing joinRoom",
-										error);
+        roomManager.joinRoom(roomName, userName, participantSession,
+                new RMContinuation<Collection<Participant>>() {
+                    @Override
+                    public void result(Throwable error,
+                            Collection<Participant> participants) {
 
-								if (error instanceof RoomManagerException) {
-									RoomManagerException e = (RoomManagerException) error;
-									transaction.sendError(e.getCode(),
-											e.getMessage(), null);
-								} else {
-									transaction.sendError(error);
-								}
-							} else {
+                        try {
+                            if (error != null) {
+                                log.error("Exception processing joinRoom",
+                                        error);
 
-								JsonArray result = new JsonArray();
+                                if (error instanceof RoomManagerException) {
+                                    RoomManagerException e = (RoomManagerException) error;
+                                    transaction.sendError(e.getCode(),
+                                            e.getMessage(), null);
+                                } else {
+                                    transaction.sendError(error);
+                                }
+                            } else {
 
-								for (Participant participant : participants) {
+                                JsonArray result = new JsonArray();
 
-									JsonObject participantJson = new JsonObject();
-									participantJson.addProperty("id",
-											participant.getName());
-									JsonObject stream = new JsonObject();
-									stream.addProperty("id", "webcam");
-									JsonArray streamsArray = new JsonArray();
-									streamsArray.add(stream);
-									participantJson
-											.add("streams", streamsArray);
+                                for (Participant participant : participants) {
 
-									result.add(participantJson);
-								}
+                                    JsonObject participantJson = new JsonObject();
+                                    participantJson.addProperty("id",
+                                            participant.getName());
+                                    JsonObject stream = new JsonObject();
+                                    stream.addProperty("id", "webcam");
+                                    JsonArray streamsArray = new JsonArray();
+                                    streamsArray.add(stream);
+                                    participantJson
+                                    .add("streams", streamsArray);
 
-								transaction.sendResponse(result);
-							}
-						} catch (IOException e) {
-							log.error("Exception responding to user", e);
-						}
-					}
-				});
-	}
+                                    result.add(participantJson);
+                                }
 
-	private void receiveVideoFrom(final Transaction transaction,
-			final Request<JsonObject> request,
-			final ParticipantSessionJsonRpc participantSession) {
+                                transaction.sendResponse(result);
+                            }
+                        } catch (IOException e) {
+                            log.error("Exception responding to user", e);
+                        }
+                    }
+                });
+    }
 
-		String senderName = request.getParams().get(RECEIVE_VIDEO_SENDER_PARAM)
-				.getAsString();
+    private void receiveVideoFrom(final Transaction transaction,
+            final Request<JsonObject> request,
+            final ParticipantSessionJsonRpc participantSession) {
 
-		senderName = senderName.substring(0, senderName.indexOf("_"));
+        String senderName = request.getParams().get(RECEIVE_VIDEO_SENDER_PARAM)
+                .getAsString();
 
-		final String sdpOffer = request.getParams()
-				.get(RECEIVE_VIDEO_SDPOFFER_PARAM).getAsString();
+        senderName = senderName.substring(0, senderName.indexOf("_"));
 
-		transaction.startAsync();
+        final String sdpOffer = request.getParams()
+                .get(RECEIVE_VIDEO_SDPOFFER_PARAM).getAsString();
 
-		roomManager.receiveVideoFrom(participantSession.getRoomParticipant(),
-				senderName, sdpOffer,
-				new RMContinuation<ReceiveVideoFromResponse>() {
-					@Override
-					public void result(Throwable error,
-							ReceiveVideoFromResponse result) {
+        transaction.startAsync();
 
-						Response<JsonObject> response;
+        roomManager.receiveVideoFrom(participantSession.getRoomParticipant(),
+                senderName, sdpOffer,
+                new RMContinuation<ReceiveVideoFromResponse>() {
+                    @Override
+                    public void result(Throwable error,
+                            ReceiveVideoFromResponse result) {
 
-						if (error != null
-								&& error instanceof RoomManagerException) {
+                        Response<JsonObject> response;
 
-							RoomManagerException e = (RoomManagerException) error;
+                        if (error != null
+                        && error instanceof RoomManagerException) {
 
-							response = new Response<>(new ResponseError(e
-									.getCode(), e.getMessage()));
-						} else {
+                            RoomManagerException e = (RoomManagerException) error;
 
-							final JsonObject resultJson = new JsonObject();
-							resultJson.addProperty("name", result.name);
-							resultJson.addProperty("sdpAnswer",
-									result.sdpAnswer);
+                            response = new Response<>(new ResponseError(e
+                                            .getCode(), e.getMessage()));
+                        } else {
 
-							response = new Response<>(resultJson);
-						}
+                            final JsonObject resultJson = new JsonObject();
+                            resultJson.addProperty("name", result.name);
+                            resultJson.addProperty("sdpAnswer",
+                                    result.sdpAnswer);
 
-						try {
-							transaction.sendResponseObject(response);
-						} catch (IOException e) {
-							log.error("Exception sending response to request: "
-									+ request);
-						}
-					}
-				});
-	}
+                            response = new Response<>(resultJson);
+                        }
 
-	private ParticipantSessionJsonRpc getParticipantSession(Session session) {
+                        try {
+                            transaction.sendResponseObject(response);
+                        } catch (IOException e) {
+                            log.error("Exception sending response to request: "
+                                    + request);
+                        }
+                    }
+                });
+    }
 
-		ParticipantSessionJsonRpc participantSession = (ParticipantSessionJsonRpc) session
-				.getAttributes().get(PARTICIPANT_SESSION_ATTRIBUTE);
+    private ParticipantSessionJsonRpc getParticipantSession(Session session) {
 
-		if (participantSession == null) {
-			participantSession = new ParticipantSessionJsonRpc(session);
-			session.getAttributes().put(PARTICIPANT_SESSION_ATTRIBUTE,
-					participantSession);
-		}
+        ParticipantSessionJsonRpc participantSession = (ParticipantSessionJsonRpc) session
+                .getAttributes().get(PARTICIPANT_SESSION_ATTRIBUTE);
 
-		return participantSession;
-	}
+        if (participantSession == null) {
+            participantSession = new ParticipantSessionJsonRpc(session);
+            session.getAttributes().put(PARTICIPANT_SESSION_ATTRIBUTE,
+                    participantSession);
+        }
 
-	private void removeParticipantForSession(
-			ParticipantSessionJsonRpc participantSession) {
-		log.info("Removing participantInfo about "
-				+ participantSession.getName());
-		participantSession.getSession().getAttributes()
-				.remove(PARTICIPANT_SESSION_ATTRIBUTE);
-	}
+        return participantSession;
+    }
 
-	@Override
-	public void afterConnectionClosed(Session session, String status)
-			throws Exception {
+    private void removeParticipantForSession(
+            ParticipantSessionJsonRpc participantSession) {
+        log.info("Removing participantInfo about "
+                + participantSession.getName());
+        participantSession.getSession().getAttributes()
+                .remove(PARTICIPANT_SESSION_ATTRIBUTE);
+    }
 
-		Participant participant = getParticipantSession(session)
-				.getRoomParticipant();
+    @Override
+    public void afterConnectionClosed(Session session, String status)
+            throws Exception {
 
-		if (participant != null) {
-			updateThreadName(participant.getName() + "|wsclosed");
-			roomManager.leaveRoom(participant);
-			updateThreadName(HANDLER_THREAD_NAME);
-		}
-	}
+        Participant participant = getParticipantSession(session)
+                .getRoomParticipant();
 
-	@Override
-	public void handleTransportError(Session session, Throwable exception)
-			throws Exception {
+        if (participant != null) {
+            updateThreadName(participant.getName() + "|wsclosed");
+            roomManager.leaveRoom(participant);
+            updateThreadName(HANDLER_THREAD_NAME);
+        }
+    }
 
-		Participant user = getParticipantSession(session).getRoomParticipant();
+    @Override
+    public void handleTransportError(Session session, Throwable exception)
+            throws Exception {
 
-		if (user != null && !user.isClosed()) {
-			log.warn("Transport error", exception);
-		}
-	}
+        Participant user = getParticipantSession(session).getRoomParticipant();
 
-	private void updateThreadName(final String name) {
-		Thread.currentThread().setName("user:" + name);
-	}
+        if (user != null && !user.isClosed()) {
+            log.warn("Transport error", exception);
+        }
+    }
 
+    private void updateThreadName(final String name) {
+        Thread.currentThread().setName("user:" + name);
+    }
+
+    //CHAT
+    private void sendMessage(final Transaction transaction,
+            final Request<JsonObject> request,
+            final ParticipantSessionJsonRpc participantSession)
+            throws IOException, InterruptedException, ExecutionException {
+
+        final String userName = request.getParams().get(SENDMESSAGE_USER_PARAM)
+                .getAsString();
+        final String roomName = request.getParams().get(SENDMESSAGE_ROOM_PARAM)
+                .getAsString();
+        final String message = request.getParams().get(SENDMESSAGE_MESSAGE_PARAM)
+                .getAsString();
+
+        log.debug("user " + userName + " send message " + message + " from room " + roomName);
+        log.debug("ROOM " + participantSession.getRoomParticipant().getRoom().toString());
+        participantSession.getRoomParticipant().getRoom().sendMessage(userName, roomName, message);
+    }
 }
