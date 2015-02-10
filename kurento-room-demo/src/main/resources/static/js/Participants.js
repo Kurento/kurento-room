@@ -146,4 +146,83 @@ function Participants() {
     this.getParticipants = function () {
         return participants;
     };
+
+    this.showMessage = function (room, user, message) {
+//        console.log(JSON.stringify(mainParticipant.videoElement));
+//        console.log(JSON.stringify(localParticipant.videoElement()));
+//        console.log(user);
+
+        var ul = document.getElementsByClassName("list");
+        console.log(ul);
+        console.log(localParticipant.videoElement.innerText);
+        console.log(localParticipant.videoElement.innerText.replace("_webcam", ""));
+        var localUser = localParticipant.videoElement.innerText.replace("_webcam", "");
+        if (room === roomName && user === localUser) { //me
+
+            var li = document.createElement('li');
+            li.className = "list-row list-row--has-primary list-row--has-separator";
+            var div1 = document.createElement("div1");
+            div1.className = "list-secondary-tile";
+            var img = document.createElement("img");
+            img.className = "list-primary-tile__img";
+            img.setAttribute("src", "http://ui.lumapps.com/images/placeholder/2-square.jpg");
+            var div2 = document.createElement('div');
+            div2.className = "list-content-tile list-content-tile--two-lines";
+            var strong = document.createElement('strong');
+            strong.innerHTML = user;
+            var span = document.createElement('span');
+            span.innerHTML = message;
+            div2.appendChild(strong);
+            div2.appendChild(span);
+            div1.appendChild(img);
+            li.appendChild(div1);
+            li.appendChild(div2);
+            ul[0].appendChild(li);
+
+//               <li class="list-row list-row--has-primary list-row--has-separator">
+//                        <div class="list-secondary-tile">
+//                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/images/placeholder/2-square.jpg">
+//                        </div>
+//
+//                        <div class="list-content-tile list-content-tile--two-lines">
+//                            <strong>User 1</strong>
+//                            <span>.............................</span>
+//                        </div>
+//                    </li>
+
+
+        } else {//others
+
+            var li = document.createElement('li');
+            li.className = "list-row list-row--has-primary list-row--has-separator";
+            var div1 = document.createElement("div1");
+            div1.className = "list-primary-tile";
+            var img = document.createElement("img");
+            img.className = "list-primary-tile__img";
+            img.setAttribute("src", "http://ui.lumapps.com/images/placeholder/1-square.jpg");
+            var div2 = document.createElement('div');
+            div2.className = "list-content-tile list-content-tile--two-lines";
+            var strong = document.createElement('strong');
+            strong.innerHTML = user;
+            var span = document.createElement('span');
+            span.innerHTML = message;
+            div2.appendChild(strong);
+            div2.appendChild(span);
+            div1.appendChild(img);
+            li.appendChild(div1);
+            li.appendChild(div2);
+            ul[0].appendChild(li);
+
+//                 <li class="list-row list-row--has-primary list-row--has-separator">
+//                        <div class="list-primary-tile">
+//                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/images/placeholder/1-square.jpg">
+//                        </div>
+//
+//                        <div class="list-content-tile list-content-tile--two-lines">
+//                            <strong>User 2</strong>
+//                            <span>.............................</span>
+//                        </div>
+//                    </li>
+        }
+    };
 }

@@ -47,6 +47,13 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
                     ServiceParticipant.removeParticipant(streamEvent.stream);
                 });
 
+                room.addEventListener("newMessage", function (msg) {
+                    console.log("mensaje recibido en controller " + JSON.stringify(msg));
+
+                    ServiceParticipant.showMessage(msg.room, msg.user, msg.message);
+
+                });
+
                 room.connect();
             });
 

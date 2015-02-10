@@ -123,8 +123,28 @@ function Room(kurento, options) {
                             + " unknown. Participants: "
                             + JSON.stringify(participants));
         }
-    }
+    };
 
+    this.onNewMessage = function (msg) {
+        console.log("nuevo mensaje" + JSON.stringify(msg));
+        var room = msg.room;
+        var user = msg.user;
+        var message = msg.message;
+
+        if (user !== undefined) {
+
+            ee.emitEvent('newMessage', [{
+                    room: room,
+                    user: user,
+                    message: message
+                }]);
+
+
+        } else {
+            console
+                    .error();
+        }
+    }
     this.leave = function () {
 
         if (connected) {
@@ -446,7 +466,6 @@ function KurentoRoom(wsUri, callback) {
 
     var userName;
 
-    var messagesChat = [];
 
     var ws = new WebSocket(wsUri);
 
@@ -478,7 +497,7 @@ function KurentoRoom(wsUri, callback) {
                 break;
             case 'sendMessage':  //CHAT
                 console.log("recibido mensaje " + JSON.stringify(request.params));
-                messagesChat.put(request.params);
+                onNewMessage(request.params);
                 break;
             default:
                 console.error('Unrecognized request: ' + JSON.stringify(request));
@@ -497,7 +516,11 @@ function KurentoRoom(wsUri, callback) {
             room.onParticipantLeft(msg);
         }
     }
-
+    function onNewMessage(msg) {
+        if (room !== undefined) {
+            room.onNewMessage(msg);
+        }
+    }
     this.sendRequest = function (method, params, callback) {
         rpc.encode(method, params, callback);
         console.log('Sent request: { method:"' + method + "', params: "
@@ -526,7 +549,6 @@ function KurentoRoom(wsUri, callback) {
 
     //CHAT
     this.sendMessage = function (room, user, message) {
-        console.log("user " + user + "send message " + message + "from room " + room);
 
         this.sendRequest('sendMessage', {message: message, userMessage: user, roomMessage: room}, function (error, response) {
             if (error) {

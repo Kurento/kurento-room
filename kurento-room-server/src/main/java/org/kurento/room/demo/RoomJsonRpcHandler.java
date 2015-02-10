@@ -329,8 +329,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
         final String message = request.getParams().get(SENDMESSAGE_MESSAGE_PARAM)
                 .getAsString();
 
-        log.debug("user " + userName + " send message " + message + " from room " + roomName);
-        log.debug("ROOM " + participantSession.getRoomParticipant().getRoom().toString());
-        participantSession.getRoomParticipant().getRoom().sendMessage(userName, roomName, message);
+        log.debug("User " + userName + " send message " + message + " from room " + roomName);
+        participantSession.getRoomParticipant().getRoom().sendMessage(roomName, userName, message);
     }
 }

@@ -16,16 +16,16 @@ kurento_room.service('ServiceRoom', function () {
         return roomName;
     };
 
-    this.getLocalStream = function () {
-        return localStream;
-    };
-
     this.setKurento = function (value) {
         kurento = value;
     };
 
     this.setRoomName = function (value) {
         roomName = value;
+    };
+
+    this.getLocalStream = function () {
+        return localStream;
     };
 
     this.setLocalStream = function (value) {
