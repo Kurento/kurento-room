@@ -1,3 +1,6 @@
+/*
+ * @author Raquel Díaz González
+ */
 
 kurento_room.factory('ServiceParticipant', function () {
 

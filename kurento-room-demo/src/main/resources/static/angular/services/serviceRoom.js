@@ -1,3 +1,6 @@
+/*
+ * @author Raquel Díaz González
+ */
 
 kurento_room.service('ServiceRoom', function () {
 

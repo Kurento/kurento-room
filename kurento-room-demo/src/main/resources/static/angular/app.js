@@ -1,3 +1,6 @@
+/*
+ * @author Raquel Díaz González
+ */
 
 var kurento_room = angular.module('kurento_room', ['ngRoute', 'FBAngular', 'lumx']);
 

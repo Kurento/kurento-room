@@ -1,3 +1,7 @@
+/*
+ * @author Micael Gallego (micael.gallego@gmail.com)
+ * @author Raquel Díaz González
+ */
 
 kurento_room.controller('callController', function ($scope, $window, ServiceParticipant, ServiceRoom, Fullscreen) {
 
