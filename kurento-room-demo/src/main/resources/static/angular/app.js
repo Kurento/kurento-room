@@ -1,18 +1,19 @@
-var kurento_room = angular.module('kurento_room', ['ngRoute','FBAngular','lumx']);
+
+var kurento_room = angular.module('kurento_room', ['ngRoute', 'FBAngular', 'lumx']);
 
 kurento_room.config(function ($routeProvider) {
 
     $routeProvider
             .when('/', {
-                templateUrl: 'angular/login.html',
+                templateUrl: 'angular/login/login.html',
                 controller: 'loginController'
             })
             .when('/login', {
-                templateUrl: 'angular/login.html',
+                templateUrl: 'angular/login/login.html',
                 controller: 'loginController'
             })
             .when('/call', {
-                templateUrl: 'angular/call.html',
+                templateUrl: 'angular/call/call.html',
                 controller: 'callController'
             });
 //            .otherwise({
@@ -20,11 +21,6 @@ kurento_room.config(function ($routeProvider) {
 //                controller: 'MainController',
 //            });
 });
-
-//kurento_room.controller('MainController', function ($scope) {
-//
-//
-//});
 
 
 

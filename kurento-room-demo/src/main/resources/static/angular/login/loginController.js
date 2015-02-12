@@ -1,10 +1,7 @@
 kurento_room.controller('loginController', function ($scope, ServiceParticipant, $window, ServiceRoom) {
 
-    console.log("controller1 iniciado");
-
     $scope.register = function (room) {
 
-        console.log("dentro de register");
         $scope.userName = room.userName;
         $scope.roomName = room.roomName;
 
@@ -28,7 +25,6 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
 
             localStream.addEventListener("access-accepted", function () {
                 room.addEventListener("room-connected", function (roomEvent) {
-//		    document.getElementById('room-name').innerText = room.name;
 
                     localStream.publish();
                     ServiceRoom.setLocalStream(localStream.getWebRtcPeer());
@@ -48,10 +44,7 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
                 });
 
                 room.addEventListener("newMessage", function (msg) {
-                    console.log("mensaje recibido en controller " + JSON.stringify(msg));
-
                     ServiceParticipant.showMessage(msg.room, msg.user, msg.message);
-
                 });
 
                 room.connect();
@@ -62,10 +55,11 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
 
         });
 
-        //save kurento & roomName in service
+        //save kurento & roomName & userName in service
         ServiceRoom.setKurento(kurento);
         ServiceRoom.setRoomName($scope.roomName);
         ServiceRoom.setUserName($scope.userName);
+
         //redirect to call
         $window.location.href = '#/call';
     };

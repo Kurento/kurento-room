@@ -1,8 +1,6 @@
 
 kurento_room.service('ServiceRoom', function () {
 
-    console.log("serviceRoom iniciado");
-
     var kurento;
     var roomName;
     var userName;

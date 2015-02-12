@@ -4,63 +4,47 @@
 
     <head>
         <title>Kurento Room Demo</title>
+        <!--css-->
         <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
         <link type="text/css" rel="stylesheet" href="room.css" />
-        <script src="./angular/jquery-2.1.1.min.js"></script>
+        <!--kurento-->
         <script src="./js/adapter.js"></script>
         <script src="./js/kurento-utils.js"></script>
         <script src="./js/kurento-jsonrpc.js"></script>
         <script src="./js/EventEmitter.js"></script>
         <script src="./js/KurentoRoom.js"></script>
-        <!--<script src="./js/KurentoBasicRoom.js"></script>-->
         <script src="./js/Participants.js"></script>
-        <!--<script src="./js/room.js"></script>-->
+        <!--jquery-->
+        <script src="./jquery-2.1.1.min.js"></script>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+        <script src="//code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+        <!--angularjs-->
         <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.0-beta.1/angular.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.0-beta.1/angular-route.js"></script>
         <script src="./angular/app.js"></script>
-        <script src="./angular/callController.js"></script>
-        <script src="./angular/loginController.js"></script>
-        <script src="./angular/serviceParticipant.js"></script>
+        <script src="./angular/call/callController.js"></script>
+        <script src="./angular/login/loginController.js"></script>
+        <script src="./angular/services/serviceParticipant.js"></script>
         <script src="./angular/angular-fullscreen.js"></script>
-        <script src="./angular/serviceRoom.js"></script>
+        <script src="./angular/services/serviceRoom.js"></script>
         <!--lumx-->
         <link rel="stylesheet" href="./angular/lumX/dist/css/lumx.css">
         <link rel="stylesheet" href="./angular/lumX/material-design-iconic-font/css/material-design-iconic-font.min.css">
         <link rel="stylesheet" href="./angular/lumX/dist/_bourbon.scss">
         <link rel="stylesheet" href="./angular/lumX/dist/_neat.scss">
-
-        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
-        <script src="//code.jquery.com/jquery-1.10.2.js"></script>
-        <script src="//code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
-        <link rel="stylesheet" href="/resources/demos/style.css">
-        <style>
-            #effect {
-                position: relative;
-                /*                width: 240px;
-                                height: 135px;*/
-                padding: 0.4em;
-            }
-            /*            #effect h3 {
-                            margin: 0;
-                            padding: 0.4em;
-                            text-align: center;
-                        }*/
-        </style>
-
-
-    </head>
-
-    <body ng-app="kurento_room">
-
-        <!--display the view with route system-->
-        <div ng-view></div> 
-
-        <!--lumx-->
         <script src="./angular/lumX/dist/velocity.js"></script>
         <script src="./angular/lumX/dist/moment-with-locales.min.js"></script>
         <script src="./angular/lumX/dist/js/lumx.js"></script>
         <script src="./angular/lumX/dist/scss/core/_core.scss"></script>
         <script src="./angular/lumX/dist/scss/main/_lumx.scss"></script>
+    </head>
+
+    <body ng-app="kurento_room">
+
+        <div ng-view>
+            <!--display the view (login/call) with route system-->
+        </div> 
+
     </body>
 
 </html>

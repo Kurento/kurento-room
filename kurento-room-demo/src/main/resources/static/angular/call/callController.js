@@ -1,6 +1,6 @@
 
 kurento_room.controller('callController', function ($scope, $window, ServiceParticipant, ServiceRoom, Fullscreen) {
-    console.log("callController iniciado");
+
     $scope.roomName = ServiceRoom.getRoomName();
     $scope.userName = ServiceRoom.getUserName();
     $scope.participants = ServiceParticipant.getParticipants();
@@ -20,7 +20,6 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         ServiceRoom.getKurento().close();
     };
 
-// FullScreen -----------------------------------------------------------------
 
     $scope.goFullscreen = function () {
 
@@ -60,7 +59,7 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         }
     };
 
-    ///chat
+    //chat
     $scope.message;
 
     $scope.sendMessage = function () {
@@ -70,9 +69,8 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         $scope.message = "";
     };
 
-//autofocus
+    //autofocus when click in chat button
     $scope.autofocus = function () {
-        console.log("FOCO");
         inputMessage.focus();
     };
 });
