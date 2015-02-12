@@ -19,7 +19,7 @@
             <button class="btn btn--xl btn--orange btn--fab mdi md-desktop-mac " lx-ripple ng-click=""></button> <!--compartir escritorio-->
             <button class="btn btn--xl btn--red btn--fab mdi md-call-end " lx-ripple ng-click="leaveRoom()"></button> <!--colgar-->
             <button class="btn btn--xl btn--green btn--fab mdi md-fullscreen" lx-ripple ng-click="goFullscreen()"></button> <!--fullscreen-->
-            <button class="btn btn--xl btn--blue btn--fab mdi md-chat buttonChat" lx-ripple ng-click=""></button> <!--chat-->
+            <button class="btn btn--xl btn--blue btn--fab mdi md-chat buttonChat" lx-ripple ng-click="autofocus()"></button> <!--chat-->
         </div>
 
         <div id="participants">
@@ -77,7 +77,7 @@
             <button class="btn btn--s btn--blue btn--icon mdi md-close buttonChat" lx-ripple ng-click="" id="button"></button> <!--cerrar-->
 
             <div>
-                <ul class="list">
+                <ul class="list" style="height: 27em;  overflow: scroll;">
 
                     <!--chat messages-->
 
@@ -85,11 +85,12 @@
             </div>
 
             <div>
-                <lx-text-field label="Message">
-                    <input type="text" ng-model="message">
-                </lx-text-field>
-                <button class="btn btn--m btn--green btn--raised" lx-ripple ng-click="sendMessage()">Send</button>
-
+                <form>
+                    <lx-text-field label="Message">
+                        <input id="inputMessage" type="text" ng-model="message">
+                    </lx-text-field>
+                    <button type="submit" class="btn btn--m btn--green btn--raised" lx-ripple ng-click="sendMessage()">Send</button>
+                </form>
             </div>
         </div>
     </div>
@@ -97,29 +98,30 @@
 
 
 <script>
-    $(function () {
-        // run the currently selected effect
-        function runEffect() {
-            // get effect type from
-            //      var selectedEffect = $( "#effectTypes" ).val();
-            var selectedEffect = "slide";
-            // most effect types need no options passed by default
-            var options = {direction: "right"};
-            console.log($("#effect").width());
-            if ($("#effect").is(':visible')) {
-                console.log("visible");
-                $("#content").animate({width: '100%'}, 500);
-            } else {
-                console.log("oculto");
-                $("#content").animate({width: '80%'}, 500);
-            }
-            // run the effect
-            $("#effect").toggle(selectedEffect, options, 500);
-        }
-        ;
-        // set effect from select menu value
-        $(".buttonChat").click(function () {
-            runEffect();
-        });
-        $("#effect").hide();
-    });</script>
+
+            $(function () {
+                // run the currently selected effect
+                function runEffect() {
+                    // get effect type from
+                    //      var selectedEffect = $( "#effectTypes" ).val();
+                    var selectedEffect = "slide";
+                    // most effect types need no options passed by default
+                    var options = {direction: "right"};
+                    console.log($("#effect").width());
+                    if ($("#effect").is(':visible')) {
+                        console.log("visible");
+                        $("#content").animate({width: '100%'}, 500);
+                    } else {
+                        console.log("oculto");
+                        $("#content").animate({width: '80%'}, 500);
+                    }
+                    // run the effect
+                    $("#effect").toggle(selectedEffect, options, 500);
+                }
+                ;
+                // set effect from select menu value
+                $(".buttonChat").click(function () {
+                    runEffect();
+                });
+                $("#effect").hide();
+            });</script>

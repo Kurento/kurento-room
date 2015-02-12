@@ -67,8 +67,14 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         console.log($scope.message);
         var kurento = ServiceRoom.getKurento();
         kurento.sendMessage($scope.roomName, $scope.userName, $scope.message);
+        $scope.message = "";
     };
 
+//autofocus
+    $scope.autofocus = function () {
+        console.log("FOCO");
+        inputMessage.focus();
+    };
 });
 
 
