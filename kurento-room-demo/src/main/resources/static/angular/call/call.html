@@ -14,8 +14,9 @@
         </div>
 
         <div id="room-name">{{roomName}}</div>
-        <div class="mb" align="right" style="margin: 1em;">
+        <div class="mb" align="right" style="margin: 1em;" id="buttonActions"> 
             <!--eliminado class action de los botones para cambiar el css-->
+            <!--aumentado el tamaño de los iconos con css (room.css)-->
             <button class="btn btn--xl btn--teal btn--fab mdi md-volume-up" lx-ripple ng-click="onOffVolume()" id="buttonVolume"></button> <!--mute audio-->
             <button class="btn btn--xl btn--grey btn--fab mdi md-videocam" lx-ripple ng-click="onOffVideocam()" id="buttonVideocam"></button> <!--mute video-->
             <button class="btn btn--xl btn--orange btn--fab mdi md-desktop-mac " lx-ripple ng-click=""></button> <!--compartir escritorio-->
@@ -37,11 +38,13 @@
     <div class="toggler" style="width: 20%;height: 100%;float: right" >
         <div id="effect">
             <!--head-->
-            <strong>Chat</strong>
-            <button class="btn btn--s btn--blue btn--icon mdi md-close buttonChat" lx-ripple ng-click="" id="button"></button> <!--close-->
-
             <div>
-                <ul class="list" style="height: 27em;  overflow: scroll;">
+                <strong>Chat</strong>
+                <button class="btn btn--s btn--blue btn--icon mdi md-close buttonChat" lx-ripple ng-click="" id="button"></button> <!--close-->
+            </div>
+
+            <div style="height: 30em;  overflow: scroll;">
+                <ul class="list" >
 
                     <!--chat messages with scroll-->
 
