@@ -21,6 +21,7 @@ import org.kurento.jsonrpc.server.JsonRpcHandlerRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
@@ -32,29 +33,30 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import(JsonRpcConfiguration.class)
 @EnableAutoConfiguration
+@ComponentScan
 public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
-	@Bean
-	public RoomManager roomManager() {
-		return new RoomManager();
-	}
+    @Bean
+    public RoomManager roomManager() {
+        return new RoomManager();
+    }
 
-	@Bean
-	public RoomJsonRpcHandler groupCallHandler() {
-		return new RoomJsonRpcHandler();
-	}
+    @Bean
+    public RoomJsonRpcHandler groupCallHandler() {
+        return new RoomJsonRpcHandler();
+    }
 
-	@Bean
-	public KurentoClient kurentoClient() {
-		return KurentoClient.create("ws://localhost:8888/kurento");
-	}
+    @Bean
+    public KurentoClient kurentoClient() {
+        return KurentoClient.create("ws://localhost:8888/kurento");
+    }
 
-	@Override
-	public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
-		registry.addHandler(groupCallHandler(), "/room");
-	}
+    @Override
+    public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
+        registry.addHandler(groupCallHandler(), "/room");
+    }
 
-	public static void main(String[] args) throws Exception {
-		SpringApplication.run(KurentoRoomServerApp.class, args);
-	}
+    public static void main(String[] args) throws Exception {
+        SpringApplication.run(KurentoRoomServerApp.class, args);
+    }
 }

@@ -140,7 +140,7 @@ video {
 .join {
     position: relative;
     margin: auto;
-    width: 310px;
+    width: 500px;
     text-align: center;
     vertical-align: middle;
 }
@@ -159,7 +159,7 @@ video {
     margin: auto 0 auto 0;
 }
 
-.join p {
+/*.join p {
     margin: 20px 0 0;
 }
 
@@ -173,7 +173,7 @@ video {
 
 .join p.submit {
     text-align: center;
-}
+}*/
 
 :-moz-placeholder {
     color: #c9c9c9 !important;

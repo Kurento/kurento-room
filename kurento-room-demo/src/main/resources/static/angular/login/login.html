@@ -1,23 +1,54 @@
 
-<div id="join" class="join">
+<div class="join">
     <div id="join-title">Kurento Room</div>
-    <form role="form" ng-submit="register(room)" accept-charset="UTF-8">
-        <div class="grid">
-            <div class="card">
-                <div class="card__content">
-                    <lx-text-field label="Username">
-                        <input type="text" ng-model="room.userName" required>
-                    </lx-text-field>
-                    <lx-text-field label="Room">
-                        <input type="text" ng-model="room.roomName" required>
-                    </lx-text-field>
+
+    <div class="card" id="join">
+        <form role="form" ng-submit="register(room)" accept-charset="UTF-8">
+
+            <div class="card__content">
+                <lx-text-field label="Username">
+                    <input type="text" ng-model="room.userName" required>
+                </lx-text-field>
+
+                <div class="grid">
+
+                    <div class="grid__col6">
+                        <lx-text-field label="Room">
+                            <input type="text" ng-model="room.roomName" >
+                        </lx-text-field>
+                    </div>
+
+                    <div class="grid__col6">
+                        <lx-select ng-model="room.roomName" placeholder="Choose an existing room" choices="listRooms" floating-label>
+                            <lx-select-selected>
+                                {{ $selected}}
+                            </lx-select-selected>
+
+                            <lx-select-choices>
+                                {{ $choice}}
+                            </lx-select-choices>
+                        </lx-select>
+                    </div>
+
                 </div>
 
-                <div class="card__actions">
-                    <button class="btn btn--l btn--blue btn--raised" lx-ripple type="submit" >Join room!</button>
-                    <br>
-                </div>
             </div>
-        </div>
-    </form>
+
+            <div class="card__actions">
+                <div class="grid">
+                    <div class="grid__col6">
+                        <button class="btn btn--l btn--blue btn--raised" lx-ripple type="button" ng-click="clear()">Clear</button>
+                    </div>
+                    <div class="grid__col6">
+                        <button class="btn btn--l btn--green btn--raised" lx-ripple type="submit" >Join room!</button>
+                    </div>
+                </div>
+                <br>
+            </div>
+
+        </form>
+    </div>
+
+
 </div>
+

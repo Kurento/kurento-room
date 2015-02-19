@@ -3,7 +3,16 @@
  * @author Raquel Díaz González
  */
 
-kurento_room.controller('loginController', function ($scope, ServiceParticipant, $window, ServiceRoom) {
+kurento_room.controller('loginController', function ($scope, $http, ServiceParticipant, $window, ServiceRoom) {
+
+
+    $http.get('/getAllRooms').
+            success(function (data, status, headers, config) {
+                console.log(JSON.stringify(data));
+                $scope.listRooms = data;
+            }).
+            error(function (data, status, headers, config) {
+            });
 
     $scope.register = function (room) {
 
@@ -68,7 +77,11 @@ kurento_room.controller('loginController', function ($scope, ServiceParticipant,
         //redirect to call
         $window.location.href = '#/call';
     };
-
+    $scope.clear = function () {
+        $scope.room = "";
+        $scope.userName = "";
+        $scope.roomName = "";
+    };
 });
 
 
