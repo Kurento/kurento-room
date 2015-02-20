@@ -36,20 +36,22 @@ import org.springframework.context.annotation.Import;
 @ComponentScan
 public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
-    @Bean
-    public RoomManager roomManager() {
-        return new RoomManager();
-    }
+	static final String DEFAULT_KMS_WS_URI = "ws://localhost:8888/kurento";
+
+	@Bean
+	public RoomManager roomManager() {
+		return new RoomManager();
+	}
 
     @Bean
     public RoomJsonRpcHandler groupCallHandler() {
         return new RoomJsonRpcHandler();
     }
 
-    @Bean
-    public KurentoClient kurentoClient() {
-        return KurentoClient.create("ws://localhost:8888/kurento");
-    }
+	@Bean
+	public KurentoClient kurentoClient() {
+		return KurentoClient.create(System.getProperty("kms.ws.uri", DEFAULT_KMS_WS_URI));
+	}
 
     @Override
     public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
