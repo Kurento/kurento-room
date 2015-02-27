@@ -118,6 +118,10 @@
         </dependency>
         <dependency>
             <groupId>org.kurento</groupId>
+            <artifactId>kurento-jsonrpc-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kurento</groupId>
             <artifactId>kurento-test</artifactId>
             <scope>test</scope>
         </dependency>
