@@ -73,9 +73,18 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         $scope.message = "";
     };
 
-    //autofocus when click in chat button
-    $scope.autofocus = function () {
-        inputMessage.focus();
+    //open or close chat when click in chat button
+    $scope.toggleChat = function () {
+        var selectedEffect = "slide";
+        // most effect types need no options passed by default
+        var options = {direction: "right"};
+        if ($("#effect").is(':visible')) {
+            $("#content").animate({width: '100%'}, 500);
+        } else {
+            $("#content").animate({width: '80%'}, 500);
+        }
+        // run the effect
+        $("#effect").toggle(selectedEffect, options, 500);
     };
 });
 

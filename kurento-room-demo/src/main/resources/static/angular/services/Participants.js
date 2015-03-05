@@ -147,6 +147,16 @@ function Participants() {
         return participants;
     };
 
+    // Open the chat automatically when a message is received
+    function autoOpenChat() {
+        var selectedEffect = "slide";
+        var options = {direction: "right"};
+        if ($("#effect").is(':hidden')) {
+            $("#content").animate({width: '80%'}, 500);
+            $("#effect").toggle(selectedEffect, options, 500);
+        }
+    };
+
     this.showMessage = function (room, user, message) {
 //        console.log(JSON.stringify(mainParticipant.videoElement));
 //        console.log(JSON.stringify(localParticipant.videoElement()));
@@ -212,6 +222,7 @@ function Participants() {
             li.appendChild(div1);
             li.appendChild(div2);
             ul[0].appendChild(li);
+            autoOpenChat();
 
 //                 <li class="list-row list-row--has-primary list-row--has-separator">
 //                        <div class="list-primary-tile">
