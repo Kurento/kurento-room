@@ -92,16 +92,19 @@ function Participants() {
     ;
 
     function updateMainParticipant(participant) {
-        if (mainParticipant !== undefined) {
-            mainParticipant.removeMain();
-        }
-        participant.setMain();
+        // if (mainParticipant !== undefined) {
+        //     mainParticipant.removeMain();
+        // }
+        mainParticipant.removeMain();
         mainParticipant = participant;
+        mainParticipant.setMain();
     }
 
     this.addLocalParticipant = function (stream) {
 
         localParticipant = that.addParticipant(stream);
+        mainParticipant = localParticipant;
+        mainParticipant.setMain();
     };
 
     this.addParticipant = function (stream) {
@@ -115,7 +118,7 @@ function Participants() {
             updateMainParticipant(participant);
         });
 
-        updateMainParticipant(participant);
+        //updateMainParticipant(participant);
 
         return participant;
     };
@@ -126,8 +129,8 @@ function Participants() {
         delete participants[stream.getGlobalID()];
 
         if (mainParticipant === participant) {
-            mainPartipant = localParticipant;
-            localParticipant.setMain();
+            mainParticipant = localParticipant;
+            mainParticipant.setMain();
         }
 
         participant.remove();
