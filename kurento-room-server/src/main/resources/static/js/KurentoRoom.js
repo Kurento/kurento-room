@@ -274,6 +274,7 @@ function Stream(kurento, local, room, options) {
         video.controls = false;
         if (wrStream) {
             video.src = URL.createObjectURL(wrStream);
+            $("#video-" + that.getGlobalID()).show();
         }
 
         videoElements.push(video);
@@ -408,6 +409,11 @@ function Stream(kurento, local, room, options) {
 
                 for (i = 0; i < videoElements.length; i++) {
                     videoElements[i].src = URL.createObjectURL(wrStream);
+                    videoElements[i].onplay = function() {
+                        var elementId = this.id;
+                        var videoId = elementId.split("-");
+                        $('#video-' + videoId[2]).show();
+                    };
                 }
 
                 that.room.emitEvent('stream-subscribed', [{
