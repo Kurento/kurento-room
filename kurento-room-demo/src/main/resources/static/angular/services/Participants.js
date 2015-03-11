@@ -107,8 +107,7 @@ function Participants() {
     this.addParticipant = function (stream) {
 
         var participant = new AppParticipant(stream);
-
-        participants[stream.getID()] = participant;
+        participants[stream.getGlobalID()] = participant;
 
         updateVideoStyle();
 
@@ -123,8 +122,8 @@ function Participants() {
 
     this.removeParticipant = function (stream) {
 
-        var participant = participants[stream.getID()];
-        delete participants[stream.getID()];
+        var participant = participants[stream.getGlobalID()];
+        delete participants[stream.getGlobalID()];
 
         if (mainParticipant === participant) {
             mainPartipant = localParticipant;
