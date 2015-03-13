@@ -36,7 +36,6 @@ function AppParticipant(stream) {
         that.videoElement = document.createElement('div');
         that.videoElement.setAttribute("id", elementId);
         that.videoElement.className = "video";
-        that.videoElement.style.display = "none";
 
         var buttonVideo = document.createElement('button');
         buttonVideo.className = 'action btn btn--m btn--orange btn--fab mdi md-desktop-mac';

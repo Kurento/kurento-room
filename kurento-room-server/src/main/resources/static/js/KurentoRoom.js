@@ -278,6 +278,7 @@ function Stream(kurento, local, room, options) {
         if (wrStream) {
             video.src = URL.createObjectURL(wrStream);
             $("#video-" + that.getGlobalID()).show();
+            hideSpinner(that.getGlobalID());
         }
 
         videoElements.push(video);
@@ -285,6 +286,17 @@ function Stream(kurento, local, room, options) {
         if (local) {
             video.setAttribute("muted", "muted");
         }
+    }
+
+    function showSpinner(elementId) {
+        var progress = document.createElement('div');
+        progress.id = 'progress-' + that.getGlobalID();
+        progress.style.background = "center transparent url('img/spinner.gif') no-repeat";
+        document.getElementById(elementId).appendChild(progress);
+    }
+
+    function hideSpinner(elementId) {
+        $('#progress-' + elementId).hide();
     }
 
     this.play = function (elementId) {
@@ -302,8 +314,9 @@ function Stream(kurento, local, room, options) {
         name.id = "name-" + that.getGlobalID();
         name.className = "name";
 
-        that.playOnlyVideo(container);
+        showSpinner(elementId);
 
+        that.playOnlyVideo(container);
     }
 
     this.getID = function () {
@@ -416,6 +429,7 @@ function Stream(kurento, local, room, options) {
                         var elementId = this.id;
                         var videoId = elementId.split("-");
                         $('#video-' + videoId[2]).show();
+                        hideSpinner(videoId[2]);
                     };
                 }
 
