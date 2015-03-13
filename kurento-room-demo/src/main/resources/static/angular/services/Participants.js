@@ -25,7 +25,9 @@ function AppParticipant(stream) {
 
     this.remove = function () {
         if (that.videoElement !== undefined) {
-            that.videoElement.parentNode.removeChild(that.videoElement);
+            if (that.videoElement.parentNode !== null) {
+                that.videoElement.parentNode.removeChild(that.videoElement);
+            }
         }
     }
 
