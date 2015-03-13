@@ -3,7 +3,7 @@
  * @author Raquel Díaz González
  */
 
-kurento_room.controller('loginController', function ($scope, $http, ServiceParticipant, $window, ServiceRoom) {
+kurento_room.controller('loginController', function ($scope, $http, ServiceParticipant, $window, ServiceRoom, LxNotificationService) {
 
 
     $http.get('/getAllRooms').
@@ -61,12 +61,14 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                     ServiceParticipant.showMessage(msg.room, msg.user, msg.message);
                 });
 
+                room.addEventListener("error-room", function (error) {
+                    ServiceParticipant.showError($window, LxNotificationService, error);
+                });
+
                 room.connect();
             });
 
             localStream.init();
-
-
         });
 
         //save kurento & roomName & userName in service

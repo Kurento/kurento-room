@@ -239,4 +239,10 @@ function Participants() {
 //                    </li>
         }
     };
+
+    this.showError = function ($window, LxNotificationService, e) {
+        LxNotificationService.alert('Error!', e.error.message, 'Reconnect', function(answer) {
+            $window.location.href = '#/login';
+        });
+    };
 }

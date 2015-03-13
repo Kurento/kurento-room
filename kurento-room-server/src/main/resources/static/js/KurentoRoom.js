@@ -32,7 +32,10 @@ function Room(kurento, options) {
             room: options.room
         }, function (error, response) {
             if (error) {
-                console.error(error);
+                ee.emitEvent('error-room', [{
+                    error: error
+                }]);
+                //console.error(error);
             } else {
 
                 connected = true;
