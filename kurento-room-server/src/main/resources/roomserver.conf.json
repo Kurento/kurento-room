@@ -1,0 +1,5 @@
+{
+   "kms": {
+      "uri": "ws://localhost:8888/kurento"
+   }
+}

@@ -15,9 +15,13 @@
 package org.kurento.room.demo;
 
 import org.kurento.client.KurentoClient;
+import org.kurento.commons.ConfigFileManager;
+import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.internal.server.config.JsonRpcConfiguration;
 import org.kurento.jsonrpc.server.JsonRpcConfigurer;
 import org.kurento.jsonrpc.server.JsonRpcHandlerRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -36,29 +40,39 @@ import org.springframework.context.annotation.Import;
 @ComponentScan
 public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
-	static final String DEFAULT_KMS_WS_URI = "ws://localhost:8888/kurento";
+	static {
+		ConfigFileManager.loadConfigFile("roomserver.conf.json");
+	}
+
+	final static String DEFAULT_KMS_WS_URI = PropertiesManager.getProperty(
+			"kms.uri", "ws://localhost:8888/kurento");
+
+	private static final Logger log = LoggerFactory
+			.getLogger(KurentoRoomServerApp.class);
 
 	@Bean
 	public RoomManager roomManager() {
 		return new RoomManager();
 	}
 
-    @Bean
-    public RoomJsonRpcHandler groupCallHandler() {
-        return new RoomJsonRpcHandler();
-    }
+	@Bean
+	public RoomJsonRpcHandler groupCallHandler() {
+		return new RoomJsonRpcHandler();
+	}
 
 	@Bean
 	public KurentoClient kurentoClient() {
-		return KurentoClient.create(System.getProperty("kms.ws.uri", DEFAULT_KMS_WS_URI));
+		KurentoClient client = KurentoClient.create(DEFAULT_KMS_WS_URI);
+		log.info("Kurento client connected on {}", DEFAULT_KMS_WS_URI);
+		return client;
 	}
 
-    @Override
-    public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
-        registry.addHandler(groupCallHandler(), "/room");
-    }
+	@Override
+	public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
+		registry.addHandler(groupCallHandler(), "/room");
+	}
 
-    public static void main(String[] args) throws Exception {
-        SpringApplication.run(KurentoRoomServerApp.class, args);
-    }
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(KurentoRoomServerApp.class, args);
+	}
 }
