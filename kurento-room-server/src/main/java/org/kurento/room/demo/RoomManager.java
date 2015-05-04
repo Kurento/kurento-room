@@ -44,212 +44,217 @@ import com.google.gson.JsonObject;
  */
 public class RoomManager {
 
-    private static final int SDP_ERROR_CODE = 101;
-    private static final int USER_NOT_FOUND_ERROR_CODE = 102;
-    private static final int ROOM_CLOSED_ERROR_CODE = 103;
-    public static final int EXISTING_USER_IN_ROOM_ERROR_CODE = 104;
+	private static final int SDP_ERROR_CODE = 101;
+	private static final int USER_NOT_FOUND_ERROR_CODE = 102;
+	private static final int ROOM_CLOSED_ERROR_CODE = 103;
+	public static final int EXISTING_USER_IN_ROOM_ERROR_CODE = 104;
 
-    private final Logger log = LoggerFactory.getLogger(RoomManager.class);
+	private final Logger log = LoggerFactory.getLogger(RoomManager.class);
 
-    @Autowired
-    private KurentoClient kurento;
+	@Autowired
+	private KurentoClient kurento;
 
-    private final ConcurrentMap<String, Room> rooms = new ConcurrentHashMap<>();
+	private final ConcurrentMap<String, Room> rooms = new ConcurrentHashMap<>();
 
-    private static final ExecutorService executor = Executors
-            .newFixedThreadPool(10);
+	private static final ExecutorService executor = Executors
+			.newFixedThreadPool(10);
 
-    public static class ReceiveVideoFromResponse {
+	public static class ReceiveVideoFromResponse {
 
-        public String name;
-        public String sdpAnswer;
+		public String name;
+		public String sdpAnswer;
 
-        public ReceiveVideoFromResponse(String name, String sdpAnswer) {
-            super();
-            this.name = name;
-            this.sdpAnswer = sdpAnswer;
-        }
-    }
+		public ReceiveVideoFromResponse(String name, String sdpAnswer) {
+			super();
+			this.name = name;
+			this.sdpAnswer = sdpAnswer;
+		}
+	}
 
-    public static interface ParticipantSession {
+	public static interface ParticipantSession {
 
-        public void setParticipant(Participant participant);
+		public void setParticipant(Participant participant);
 
-        public void sendRequest(
-                Request<JsonObject> request,
-                org.kurento.jsonrpc.client.Continuation<Response<JsonElement>> continuation)
-                throws IOException;
-    }
+		public void sendRequest(
+				Request<JsonObject> request,
+				org.kurento.jsonrpc.client.Continuation<Response<JsonElement>> continuation)
+						throws IOException;
 
-    public interface RMContinuation<F> {
+		public void sendNotification(String method, Object params)
+				throws IOException;
+	}
 
-        void result(Throwable error, F result);
-    }
+	public interface RMContinuation<F> {
 
-    @PreDestroy
-    public void close() {
-        for (Room room : rooms.values()) {
-            room.close();
-        }
-        executor.shutdown();
-    }
+		void result(Throwable error, F result);
+	}
 
-    /**
-     * @param roomName the name of the room
-     * @return the room if it was already created, or a new one if it is the
-     * first time this room is accessed
-     */
-    public Room getRoom(String roomName) {
+	@PreDestroy
+	public void close() {
+		for (Room room : rooms.values()) {
+			room.close();
+		}
+		executor.shutdown();
+	}
 
-        Room room = rooms.get(roomName);
+	/**
+	 * @param roomName the name of the room
+	 * @return the room if it was already created, or a new one if it is the
+	 * first time this room is accessed
+	 */
+	public Room getRoom(String roomName) {
 
-        if (room == null) {
+		Room room = rooms.get(roomName);
 
-            room = new Room(roomName, kurento);
-            Room oldRoom = rooms.putIfAbsent(roomName, room);
-            if (oldRoom != null) {
-                return oldRoom;
-            } else {
-                log.debug("Room {} not existent. Created new!", roomName);
-                return room;
-            }
-        } else {
-            return room;
-        }
-    }
+		if (room == null) {
 
-    public void receiveVideoFrom(final Participant recvParticipant,
-            final String senderParticipantName, final String sdpOffer,
-            final RMContinuation<ReceiveVideoFromResponse> cont) {
+			room = new Room(roomName, kurento);
+			Room oldRoom = rooms.putIfAbsent(roomName, room);
+			if (oldRoom != null) {
+				return oldRoom;
+			} else {
+				log.debug("Room {} not existent. Created new!", roomName);
+				return room;
+			}
+		} else {
+			return room;
+		}
+	}
 
-        executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                updateThreadName("rv:" + recvParticipant.getName());
+	public void receiveVideoFrom(final Participant recvParticipant,
+			final String senderParticipantName, final String sdpOffer,
+			final RMContinuation<ReceiveVideoFromResponse> cont) {
 
-                Room room = recvParticipant.getRoom();
+		executor.submit(new Runnable() {
+			@Override
+			public void run() {
+				updateThreadName("rv:" + recvParticipant.getName());
 
-                final Participant senderParticipant = room
-                        .getParticipant(senderParticipantName);
+				Room room = recvParticipant.getRoom();
 
-                if (senderParticipant != null) {
-                    String sdpAnswer = recvParticipant.receiveVideoFrom(
-                            senderParticipant, sdpOffer);
+				final Participant senderParticipant = room
+						.getParticipant(senderParticipantName);
 
-                    if (sdpAnswer != null) {
+				if (senderParticipant != null) {
+					String sdpAnswer = recvParticipant.receiveVideoFrom(
+							senderParticipant, sdpOffer);
 
-                        log.trace("USER {}: SdpAnswer for {} is {}",
-                                recvParticipant.getName(),
-                                senderParticipant.getName(), sdpAnswer);
+					if (sdpAnswer != null) {
 
-                        cont.result(null, new ReceiveVideoFromResponse(
-                                senderParticipant.getName(), sdpAnswer));
+						log.trace("USER {}: SdpAnswer for {} is {}",
+								recvParticipant.getName(),
+								senderParticipant.getName(), sdpAnswer);
 
-                    } else {
+						cont.result(null, new ReceiveVideoFromResponse(
+								senderParticipant.getName(), sdpAnswer));
 
-                        cont.result(new RoomManagerException(SDP_ERROR_CODE,
-                                "Error generating sdpAnswer for user "
-                                + recvParticipant.getName()), null);
-                    }
+					} else {
 
-                } else {
+						cont.result(new RoomManagerException(SDP_ERROR_CODE,
+								"Error generating sdpAnswer for user "
+										+ recvParticipant.getName()), null);
+					}
 
-                    log.warn(
-                            "PARTICIPANT {}: Requesting send video for user {} in room {} but it is not found",
-                            recvParticipant.getName(), senderParticipantName,
-                            recvParticipant.getRoom().getName());
+				} else {
 
-                    cont.result(new RoomManagerException(
-                            USER_NOT_FOUND_ERROR_CODE, "User "
-                            + recvParticipant.getName()
-                            + " not found in room " + room.getName()),
-                            null);
-                }
+					log.warn(
+							"PARTICIPANT {}: Requesting send video for user {} in room {} but it is not found",
+							recvParticipant.getName(), senderParticipantName,
+							recvParticipant.getRoom().getName());
 
-                updateThreadName("roomManager");
-            }
-        });
-    }
+					cont.result(new RoomManagerException(
+							USER_NOT_FOUND_ERROR_CODE, "User "
+									+ recvParticipant.getName()
+									+ " not found in room " + room.getName()),
+									null);
+				}
 
-    public void joinRoom(String roomName, final String userName,
-            final ParticipantSession session,
-            final RMContinuation<Collection<Participant>> cont)
-            throws IOException, InterruptedException, ExecutionException {
+				updateThreadName("roomManager");
+			}
+		});
+	}
 
-        updateThreadName(userName);
+	public void joinRoom(String roomName, final String userName,
+			final ParticipantSession session,
+			final RMContinuation<Collection<Participant>> cont)
+					throws IOException, InterruptedException, ExecutionException {
 
-        log.info("PARTICIPANT {}: trying to join room {}", userName, roomName);
+		updateThreadName(userName);
 
-        final Room room = getRoom(roomName);
+		log.info("PARTICIPANT {}: trying to join room {}", userName, roomName);
 
-        if (!room.isClosed()) {
+		final Room room = getRoom(roomName);
 
-            room.execute(new Runnable() {
-                public void run() {
-                    updateThreadName("room> user:" + userName);
+		if (!room.isClosed()) {
 
-                    try {
+			room.execute(new Runnable() {
+				@Override
+				public void run() {
+					updateThreadName("room> user:" + userName);
 
-                        Collection<Participant> participants = new ArrayList<>(
-                                room.getParticipants());
+					try {
 
-                        final Participant participant = room.join(userName,
-                                session);
+						Collection<Participant> participants = new ArrayList<>(
+								room.getParticipants());
 
-                        session.setParticipant(participant);
+						final Participant participant = room.join(userName,
+								session);
 
-                        cont.result(null, participants);
+						session.setParticipant(participant);
 
-                        executor.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                participant.createWebRtcEndpoint();
-                            }
-                        });
+						cont.result(null, participants);
 
-                    } catch (RoomManagerException e) {
-                        cont.result(e, null);
-                    }
+						executor.submit(new Runnable() {
+							@Override
+							public void run() {
+								participant.createWebRtcEndpoint();
+							}
+						});
 
-                    updateThreadName("room");
-                }
-            });
+					} catch (RoomManagerException e) {
+						cont.result(e, null);
+					}
 
-        } else {
-            log.error("Trying to join room {} but it is closing",
-                    room.getName());
-            cont.result(new RoomManagerException(ROOM_CLOSED_ERROR_CODE,
-                    "Trying to join room '" + room.getName()
-                    + "' but it is closing"), null);
-        }
-    }
+					updateThreadName("room");
+				}
+			});
 
-    public void leaveRoom(final Participant user) throws IOException,
-            InterruptedException, ExecutionException {
+		} else {
+			log.error("Trying to join room {} but it is closing",
+					room.getName());
+			cont.result(new RoomManagerException(ROOM_CLOSED_ERROR_CODE,
+					"Trying to join room '" + room.getName()
+					+ "' but it is closing"), null);
+		}
+	}
 
-        final Room room = user.getRoom();
+	public void leaveRoom(final Participant user) throws IOException,
+	InterruptedException, ExecutionException {
 
-        if (!room.isClosed()) {
+		final Room room = user.getRoom();
 
-            room.execute(new Runnable() {
-                public void run() {
-                    updateThreadName("room> user:" + user.getName());
-                    room.leave(user);
-                    if (room.getParticipants().isEmpty()) {
-                        room.close();
-                        rooms.remove(room.getName());
-                        log.info("Room {} removed and closed", room.getName());
-                    }
-                    updateThreadName("room");
-                }
-            });
-        } else {
-            log.warn("Trying to leave from room {} but it is closing",
-                    room.getName());
-        }
-    }
+		if (!room.isClosed()) {
 
-    public ConcurrentMap<String, Room> getAllRooms() {
-        return rooms;
-    }
+			room.execute(new Runnable() {
+				@Override
+				public void run() {
+					updateThreadName("room> user:" + user.getName());
+					room.leave(user);
+					if (room.getParticipants().isEmpty()) {
+						room.close();
+						rooms.remove(room.getName());
+						log.info("Room {} removed and closed", room.getName());
+					}
+					updateThreadName("room");
+				}
+			});
+		} else {
+			log.warn("Trying to leave from room {} but it is closing",
+					room.getName());
+		}
+	}
+
+	public ConcurrentMap<String, Room> getAllRooms() {
+		return rooms;
+	}
 }

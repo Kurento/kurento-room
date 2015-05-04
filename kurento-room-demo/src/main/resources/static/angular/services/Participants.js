@@ -77,7 +77,7 @@ function Participants() {
         var MAX_WIDTH = 15;
         roomName = room.name;
         var numParticipants = Object.keys(participants).length;
-        console.log("room" + room.name);
+        console.log("room: " + room.name);
         var maxParticipantsWithMaxWidth = 95 / MAX_WIDTH;
 
         if (numParticipants > maxParticipantsWithMaxWidth) {

@@ -26,7 +26,6 @@ import org.kurento.client.Continuation;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
 import org.kurento.commons.exception.KurentoException;
-import org.kurento.jsonrpc.message.Request;
 import org.kurento.room.demo.RoomManager.ParticipantSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,206 +40,211 @@ import com.google.gson.JsonObject;
  */
 public class Room implements Closeable {
 
-    private static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
-    private static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
-    private static final String PARTICIPANT_SEND_MESSAGE_METHOD = "sendMessage"; //CHAT
+	private static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
+	private static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
+	private static final String PARTICIPANT_SEND_MESSAGE_METHOD = "sendMessage"; //CHAT
 
-    private final Logger log = LoggerFactory.getLogger(Room.class);
+	private final Logger log = LoggerFactory.getLogger(Room.class);
 
-    private final ConcurrentMap<String, Participant> participants = new ConcurrentHashMap<>();
-    private final String name;
+	private final ConcurrentMap<String, Participant> participants = new ConcurrentHashMap<>();
+	private final String name;
 
-    private MediaPipeline pipeline;
+	private MediaPipeline pipeline;
 
-    private KurentoClient kurento;
+	private KurentoClient kurento;
 
-    private volatile boolean closed = false;
+	private volatile boolean closed = false;
 
-    private ExecutorService executor = Executors.newFixedThreadPool(1);
+	private ExecutorService executor = Executors.newFixedThreadPool(1);
 
-    public Room(String roomName, KurentoClient kurento) {
-        this.name = roomName;
-        this.kurento = kurento;
-        log.info("ROOM {} has been created", roomName);
-    }
+	public Room(String roomName, KurentoClient kurento) {
+		this.name = roomName;
+		this.kurento = kurento;
+		log.info("ROOM {} has been created", roomName);
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public Participant join(String userName, ParticipantSession session) {
+	public Participant join(String userName, ParticipantSession session) {
 
-        checkClosed();
+		checkClosed();
 
-        if (participants.containsKey(userName)) {
-            throw new RoomManagerException(
-                    RoomManager.EXISTING_USER_IN_ROOM_ERROR_CODE, "User "
-                    + userName + " exists in room " + name);
-        }
+		if (participants.containsKey(userName)) {
+			throw new RoomManagerException(
+					RoomManager.EXISTING_USER_IN_ROOM_ERROR_CODE, "User "
+							+ userName + " exists in room " + name);
+		}
 
-        if (pipeline == null) {
-            log.info("ROOM {}: Creating MediaPipeline", userName);
-            pipeline = kurento.createMediaPipeline();
-        }
+		if (pipeline == null) {
+			log.info("ROOM {}: Creating MediaPipeline", userName);
+			pipeline = kurento.createMediaPipeline();
+		}
 
-        log.info("ROOM {}: adding participant {}", userName, userName);
-        final Participant participant = new Participant(userName, this,
-                session, this.pipeline);
+		log.info("ROOM {}: adding participant {}", userName, userName);
+		final Participant participant = new Participant(userName, this,
+				session, this.pipeline);
 
-        log.debug(
-                "ROOM {}: notifying other participants {} of new participant {}",
-                name, participants.values(), participant.getName());
+		log.debug(
+				"ROOM {}: notifying other participants {} of new participant {}",
+				name, participants.values(), participant.getName());
 
-        JsonObject params = new JsonObject();
-        params.addProperty("id", participant.getName());
-        JsonObject stream = new JsonObject();
-        stream.addProperty("id", "webcam");
-        JsonArray streamsArray = new JsonArray();
-        streamsArray.add(stream);
-        params.add("streams", streamsArray);
+		JsonObject params = new JsonObject();
+		params.addProperty("id", participant.getName());
+		JsonObject stream = new JsonObject();
+		stream.addProperty("id", "webcam");
+		JsonArray streamsArray = new JsonArray();
+		streamsArray.add(stream);
+		params.add("streams", streamsArray);
 
-        for (final Participant participant1 : participants.values()) {
+		for (final Participant participant1 : participants.values()) {
 
-            participant1.sendMessage(new Request<>(PARTICIPANT_JOINED_METHOD,
-                    params));
-        }
+			participant1.sendNotification(new RpcNotification(
+					PARTICIPANT_JOINED_METHOD,
+					params));
 
-        participants.put(participant.getName(), participant);
+			if (!participant1.getName().equals(userName)) // sanity check
+				participant1.addWebRtcEndpointCandidate(userName);
+		}
 
-        log.debug(
-                "ROOM {}: Notified other participants {} of new participant {}",
-                name, participants.values(), participant.getName());
+		participants.put(participant.getName(), participant);
 
-        return participant;
-    }
+		log.debug(
+				"ROOM {}: Notified other participants {} of new participant {}",
+				name, participants.values(), participant.getName());
 
-    private void checkClosed() {
-        if (closed) {
-            throw new KurentoException("The room '" + name + "' is closed");
-        }
-    }
+		return participant;
+	}
 
-    public void leave(Participant user) {
+	private void checkClosed() {
+		if (closed) {
+			throw new KurentoException("The room '" + name + "' is closed");
+		}
+	}
 
-        checkClosed();
+	public void leave(Participant user) {
 
-        log.debug("PARTICIPANT {}: Leaving room {}", user.getName(), this.name);
-        this.removeParticipant(user.getName());
-        user.close();
-    }
+		checkClosed();
 
-    private void removeParticipant(String name) {
+		log.debug("PARTICIPANT {}: Leaving room {}", user.getName(), this.name);
+		this.removeParticipant(user.getName());
+		user.close();
+	}
 
-        checkClosed();
+	private void removeParticipant(String name) {
 
-        participants.remove(name);
+		checkClosed();
 
-        log.debug("ROOM {}: notifying all users that {} is leaving the room",
-                this.name, name);
+		participants.remove(name);
 
-        final JsonObject params = new JsonObject();
-        params.addProperty("name", name);
+		log.debug("ROOM {}: notifying all users that {} is leaving the room",
+				this.name, name);
 
-        for (final Participant participant : participants.values()) {
+		final JsonObject params = new JsonObject();
+		params.addProperty("name", name);
 
-            participant.cancelSendingVideoTo(name);
-            participant.sendMessage(new Request<>(PARTICIPANT_LEFT_METHOD,
-                    params));
-        }
-    }
+		for (final Participant participant : participants.values()) {
 
-    /**
-     * @return a collection with all the participants in the room
-     */
-    public Collection<Participant> getParticipants() {
+			participant.cancelSendingVideoTo(name);
+			participant.sendNotification(new RpcNotification(
+					PARTICIPANT_LEFT_METHOD,
+					params));
+		}
+	}
 
-        checkClosed();
+	/**
+	 * @return a collection with all the participants in the room
+	 */
+	public Collection<Participant> getParticipants() {
 
-        return participants.values();
-    }
+		checkClosed();
 
-    /**
-     * @param name
-     * @return the participant from this session
-     */
-    public Participant getParticipant(String name) {
+		return participants.values();
+	}
 
-        checkClosed();
+	/**
+	 * @param name
+	 * @return the participant from this session
+	 */
+	public Participant getParticipant(String name) {
 
-        return participants.get(name);
-    }
+		checkClosed();
 
-    @Override
-    public void close() {
+		return participants.get(name);
+	}
 
-        if (!closed) {
+	@Override
+	public void close() {
 
-            executor.shutdown();
+		if (!closed) {
 
-            for (final Participant user : participants.values()) {
-                user.close();
-            }
+			executor.shutdown();
 
-            participants.clear();
+			for (final Participant user : participants.values()) {
+				user.close();
+			}
 
-            if (pipeline != null) {
-                pipeline.release(new Continuation<Void>() {
+			participants.clear();
 
-                    @Override
-                    public void onSuccess(Void result) throws Exception {
-                        log.trace("ROOM {}: Released Pipeline", Room.this.name);
-                    }
+			if (pipeline != null) {
+				pipeline.release(new Continuation<Void>() {
 
-                    @Override
-                    public void onError(Throwable cause) throws Exception {
-                        log.warn("PARTICIPANT " + Room.this.name
-                                + ": Could not release Pipeline", cause);
-                    }
-                });
-            }
+					@Override
+					public void onSuccess(Void result) throws Exception {
+						log.trace("ROOM {}: Released Pipeline", Room.this.name);
+					}
 
-            log.debug("Room {} closed", this.name);
+					@Override
+					public void onError(Throwable cause) throws Exception {
+						log.warn("PARTICIPANT " + Room.this.name
+								+ ": Could not release Pipeline", cause);
+					}
+				});
+			}
 
-            this.closed = true;
-        } else {
-            log.warn("Closing a yet closed room {}", this.name);
-        }
-    }
+			log.debug("Room {} closed", this.name);
 
-    public void execute(Runnable task) {
+			this.closed = true;
+		} else {
+			log.warn("Closing a yet closed room {}", this.name);
+		}
+	}
 
-        checkClosed();
+	public void execute(Runnable task) {
 
-        if (!executor.isShutdown()) {
-            try {
-                executor.submit(task).get();
-            } catch (InterruptedException e) {
-                return;
-            } catch (ExecutionException e) {
-                log.warn("Exception while executing a task in room " + name, e);
-            }
-        }
-    }
+		checkClosed();
 
-    public boolean isClosed() {
-        return closed;
-    }
+		if (!executor.isShutdown()) {
+			try {
+				executor.submit(task).get();
+			} catch (InterruptedException e) {
+				return;
+			} catch (ExecutionException e) {
+				log.warn("Exception while executing a task in room " + name, e);
+			}
+		}
+	}
 
-    //CHAT
-    public void sendMessage(String room, String user, String message) {
+	public boolean isClosed() {
+		return closed;
+	}
 
-        log.debug("ROOM {}: notifying all users that {} is sending a message {}",
-                room, user, message);
+	//CHAT
+	public void sendMessage(String room, String user, String message) {
 
-        final JsonObject params = new JsonObject();
-        params.addProperty("room", room);
-        params.addProperty("user", user);
-        params.addProperty("message", message);
+		log.debug("ROOM {}: notifying all users that {} is sending a message {}",
+				room, user, message);
 
-        for (final Participant participant : participants.values()) {
+		final JsonObject params = new JsonObject();
+		params.addProperty("room", room);
+		params.addProperty("user", user);
+		params.addProperty("message", message);
 
-            participant.sendMessage(new Request<>(PARTICIPANT_SEND_MESSAGE_METHOD,
-                    params));
-        }
-    }
+		for (final Participant participant : participants.values()) {
+			participant.sendNotification(new RpcNotification(
+					PARTICIPANT_SEND_MESSAGE_METHOD,
+					params));
+		}
+	}
 }

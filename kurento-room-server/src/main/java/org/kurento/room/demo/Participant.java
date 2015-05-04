@@ -26,7 +26,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 import org.kurento.client.Continuation;
+import org.kurento.client.EventListener;
+import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaPipeline;
+import org.kurento.client.OnIceCandidateEvent;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
 import org.kurento.jsonrpc.message.Request;
@@ -54,14 +57,18 @@ public class Participant implements Closeable {
 	private final ParticipantSession session;
 	private final MediaPipeline pipeline;
 
-	private WebRtcEndpoint receivingEndpoint;
+	private IceWebRtcEndpoint receivingEndpoint = new IceWebRtcEndpoint();
 	private CountDownLatch endPointLatch = new CountDownLatch(1);
 
-	private final ConcurrentMap<String, WebRtcEndpoint> sendingEndpoints = new ConcurrentHashMap<>();
+	private final ConcurrentMap<String, IceWebRtcEndpoint> sendingEndpoints = new ConcurrentHashMap<>();
 
 	private BlockingQueue<Request<JsonObject>> messages = new ArrayBlockingQueue<>(
 			10);
 	private Thread senderThread;
+
+	private BlockingQueue<RpcNotification> notifications = new ArrayBlockingQueue<>(
+			10);
+	private Thread notifThread;
 
 	private volatile boolean closed;
 
@@ -74,6 +81,7 @@ public class Participant implements Closeable {
 		this.room = room;
 
 		this.senderThread = new Thread("sender:" + name) {
+			@Override
 			public void run() {
 				try {
 					internalSendMessage();
@@ -83,11 +91,50 @@ public class Participant implements Closeable {
 			}
 		};
 
+		this.notifThread = new Thread("notif:" + name) {
+			@Override
+			public void run() {
+				try {
+					internalSendNotification();
+				} catch (InterruptedException e) {
+					return;
+				}
+			}
+		};
+
+		for (Participant other : room.getParticipants())
+			if (!other.getName().equals(this.name))
+				sendingEndpoints.put(other.getName(), new IceWebRtcEndpoint());
+
 		this.senderThread.start();
+		this.notifThread.start();
 	}
 
 	public void createWebRtcEndpoint() {
-		this.receivingEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
+		this.receivingEndpoint.setEndpoint(new WebRtcEndpoint.Builder(pipeline)
+		.build());
+		this.receivingEndpoint.getEndpoint().addOnIceCandidateListener(
+				new EventListener<OnIceCandidateEvent>() {
+					@Override
+					public void onEvent(OnIceCandidateEvent event) {
+						JsonObject params = new JsonObject();
+						params.addProperty(
+								RoomJsonRpcHandler.ON_ICE_EP_NAME_PARAM, name);
+						params.addProperty(
+								RoomJsonRpcHandler.ON_ICE_SDP_M_LINE_INDEX_PARAM,
+								event.getCandidate().getSdpMLineIndex());
+						params.addProperty(
+								RoomJsonRpcHandler.ON_ICE_SDP_MID_PARAM, event
+								.getCandidate().getSdpMid());
+						params.addProperty(
+								RoomJsonRpcHandler.ON_ICE_CANDIDATE_PARAM,
+								event.getCandidate().getCandidate());
+						Participant.this
+								.sendNotification(new RpcNotification(
+								RoomJsonRpcHandler.ICE_CANDIDATE_EVENT,
+								params));
+					}
+				});
 		endPointLatch.countDown();
 	}
 
@@ -111,7 +158,7 @@ public class Participant implements Closeable {
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
-		return receivingEndpoint;
+		return this.receivingEndpoint.getEndpoint();
 	}
 
 	/**
@@ -130,12 +177,13 @@ public class Participant implements Closeable {
 	 * @throws IOException
 	 */
 	public String receiveVideoFrom(Participant sender, String sdpOffer) {
+		final String senderName = sender.getName();
 
 		log.info("USER {}: Request to receive video from {} in room {}",
-				this.name, sender.getName(), this.room.getName());
-
+				this.name, senderName, this.room.getName());
 		log.trace("USER {}: SdpOffer for {} is {}", this.name,
-				sender.getName(), sdpOffer);
+				senderName,
+				sdpOffer);
 
 		WebRtcEndpoint receivingEndpoint = sender.getReceivingEndpoint();
 		if (receivingEndpoint == null) {
@@ -145,75 +193,83 @@ public class Participant implements Closeable {
 			return null;
 		}
 
-		if (sender.getName().equals(this.name)) {
+		if (senderName.equals(this.name)) {
 			// FIXME: Use another message type for receiving sdp offer
 			log.debug("PARTICIPANT {}: configuring loopback", this.name);
-			return receivingEndpoint.processOffer(sdpOffer);
-		}
-
-		if (this.sendingEndpoints.get(sender.getName()) != null) {
-			log.warn(
-					"PARTICIPANT {}: There is a sending endpoint to user {} when trying to create another one",
-					this.name, sender.getName());
-			return null;
+			String sdpAnswer = receivingEndpoint.processOffer(sdpOffer);
+			receivingEndpoint.gatherCandidates();
+			return sdpAnswer;
 		}
 
 		log.debug("PARTICIPANT {}: Creating a sending endpoint to user {}",
-				this.name, sender.getName());
+				this.name, senderName);
+
+		IceWebRtcEndpoint iceSendingEndpoint = new IceWebRtcEndpoint();
+		IceWebRtcEndpoint oldIceSendingEndpoint = this.sendingEndpoints
+				.putIfAbsent(senderName, iceSendingEndpoint);
+		if (oldIceSendingEndpoint != null)
+			iceSendingEndpoint = oldIceSendingEndpoint;
 
 		WebRtcEndpoint sendingEndpoint = new WebRtcEndpoint.Builder(
 				this.pipeline).build();
-		WebRtcEndpoint oldSendingEndpoint = this.sendingEndpoints.putIfAbsent(
-				sender.getName(), sendingEndpoint);
-
+		WebRtcEndpoint oldSendingEndpoint = iceSendingEndpoint
+				.setEndpoint(sendingEndpoint);
 		if (oldSendingEndpoint != null) {
 			log.warn(
 					"PARTICIPANT {}: Two threads have created at the same time a sending endpoint for user {}",
-					this.name, sender.getName());
+					this.name, senderName);
+			this.releaseEndpoint(senderName, sendingEndpoint);
 			return null;
 		}
 
-		log.debug("PARTICIPANT {}: Created sending endpoint for user {}",
-				this.name, sender.getName());
-		try {
-			receivingEndpoint = sender.getReceivingEndpoint();
-			if (receivingEndpoint != null) {
-				receivingEndpoint.connect(sendingEndpoint);
-				return sendingEndpoint.processOffer(sdpOffer);
+		sendingEndpoint
+		.addOnIceCandidateListener(new EventListener<OnIceCandidateEvent>() {
+			@Override
+			public void onEvent(OnIceCandidateEvent event) {
+				JsonObject params = new JsonObject();
+				params.addProperty(
+						RoomJsonRpcHandler.ON_ICE_EP_NAME_PARAM,
+						senderName);
+				params.addProperty(
+						RoomJsonRpcHandler.ON_ICE_SDP_M_LINE_INDEX_PARAM,
+						event.getCandidate().getSdpMLineIndex());
+				params.addProperty(
+						RoomJsonRpcHandler.ON_ICE_SDP_MID_PARAM, event
+						.getCandidate().getSdpMid());
+				params.addProperty(
+						RoomJsonRpcHandler.ON_ICE_CANDIDATE_PARAM,
+						event.getCandidate().getCandidate());
+				Participant.this
+								.sendNotification(new RpcNotification(
+						RoomJsonRpcHandler.ICE_CANDIDATE_EVENT,
+						params));
 			}
+		});
 
+		log.debug("PARTICIPANT {}: Created sending endpoint for user {}",
+				this.name, senderName);
+		try {
+			receivingEndpoint.connect(sendingEndpoint);
+			String sdpAnswer = sendingEndpoint.processOffer(sdpOffer);
+			sendingEndpoint.gatherCandidates();
+			return sdpAnswer;
 		} catch (KurentoServerException e) {
 
 			// TODO Check object status when KurentoClient set this info in the
 			// object
-			if (e.getCode() == 40101) {
+			if (e.getCode() == 40101)
 				log.warn(
 						"Receiving endpoint is released when trying to connect a sending endpoint to it",
 						e);
-			} else {
+			else
 				log.error(
 						"Exception connecting receiving endpoint to sending endpoint",
 						e);
-				sendingEndpoint.release(new Continuation<Void>() {
 
-					@Override
-					public void onSuccess(Void result) throws Exception {
-					}
-
-					@Override
-					public void onError(Throwable cause) throws Exception {
-						log.error("Exception releasing WebRtcEndpoint", cause);
-					}
-				});
-			}
-
-			this.sendingEndpoints.remove(sender.getName());
-
-			this.releaseEndpoint(sender.getName(), sendingEndpoint);
+			this.sendingEndpoints.remove(senderName);
+			this.releaseEndpoint(senderName, sendingEndpoint);
 		}
-
 		return null;
-
 	}
 
 	/**
@@ -233,19 +289,18 @@ public class Participant implements Closeable {
 		log.debug("PARTICIPANT {}: canceling video sending to {}", this.name,
 				senderName);
 
-		final WebRtcEndpoint sendingEndpoint = sendingEndpoints
+		final IceWebRtcEndpoint sendingEndpoint = sendingEndpoints
 				.remove(senderName);
 
-		if (sendingEndpoint == null) {
+		if (sendingEndpoint == null || sendingEndpoint.getEndpoint() == null) {
 			log.warn(
 					"PARTICIPANT {}: Trying to cancel sending video to user {}. But there is no such sending endpoint",
 					this.name, senderName);
 		} else {
-
 			log.debug("PARTICIPANT {}: Cancelling sending endpoint to user {}",
 					this.name, senderName);
 
-			releaseEndpoint(senderName, sendingEndpoint);
+			releaseEndpoint(senderName, sendingEndpoint.getEndpoint());
 		}
 	}
 
@@ -255,15 +310,15 @@ public class Participant implements Closeable {
 			@Override
 			public void onSuccess(Void result) throws Exception {
 				log.debug(
-						"PARTICIPANT {}: Released successfully incoming EP for {}",
+						"PARTICIPANT {}: Released successfully sending EP for {}",
 						Participant.this.name, senderName);
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
-				log.warn("PARTICIPANT " + Participant.this.name
-						+ ": Could not release sending endpoint for user "
-						+ senderName, cause);
+				log.warn(
+						"PARTICIPANT {}: Could not release sending EP for user {}",
+						Participant.this.name, senderName, cause);
 			}
 		});
 	}
@@ -276,21 +331,27 @@ public class Participant implements Closeable {
 
 		for (final String remoteParticipantName : sendingEndpoints.keySet()) {
 
-			log.debug("PARTICIPANT {}: Released incoming EP for {}", this.name,
-					remoteParticipantName);
-
-			final WebRtcEndpoint ep = this.sendingEndpoints
+			final IceWebRtcEndpoint ep = this.sendingEndpoints
 					.get(remoteParticipantName);
 
-			releaseEndpoint(remoteParticipantName, ep);
+			if (ep.getEndpoint() != null) {
+				releaseEndpoint(remoteParticipantName, ep.getEndpoint());
+				log.debug("PARTICIPANT {}: Released sending EP for {}",
+						this.name, remoteParticipantName);
+			} else
+				log.warn(
+						"PARTICIPANT {}: Trying to close sending EP for {}. But the endpoint was never instantiated.",
+						this.name, remoteParticipantName);
 		}
 
-		if (receivingEndpoint != null) {
-			releaseEndpoint(name, receivingEndpoint);
+		if (receivingEndpoint != null
+				&& receivingEndpoint.getEndpoint() != null) {
+			releaseEndpoint(name, receivingEndpoint.getEndpoint());
 			receivingEndpoint = null;
 		}
 
-		senderThread.interrupt();
+		this.senderThread.interrupt();
+		this.notifThread.interrupt();
 	}
 
 	public void sendMessage(Request<JsonObject> request) {
@@ -303,6 +364,40 @@ public class Participant implements Closeable {
 		}
 	}
 
+	public void sendNotification(RpcNotification notification) {
+		log.debug("USER {}: Enqueueing notification {}", name, notification);
+		try {
+			notifications.put(notification);
+			log.debug("USER {}: Enqueued notification {}", name, notification);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public IceWebRtcEndpoint addWebRtcEndpointCandidate(String newUserName) {
+		IceWebRtcEndpoint iceSendingEndpoint = new IceWebRtcEndpoint();
+		IceWebRtcEndpoint oldIceSendingEndpoint = this.sendingEndpoints
+				.putIfAbsent(newUserName, iceSendingEndpoint);
+		if (oldIceSendingEndpoint != null) {
+			iceSendingEndpoint = oldIceSendingEndpoint;
+			log.debug(
+					"PARTICIPANT {}: New placeholder for WebRtcEndpoint with ICE candidates queue for user {}",
+					this.name, newUserName);
+		} else
+			log.debug(
+					"PARTICIPANT {}: There is an existing placeholder for WebRtcEndpoint with ICE candidates queue for user {}",
+					this.name, newUserName);
+		return iceSendingEndpoint;
+	}
+
+	public void addIceCandidate(String endpointName, IceCandidate iceCandidate) {
+		if (this.name.equals(endpointName))
+			this.receivingEndpoint.addIceCandidate(iceCandidate);
+		else
+			this.addWebRtcEndpointCandidate(endpointName).addIceCandidate(
+					iceCandidate);
+	}
+
 	private void internalSendMessage() throws InterruptedException {
 		while (true) {
 			try {
@@ -312,26 +407,43 @@ public class Participant implements Closeable {
 						Participant.this.name);
 
 				Participant.this.session
-						.sendRequest(
-								request,
-								new org.kurento.jsonrpc.client.Continuation<Response<JsonElement>>() {
-									@Override
-									public void onSuccess(
-											Response<JsonElement> result) {
-									}
+				.sendRequest(
+						request,
+						new org.kurento.jsonrpc.client.Continuation<Response<JsonElement>>() {
+							@Override
+							public void onSuccess(
+									Response<JsonElement> result) {
+							}
 
-									@Override
-									public void onError(Throwable cause) {
-										log.error(
-												"Exception while sending message to user '"
-														+ Participant.this.name
-														+ "'", cause);
-									}
-								});
+							@Override
+							public void onError(Throwable cause) {
+								log.error(
+										"Exception while sending message to user '"
+												+ Participant.this.name
+												+ "'", cause);
+							}
+						});
 			} catch (InterruptedException e) {
 				return;
 			} catch (Exception e) {
 				log.warn("Exception while sending message to user '"
+						+ Participant.this.name + "'", e);
+			}
+		}
+	}
+
+	private void internalSendNotification() throws InterruptedException {
+		while (true) {
+			try {
+				RpcNotification notification = notifications.take();
+				log.debug("Sending notification {} to user {}", notification,
+						Participant.this.name);
+				Participant.this.session.sendNotification(
+						notification.getMethod(), notification.getParams());
+			} catch (InterruptedException e) {
+				return;
+			} catch (Exception e) {
+				log.warn("Exception while sending notification to user '"
 						+ Participant.this.name + "'", e);
 			}
 		}
@@ -378,7 +490,7 @@ public class Participant implements Closeable {
 	}
 
 	public void leaveFromRoom() throws IOException, InterruptedException,
-			ExecutionException {
+	ExecutionException {
 
 		final Room room = getRoom();
 
@@ -387,6 +499,7 @@ public class Participant implements Closeable {
 		if (!room.isClosed()) {
 
 			room.execute(new Runnable() {
+				@Override
 				public void run() {
 					updateThreadName("room>" + threadName);
 					room.leave(Participant.this);

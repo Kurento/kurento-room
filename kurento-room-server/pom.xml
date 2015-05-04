@@ -46,13 +46,18 @@
 		</developer>
 	</developers>
 
+	<properties>
+		<!-- Main class -->
+        <start-class>org.kurento.room.demo.KurentoRoomServerApp</start-class>
+	</properties>
+
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>org.kurento.room.server.app.KurentoRoomServerApp</mainClass>
+					<mainClass>${start-class}</mainClass>
 					<layout>ZIP</layout>
 				</configuration>
 				<executions>
@@ -98,9 +103,21 @@
 					</execution>
 				</executions>
 			</plugin>
-
 		</plugins>
 
+        <resources>
+            <resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>banner.txt</include>
+				</includes>
+			</resource>
+		</resources>
 	</build>
 
 	<dependencies>

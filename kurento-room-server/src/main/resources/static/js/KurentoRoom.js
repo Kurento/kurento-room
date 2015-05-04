@@ -129,7 +129,7 @@ function Room(kurento, options) {
     };
 
     this.onNewMessage = function (msg) {
-        console.log("nuevo mensaje" + JSON.stringify(msg));
+        console.log("New message: " + JSON.stringify(msg));
         var room = msg.room;
         var user = msg.user;
         var message = msg.message;
@@ -148,6 +148,30 @@ function Room(kurento, options) {
                     .error();
         }
     }
+    
+    this.onIceCandidate = function (msg) {
+    	var candidate = {
+    			candidate: msg.candidate,
+    			sdpMid: msg.sdpMid,
+    			sdpMLineIndex: msg.sdpMLineIndex
+    	}
+    	var participant = participants[msg.endpointName];
+    	var streams = participant.getStreams();
+        for (var key in streams) {
+        	var stream = streams[key];
+        	console.log("Stream #" + key + ": " + stream.getGlobalID());
+        	if (key == "webcam") {
+        		stream.getWebRtcPeer().addIceCandidate(candidate, function (error) {
+        			if (error) {
+        				console.error("Error adding candidate: " + error);
+        				return;
+        			}
+        		});
+        		break;
+        	}
+        }
+    }
+    
     this.leave = function () {
 
         if (connected) {
@@ -218,6 +242,21 @@ function Participant(kurento, local, room, options) {
     that.getID = function () {
         return id;
     }
+    
+	this.onIceCandidate = function (candidate) {
+		console.log((local ? "Local" : "Remote") + " candidate for " + that.getID() 
+				+ ": " + JSON.stringify(candidate));
+		kurento.sendRequest("onIceCandidate", {
+			endpointName: that.getID(),
+	        candidate: candidate.candidate,
+	        sdpMid: candidate.sdpMid,
+	      	sdpMLineIndex: candidate.sdpMLineIndex
+	    }, function (error, response) {
+	    	if (error) {
+	    		console.error(JSON.stringify(error));
+	    	}
+	    });
+	}
 }
 
 // Stream --------------------------------
@@ -332,9 +371,7 @@ function Stream(kurento, local, room, options) {
     }
 
     this.init = function () {
-
         participant.addStream(that);
-
         var constraints = {
             audio: true,
             video: {
@@ -354,35 +391,58 @@ function Stream(kurento, local, room, options) {
         });
     }
 
+    this.startVideoCallback = function (error, sdpOfferParam, wp) {
+    	if (error) {
+    		return console.error ("SDP offer error");
+    	}
+    	console.log('Invoking SDP offer callback function - sender: ' + that.getGlobalID());
+        kurento.sendRequest("receiveVideoFrom", {
+            sender: that.getGlobalID(),
+            sdpOffer: sdpOfferParam
+        }, function (error, response) {
+            if (error) {
+                console.error(JSON.stringify(error));
+            } else {
+                that.processSdpAnswer(response.sdpAnswer);
+            }
+        });
+    }
+    
     function initWebRtcPeer(sdpOfferCallback) {
-
-        var startVideoCallback = function (sdpOfferParam) {
-            sdpOffer = sdpOfferParam;
-            kurento.sendRequest("receiveVideoFrom", {
-                sender: that.getGlobalID(),
-                sdpOffer: sdpOffer
-            }, function (error, response) {
-                if (error) {
-                    console.error(JSON.stringify(error));
-                } else {
-                    that.processSdpAnswer(response.sdpAnswer);
-                }
+        if (local) {
+        	var constraints = {
+                    audio: true,
+                    video: {
+                        mandatory: {
+                            maxWidth: 640,
+                            maxFrameRate: 15,
+                            minFrameRate: 15
+                        }
+                    }
+                };
+        	 var options = {
+             		mediaConstraints: constraints,
+             		onicecandidate: participant.onIceCandidate.bind(participant)
+             }
+        	wp = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(options, function (error) {
+            	if(error) {
+            		return console.error(error);
+            	}
+            	this.generateOffer(that.startVideoCallback.bind(that));
+            });
+        } else {
+        	 var options = {
+        			 onicecandidate: participant.onIceCandidate.bind(participant)
+             }
+        	wp = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(options, function (error) {
+            	if(error) {
+            		return console.error(error);
+            	}
+            	this.generateOffer(that.startVideoCallback.bind(that));
             });
         }
-
-        var onerror = function (error) {
-            console.error(error);
-        }
-
-        var mode = local ? "send" : "recv";
-
-        wp = new kurentoUtils.WebRtcPeer(mode, null, null, startVideoCallback,
-                onerror, null, wrStream);
-
         wp.stream = wrStream;
-        wp.start();
-
-        console.log(name + " waiting for SDP offer");
+        console.log(that.getGlobalID() + " waiting for SDP offer");
     }
 
     this.publish = function () {
@@ -414,7 +474,7 @@ function Stream(kurento, local, room, options) {
             sdp: sdpAnswer,
         });
 
-        console.log('SDP answer received, setting remote description');
+        console.info(that.getGlobalID() + ': SDP answer received, setting remote description');
 
         var pc = wp.peerConnection
         pc.setRemoteDescription(answer, function () {
@@ -471,7 +531,7 @@ function Stream(kurento, local, room, options) {
             })
         }
 
-        console.log("Stream " + id + " disposed");
+        console.log(that.getGlobalID() + ": Stream " + id + " disposed");
     }
 }
 
@@ -483,7 +543,7 @@ function KurentoRoom(wsUri, callback) {
         return new KurentoRoom(wsUri, callback);
 
     // Enable and disable iceServers from code
-    kurentoUtils.WebRtcPeer.prototype.server.iceServers = [];
+//    kurentoUtils.WebRtcPeer.prototype.server.iceServers = [];
 
     var that = this;
 
@@ -519,8 +579,10 @@ function KurentoRoom(wsUri, callback) {
                 onParticipantLeft(request.params);
                 break;
             case 'sendMessage':  //CHAT
-                console.log("recibido mensaje " + JSON.stringify(request.params));
                 onNewMessage(request.params);
+                break;
+            case 'iceCandidate':
+                onIceCandidate(request.params);
                 break;
             default:
                 console.error('Unrecognized request: ' + JSON.stringify(request));
@@ -539,11 +601,19 @@ function KurentoRoom(wsUri, callback) {
             room.onParticipantLeft(msg);
         }
     }
+    
     function onNewMessage(msg) {
         if (room !== undefined) {
             room.onNewMessage(msg);
         }
     }
+    
+    function onIceCandidate(msg) {
+        if (room !== undefined) {
+            room.onIceCandidate(msg);
+        }
+    }
+    
     this.sendRequest = function (method, params, callback) {
         rpc.encode(method, params, callback);
         console.log('Sent request: { method:"' + method + "', params: "
@@ -566,7 +636,7 @@ function KurentoRoom(wsUri, callback) {
         // FIXME Support more than one room
         room = new Room(that, options);
         // FIXME Include name in stream, not in room
-        usarName = options.userName;
+        userName = options.userName;
         return room;
     };
 
