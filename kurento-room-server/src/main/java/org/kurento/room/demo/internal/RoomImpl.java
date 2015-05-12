@@ -12,9 +12,8 @@
  * Lesser General Public License for more details.
  *
  */
-package org.kurento.room.demo;
+package org.kurento.room.demo.internal;
 
-import java.io.Closeable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,7 +25,10 @@ import org.kurento.client.Continuation;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
 import org.kurento.commons.exception.KurentoException;
-import org.kurento.room.demo.RoomManager.ParticipantSession;
+import org.kurento.room.demo.api.Participant;
+import org.kurento.room.demo.api.ParticipantSession;
+import org.kurento.room.demo.api.Room;
+import org.kurento.room.demo.api.RoomManagerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,13 +40,13 @@ import com.google.gson.JsonObject;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 1.0.0
  */
-public class Room implements Closeable {
+public class RoomImpl implements Room {
 
 	private static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
 	private static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
 	private static final String PARTICIPANT_SEND_MESSAGE_METHOD = "sendMessage"; //CHAT
 
-	private final Logger log = LoggerFactory.getLogger(Room.class);
+	private final Logger log = LoggerFactory.getLogger(RoomImpl.class);
 
 	private final ConcurrentMap<String, Participant> participants = new ConcurrentHashMap<>();
 	private final String name;
@@ -57,23 +59,25 @@ public class Room implements Closeable {
 
 	private ExecutorService executor = Executors.newFixedThreadPool(1);
 
-	public Room(String roomName, KurentoClient kurento) {
+	public RoomImpl(String roomName, KurentoClient kurento) {
 		this.name = roomName;
 		this.kurento = kurento;
 		log.info("ROOM {} has been created", roomName);
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public Participant join(String userName, ParticipantSession session) {
 
 		checkClosed();
 
 		if (participants.containsKey(userName)) {
 			throw new RoomManagerException(
-					RoomManager.EXISTING_USER_IN_ROOM_ERROR_CODE, "User "
+					RoomManagerImpl.EXISTING_USER_IN_ROOM_ERROR_CODE, "User "
 							+ userName + " exists in room " + name);
 		}
 
@@ -83,7 +87,7 @@ public class Room implements Closeable {
 		}
 
 		log.info("ROOM {}: adding participant {}", userName, userName);
-		final Participant participant = new Participant(userName, this,
+		final Participant participant = new ParticipantImpl(userName, this,
 				session, this.pipeline);
 
 		log.debug(
@@ -100,12 +104,10 @@ public class Room implements Closeable {
 
 		for (final Participant participant1 : participants.values()) {
 
-			participant1.sendNotification(new RpcNotification(
-					PARTICIPANT_JOINED_METHOD,
-					params));
+			participant1.sendNotification(PARTICIPANT_JOINED_METHOD, params);
 
 			if (!participant1.getName().equals(userName)) // sanity check
-				participant1.addWebRtcEndpointCandidate(userName);
+				participant1.addSendingEndpoint(userName);
 		}
 
 		participants.put(participant.getName(), participant);
@@ -117,12 +119,7 @@ public class Room implements Closeable {
 		return participant;
 	}
 
-	private void checkClosed() {
-		if (closed) {
-			throw new KurentoException("The room '" + name + "' is closed");
-		}
-	}
-
+	@Override
 	public void leave(Participant user) {
 
 		checkClosed();
@@ -132,30 +129,7 @@ public class Room implements Closeable {
 		user.close();
 	}
 
-	private void removeParticipant(String name) {
-
-		checkClosed();
-
-		participants.remove(name);
-
-		log.debug("ROOM {}: notifying all users that {} is leaving the room",
-				this.name, name);
-
-		final JsonObject params = new JsonObject();
-		params.addProperty("name", name);
-
-		for (final Participant participant : participants.values()) {
-
-			participant.cancelSendingVideoTo(name);
-			participant.sendNotification(new RpcNotification(
-					PARTICIPANT_LEFT_METHOD,
-					params));
-		}
-	}
-
-	/**
-	 * @return a collection with all the participants in the room
-	 */
+	@Override
 	public Collection<Participant> getParticipants() {
 
 		checkClosed();
@@ -163,10 +137,7 @@ public class Room implements Closeable {
 		return participants.values();
 	}
 
-	/**
-	 * @param name
-	 * @return the participant from this session
-	 */
+	@Override
 	public Participant getParticipant(String name) {
 
 		checkClosed();
@@ -192,12 +163,12 @@ public class Room implements Closeable {
 
 					@Override
 					public void onSuccess(Void result) throws Exception {
-						log.trace("ROOM {}: Released Pipeline", Room.this.name);
+						log.trace("ROOM {}: Released Pipeline", RoomImpl.this.name);
 					}
 
 					@Override
 					public void onError(Throwable cause) throws Exception {
-						log.warn("PARTICIPANT " + Room.this.name
+						log.warn("PARTICIPANT " + RoomImpl.this.name
 								+ ": Could not release Pipeline", cause);
 					}
 				});
@@ -211,7 +182,8 @@ public class Room implements Closeable {
 		}
 	}
 
-	public void execute(Runnable task) {
+	@Override
+	public void executeRoomTask(Runnable task) {
 
 		checkClosed();
 
@@ -226,11 +198,13 @@ public class Room implements Closeable {
 		}
 	}
 
+	@Override
 	public boolean isClosed() {
 		return closed;
 	}
 
 	//CHAT
+	@Override
 	public void sendMessage(String room, String user, String message) {
 
 		log.debug("ROOM {}: notifying all users that {} is sending a message {}",
@@ -242,9 +216,33 @@ public class Room implements Closeable {
 		params.addProperty("message", message);
 
 		for (final Participant participant : participants.values()) {
-			participant.sendNotification(new RpcNotification(
-					PARTICIPANT_SEND_MESSAGE_METHOD,
-					params));
+			participant.sendNotification(PARTICIPANT_SEND_MESSAGE_METHOD,
+					params);
+		}
+	}
+
+	private void checkClosed() {
+		if (closed) {
+			throw new KurentoException("The room '" + name + "' is closed");
+		}
+	}
+
+	private void removeParticipant(String name) {
+
+		checkClosed();
+
+		participants.remove(name);
+
+		log.debug("ROOM {}: notifying all users that {} is leaving the room",
+				this.name, name);
+
+		final JsonObject params = new JsonObject();
+		params.addProperty("name", name);
+
+		for (final Participant participant : participants.values()) {
+
+			participant.cancelSendingVideoTo(name);
+			participant.sendNotification(PARTICIPANT_LEFT_METHOD, params);
 		}
 	}
 }

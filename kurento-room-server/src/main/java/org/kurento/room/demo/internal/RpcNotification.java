@@ -13,7 +13,7 @@
  *
  */
 
-package org.kurento.room.demo;
+package org.kurento.room.demo.internal;
 
 import com.google.gson.JsonObject;
 

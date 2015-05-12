@@ -13,14 +13,15 @@
  *
  */
 
-package org.kurento.room.demo;
+package org.kurento.room.demo.internal;
 
 import java.util.LinkedList;
 
 import org.kurento.client.IceCandidate;
 import org.kurento.client.WebRtcEndpoint;
+import org.kurento.room.demo.api.TrickleIceEndpoint;
 
-public class IceWebRtcEndpoint {
+public class IceWebRtcEndpoint implements TrickleIceEndpoint {
 	private WebRtcEndpoint endpoint = null;
 	private LinkedList<IceCandidate> candidates;
 
@@ -28,10 +29,12 @@ public class IceWebRtcEndpoint {
 		candidates = new LinkedList<IceCandidate>();
 	}
 
+	@Override
 	public WebRtcEndpoint getEndpoint() {
 		return endpoint;
 	}
 
+	@Override
 	public synchronized WebRtcEndpoint setEndpoint(WebRtcEndpoint endpoint) {
 		WebRtcEndpoint old = this.endpoint;
 		if (this.endpoint == null) {
@@ -42,6 +45,7 @@ public class IceWebRtcEndpoint {
 		return old;
 	}
 
+	@Override
 	public synchronized void addIceCandidate(IceCandidate candidate) {
 		if (endpoint == null)
 			candidates.addLast(candidate);

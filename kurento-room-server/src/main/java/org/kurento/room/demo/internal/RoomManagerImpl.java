@@ -12,13 +12,14 @@
  * Lesser General Public License for more details.
  *
  */
-package org.kurento.room.demo;
+package org.kurento.room.demo.internal;
 
-import static org.kurento.room.demo.ThreadLogUtils.updateThreadName;
+import static org.kurento.room.demo.internal.ThreadLogUtils.updateThreadName;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -27,67 +28,38 @@ import java.util.concurrent.Executors;
 
 import javax.annotation.PreDestroy;
 
-import org.kurento.client.KurentoClient;
-import org.kurento.jsonrpc.message.Request;
-import org.kurento.jsonrpc.message.Response;
+import org.kurento.room.demo.api.Participant;
+import org.kurento.room.demo.api.ParticipantSession;
+import org.kurento.room.demo.api.ReceiveVideoFromResponse;
+import org.kurento.room.demo.api.Room;
+import org.kurento.room.demo.api.RoomManager;
+import org.kurento.room.demo.api.RoomManagerException;
+import org.kurento.room.demo.kms.KmsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 /**
  * @author Ivan Gracia (izanmail@gmail.com)
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 1.0.0
  */
-public class RoomManager {
+public class RoomManagerImpl implements RoomManager {
 
 	private static final int SDP_ERROR_CODE = 101;
 	private static final int USER_NOT_FOUND_ERROR_CODE = 102;
 	private static final int ROOM_CLOSED_ERROR_CODE = 103;
 	public static final int EXISTING_USER_IN_ROOM_ERROR_CODE = 104;
 
-	private final Logger log = LoggerFactory.getLogger(RoomManager.class);
+	private final Logger log = LoggerFactory.getLogger(RoomManagerImpl.class);
 
 	@Autowired
-	private KurentoClient kurento;
+	private KmsManager kmsManager;
 
 	private final ConcurrentMap<String, Room> rooms = new ConcurrentHashMap<>();
 
 	private static final ExecutorService executor = Executors
 			.newFixedThreadPool(10);
-
-	public static class ReceiveVideoFromResponse {
-
-		public String name;
-		public String sdpAnswer;
-
-		public ReceiveVideoFromResponse(String name, String sdpAnswer) {
-			super();
-			this.name = name;
-			this.sdpAnswer = sdpAnswer;
-		}
-	}
-
-	public static interface ParticipantSession {
-
-		public void setParticipant(Participant participant);
-
-		public void sendRequest(
-				Request<JsonObject> request,
-				org.kurento.jsonrpc.client.Continuation<Response<JsonElement>> continuation)
-						throws IOException;
-
-		public void sendNotification(String method, Object params)
-				throws IOException;
-	}
-
-	public interface RMContinuation<F> {
-
-		void result(Throwable error, F result);
-	}
 
 	@PreDestroy
 	public void close() {
@@ -102,13 +74,13 @@ public class RoomManager {
 	 * @return the room if it was already created, or a new one if it is the
 	 * first time this room is accessed
 	 */
+	@Override
 	public Room getRoom(String roomName) {
 
 		Room room = rooms.get(roomName);
 
 		if (room == null) {
-
-			room = new Room(roomName, kurento);
+			room = new RoomImpl(roomName, kmsManager.getKurentoClient());
 			Room oldRoom = rooms.putIfAbsent(roomName, room);
 			if (oldRoom != null) {
 				return oldRoom;
@@ -121,6 +93,7 @@ public class RoomManager {
 		}
 	}
 
+	@Override
 	public void receiveVideoFrom(final Participant recvParticipant,
 			final String senderParticipantName, final String sdpOffer,
 			final RMContinuation<ReceiveVideoFromResponse> cont) {
@@ -174,6 +147,7 @@ public class RoomManager {
 		});
 	}
 
+	@Override
 	public void joinRoom(String roomName, final String userName,
 			final ParticipantSession session,
 			final RMContinuation<Collection<Participant>> cont)
@@ -187,7 +161,7 @@ public class RoomManager {
 
 		if (!room.isClosed()) {
 
-			room.execute(new Runnable() {
+			room.executeRoomTask(new Runnable() {
 				@Override
 				public void run() {
 					updateThreadName("room> user:" + userName);
@@ -207,7 +181,7 @@ public class RoomManager {
 						executor.submit(new Runnable() {
 							@Override
 							public void run() {
-								participant.createWebRtcEndpoint();
+								participant.createReceivingEndpoint();
 							}
 						});
 
@@ -228,6 +202,7 @@ public class RoomManager {
 		}
 	}
 
+	@Override
 	public void leaveRoom(final Participant user) throws IOException,
 	InterruptedException, ExecutionException {
 
@@ -235,7 +210,7 @@ public class RoomManager {
 
 		if (!room.isClosed()) {
 
-			room.execute(new Runnable() {
+			room.executeRoomTask(new Runnable() {
 				@Override
 				public void run() {
 					updateThreadName("room> user:" + user.getName());
@@ -254,7 +229,8 @@ public class RoomManager {
 		}
 	}
 
-	public ConcurrentMap<String, Room> getAllRooms() {
+	@Override
+	public Map<String, Room> getAllRooms() {
 		return rooms;
 	}
 }

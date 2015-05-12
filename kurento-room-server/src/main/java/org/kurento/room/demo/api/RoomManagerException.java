@@ -1,4 +1,4 @@
-package org.kurento.room.demo;
+package org.kurento.room.demo.api;
 
 public class RoomManagerException extends RuntimeException {
 

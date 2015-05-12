@@ -1,5 +1,5 @@
 {
    "kms": {
-      "uri": "ws://localhost:8888/kurento"
+      "uris": ["ws://localhost:8888/kurento"]
    }
 }
