@@ -38,7 +38,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
 @WebAppConfiguration
 @IntegrationTest
-public class AddRemoveUsersRoomDemoTest extends BaseRoomDemoTest {
+public class AddRemoveUsersRoomDemoTest extends RoomDemoTestBase {
 
 	private Logger log = LoggerFactory
 			.getLogger(AddRemoveUsersRoomDemoTest.class);

@@ -40,7 +40,7 @@ import com.google.common.base.Function;
 @SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
 @WebAppConfiguration
 @IntegrationTest
-public class NUsersEqualLifetimeRoomDemoTest extends BaseRoomDemoTest {
+public class NUsersEqualLifetimeRoomDemoTest extends RoomDemoTestBase {
 
 	private Logger log = LoggerFactory
 			.getLogger(NUsersEqualLifetimeRoomDemoTest.class);
@@ -54,6 +54,7 @@ public class NUsersEqualLifetimeRoomDemoTest extends BaseRoomDemoTest {
 	public void test() throws Exception {
 
 		parallelUsers(NUM_USERS, new UserLifecycle() {
+			@Override
 			public void run(int numUser, final WebDriver browser)
 					throws InterruptedException, ExecutionException {
 
@@ -65,9 +66,11 @@ public class NUsersEqualLifetimeRoomDemoTest extends BaseRoomDemoTest {
 				final long start = System.currentTimeMillis();
 
 				parallelTask(NUM_USERS, new Function<Integer, Void>() {
+					@Override
 					public Void apply(Integer num) {
 						String videoUserName = "user" + num;
-						waitForStream(browser, "native-video-user" + num);
+						waitForStream(browser, "native-video-user" + num
+								+ "_webcam");
 						long duration = System.currentTimeMillis() - start;
 						log.info(
 								"Video received in browser of user {} for user '{}' in {} millis",

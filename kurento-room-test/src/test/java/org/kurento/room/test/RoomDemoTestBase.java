@@ -53,13 +53,13 @@ import com.google.common.base.Function;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-public class BaseRoomDemoTest extends KurentoTest {
+public class RoomDemoTestBase extends KurentoTest {
 
 	public interface UserLifecycle {
 		public void run(int numUser, WebDriver browser) throws Exception;
 	}
 
-	private Logger log = LoggerFactory.getLogger(BaseRoomDemoTest.class);
+	private Logger log = LoggerFactory.getLogger(RoomDemoTestBase.class);
 
 	protected static final String APP_URL = "http://127.0.0.1:8080/room.html";
 

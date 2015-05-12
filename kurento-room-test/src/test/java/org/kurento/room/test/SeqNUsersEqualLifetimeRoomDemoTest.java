@@ -39,7 +39,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
 @WebAppConfiguration
 @IntegrationTest
-public class SeqNUsersEqualLifetimeRoomDemoTest extends BaseRoomDemoTest {
+public class SeqNUsersEqualLifetimeRoomDemoTest extends RoomDemoTestBase {
 
 	private Logger log = LoggerFactory
 			.getLogger(SeqNUsersEqualLifetimeRoomDemoTest.class);
@@ -52,7 +52,7 @@ public class SeqNUsersEqualLifetimeRoomDemoTest extends BaseRoomDemoTest {
 
 	@Test
 	public void twoUsersRoomTest() throws InterruptedException,
-			ExecutionException {
+	ExecutionException {
 
 		List<WebDriver> browsers = createBrowsers(2);
 
@@ -61,10 +61,12 @@ public class SeqNUsersEqualLifetimeRoomDemoTest extends BaseRoomDemoTest {
 			joinToRoom(browsers.get(0), USER1_NAME, ROOM_NAME);
 			joinToRoom(browsers.get(1), USER2_NAME, ROOM_NAME);
 
-			waitForStream(browsers.get(0), "native-video-" + USER2_NAME);
+			waitForStream(browsers.get(0), "native-video-" + USER2_NAME
+					+ "_webcam");
 			log.debug("Received media from " + USER2_NAME + " in " + USER1_NAME);
 
-			waitForStream(browsers.get(1), "native-video-" + USER1_NAME);
+			waitForStream(browsers.get(1), "native-video-" + USER1_NAME
+					+ "_webcam");
 			log.debug("Received media from " + USER1_NAME + " in " + USER2_NAME);
 
 			// Guard time to see application in action

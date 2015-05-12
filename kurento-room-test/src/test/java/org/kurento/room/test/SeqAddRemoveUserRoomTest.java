@@ -39,7 +39,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
 @WebAppConfiguration
 @IntegrationTest
-public class SeqAddRemoveUserRoomTest extends BaseRoomDemoTest {
+public class SeqAddRemoveUserRoomTest extends RoomDemoTestBase {
 
 	private static final int WAIT_TIME = 500;
 
@@ -56,7 +56,7 @@ public class SeqAddRemoveUserRoomTest extends BaseRoomDemoTest {
 
 	@Test
 	public void nUsersRoomTest() throws InterruptedException,
-			ExecutionException {
+	ExecutionException {
 
 		boolean[] activeUsers = new boolean[NUM_USERS];
 
@@ -76,7 +76,8 @@ public class SeqAddRemoveUserRoomTest extends BaseRoomDemoTest {
 
 				for (int i = 0; i < NUM_USERS; i++) {
 					for (int j = 0; j < NUM_USERS; j++) {
-						waitForStream(browsers.get(i), "native-video-user" + j);
+						waitForStream(browsers.get(i), "native-video-user" + j
+								+ "_webcam");
 						log.debug("Received media from user" + j + " in user"
 								+ i);
 					}

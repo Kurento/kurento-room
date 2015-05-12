@@ -36,7 +36,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
 @WebAppConfiguration
 @IntegrationTest
-public class TwoUsersEqualLifetimeRoomDemoTest extends BaseRoomDemoTest {
+public class TwoUsersEqualLifetimeRoomDemoTest extends RoomDemoTestBase {
 
 	private static final int PLAY_TIME = 5; // seconds
 
@@ -59,8 +59,8 @@ public class TwoUsersEqualLifetimeRoomDemoTest extends BaseRoomDemoTest {
 		joinToRoom(user1Browser, USER1_NAME, ROOM_NAME);
 		joinToRoom(user2Browser, USER2_NAME, ROOM_NAME);
 
-		waitForStream(user1Browser, "native-video-" + USER1_NAME);
-		waitForStream(user2Browser, "native-video-" + USER2_NAME);
+		waitForStream(user1Browser, "native-video-" + USER1_NAME + "_webcam");
+		waitForStream(user2Browser, "native-video-" + USER2_NAME + "_webcam");
 
 		// Guard time to see application in action
 		Thread.sleep(PLAY_TIME * 1000);
