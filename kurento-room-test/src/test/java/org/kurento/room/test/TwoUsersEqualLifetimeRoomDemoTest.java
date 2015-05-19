@@ -19,7 +19,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.kurento.room.demo.KurentoRoomServerApp;
+import org.kurento.room.KurentoRoomServerApp;
 import org.openqa.selenium.WebDriver;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;

@@ -12,16 +12,21 @@
  * Lesser General Public License for more details.
  *
  */
-package org.kurento.room.demo;
+package org.kurento.room;
+
+import java.io.IOException;
 
 import org.kurento.jsonrpc.DefaultJsonRpcHandler;
 import org.kurento.jsonrpc.Session;
 import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
-import org.kurento.room.demo.api.Participant;
-import org.kurento.room.demo.api.ParticipantSession;
-import org.kurento.room.demo.api.control.JsonRpcParticipantControl;
-import org.kurento.room.demo.api.control.JsonRpcProtocolElements;
+import org.kurento.room.api.ParticipantSession;
+import org.kurento.room.api.RoomException;
+import org.kurento.room.api.RoomRequestsFilter;
+import org.kurento.room.api.RoomRequestsFilter.SessionState;
+import org.kurento.room.api.control.JsonRpcProtocolElements;
+import org.kurento.room.api.control.JsonRpcUserControl;
+import org.kurento.room.internal.Participant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,40 +46,48 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	private static final String HANDLER_THREAD_NAME = "handler";
 
 	@Autowired
-	private JsonRpcParticipantControl participantControl;
+	private JsonRpcUserControl userControl;
+
+	@Autowired
+	private RoomRequestsFilter reqFilter;
 
 	@Override
-	public void handleRequest(final Transaction transaction,
+	public final void handleRequest(final Transaction transaction,
 			final Request<JsonObject> request) throws Exception {
 
 		updateThreadName(HANDLER_THREAD_NAME + "_"
 				+ transaction.getSession().getSessionId());
 
-		ParticipantSession participantSession = participantControl
+		ParticipantSession participantSession = userControl
 				.getParticipantSession(transaction);
-
 		if (participantSession.getParticipant() != null) {
 			log.debug("Incoming message from user '{}': {}",
 					participantSession.getName(), request);
+			if (!invokeReqFilter(transaction, request, participantSession,
+					SessionState.REGISTERED))
+				return;
 		} else {
 			log.debug("Incoming message from new user: {}", request);
+			if (!invokeReqFilter(transaction, request, participantSession,
+					SessionState.NEW))
+				return;
 		}
 
 		switch (request.getMethod()) {
 		case JsonRpcProtocolElements.RECEIVE_VIDEO_METHOD:
-			participantControl.receiveVideoFrom(transaction, request);
+			userControl.receiveVideoFrom(transaction, request);
 			break;
 		case JsonRpcProtocolElements.ON_ICE_CANDIDATE_METHOD:
-			participantControl.onIceCandidate(transaction, request);
+			userControl.onIceCandidate(transaction, request);
 			break;
 		case JsonRpcProtocolElements.JOIN_ROOM_METHOD:
-			participantControl.joinRoom(transaction, request);
+			userControl.joinRoom(transaction, request);
 			break;
 		case JsonRpcProtocolElements.LEAVE_ROOM_METHOD:
-			participantControl.leaveRoom(transaction.getSession());
+			userControl.leaveRoom(transaction);
 			break;
 		case JsonRpcProtocolElements.SENDMESSAGE_ROOM_METHOD:
-			participantControl.sendMessage(transaction, request);
+			userControl.sendMessage(transaction, request);
 			break;
 		default:
 			log.error("Unrecognized request {}", request);
@@ -85,15 +98,16 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	}
 
 	@Override
-	public void afterConnectionClosed(Session session, String status)
+	public final void afterConnectionClosed(Session session, String status)
 			throws Exception {
-
-		Participant participant = participantControl.getParticipantSession(
-				session).getParticipant();
-
+		ParticipantSession participantSession = userControl
+				.getParticipantSession(session);
+		Participant participant = participantSession.getParticipant();
 		if (participant != null) {
 			updateThreadName(participant.getName() + "|wsclosed");
-			participantControl.leaveRoom(participant);
+			if (invokeReqFilter(null, null, participantSession,
+					SessionState.DISCONNECTED))
+				userControl.leaveRoom(participant);
 			updateThreadName(HANDLER_THREAD_NAME);
 		}
 	}
@@ -101,11 +115,26 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	@Override
 	public void handleTransportError(Session session, Throwable exception)
 			throws Exception {
-		Participant participant = participantControl.getParticipantSession(
+		Participant participant = userControl.getParticipantSession(
 				session).getParticipant();
 		if (participant != null && !participant.isClosed()) {
 			log.warn("Transport error", exception);
 		}
+	}
+
+	private boolean invokeReqFilter(Transaction transaction,
+			Request<JsonObject> request, ParticipantSession participantSession,
+			SessionState sessionState) throws IOException {
+		try {
+			reqFilter.filterUserRequest(request, participantSession,
+					sessionState);
+		} catch (RoomException e) {
+			log.warn("Request filtered with error", e);
+			if (transaction != null)
+				transaction.sendError(e.getCode(), e.getMessage(), null);
+			return false;
+		}
+		return true;
 	}
 
 	private void updateThreadName(final String name) {

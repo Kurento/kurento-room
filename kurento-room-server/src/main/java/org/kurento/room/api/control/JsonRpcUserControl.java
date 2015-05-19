@@ -13,26 +13,25 @@
  *
  */
 
-package org.kurento.room.demo.internal.control;
+package org.kurento.room.api.control;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 
 import org.kurento.client.IceCandidate;
+import org.kurento.client.WebRtcEndpoint;
 import org.kurento.jsonrpc.Session;
 import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.jsonrpc.message.Response;
 import org.kurento.jsonrpc.message.ResponseError;
-import org.kurento.room.demo.api.Participant;
-import org.kurento.room.demo.api.ParticipantSession;
-import org.kurento.room.demo.api.ReceiveVideoFromResponse;
-import org.kurento.room.demo.api.RoomManager;
-import org.kurento.room.demo.api.RoomManager.RMContinuation;
-import org.kurento.room.demo.api.RoomManagerException;
-import org.kurento.room.demo.api.control.JsonRpcParticipantControl;
-import org.kurento.room.demo.api.control.JsonRpcProtocolElements;
+import org.kurento.room.api.ParticipantSession;
+import org.kurento.room.api.RoomException;
+import org.kurento.room.internal.Participant;
+import org.kurento.room.internal.ReceiveVideoFromResponse;
+import org.kurento.room.internal.RoomManager;
+import org.kurento.room.internal.RoomManager.RMContinuation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,15 +39,33 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-public class ParticipantControlImpl implements JsonRpcParticipantControl {
+/**
+ * Uses the room api to handle the user's requests. Some of these requests are
+ * processed asynchronously. The responses are sent using JSON-RPC over an
+ * opened WebSocket connection, sometime in the future.
+ * 
+ * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
+ */
+public class JsonRpcUserControl {
 
 	private static final Logger log = LoggerFactory
-			.getLogger(ParticipantControlImpl.class);
+			.getLogger(JsonRpcUserControl.class);
 
 	@Autowired
 	private RoomManager roomManager;
 
-	@Override
+	/**
+	 * Represents a user's request to join a room. If the room does not exist,
+	 * it is created. The user will be added as a room's participant.
+	 * 
+	 * @param transaction
+	 *            a JSON RPC transaction
+	 * @param request
+	 *            JSON RPC request
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
 	public void joinRoom(final Transaction transaction,
 			Request<JsonObject> request)
 					throws IOException, InterruptedException, ExecutionException {
@@ -74,8 +91,8 @@ public class ParticipantControlImpl implements JsonRpcParticipantControl {
 						log.error("Exception processing joinRoom",
 								error);
 
-						if (error instanceof RoomManagerException) {
-							RoomManagerException e = (RoomManagerException) error;
+						if (error instanceof RoomException) {
+							RoomException e = (RoomException) error;
 							transaction.sendError(e.getCode(),
 									e.getMessage(), null);
 						} else {
@@ -109,7 +126,15 @@ public class ParticipantControlImpl implements JsonRpcParticipantControl {
 		});
 	}
 
-	@Override
+	/**
+	 * Represents a user's request to receive video from another participant in
+	 * the room (supports loopback).
+	 * 
+	 * @param transaction
+	 *            a JSON RPC transaction
+	 * @param request
+	 *            JSON RPC request
+	 */
 	public void receiveVideoFrom(final Transaction transaction,
 			final Request<JsonObject> request) {
 		ParticipantSession participantSession = getParticipantSession(transaction);
@@ -136,9 +161,9 @@ public class ParticipantControlImpl implements JsonRpcParticipantControl {
 				Response<JsonObject> response;
 
 				if (error != null
-						&& error instanceof RoomManagerException) {
+						&& error instanceof RoomException) {
 
-					RoomManagerException e = (RoomManagerException) error;
+					RoomException e = (RoomException) error;
 
 					response = new Response<>(new ResponseError(e
 							.getCode(), e.getMessage()));
@@ -162,9 +187,19 @@ public class ParticipantControlImpl implements JsonRpcParticipantControl {
 		});
 	}
 
-	@Override
-	public void leaveRoom(Session session) throws IOException,
+	/**
+	 * Represents a user's request to leave a room. Besides removing the user
+	 * from the room, this method will also cleanup the WebSocket session.
+	 * 
+	 * @param transaction
+	 *            a JSON RPC transaction
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
+	public void leaveRoom(Transaction transaction) throws IOException,
 	InterruptedException, ExecutionException {
+		Session session = transaction.getSession();
 		ParticipantSession participantSession = getParticipantSession(session);
 		Participant roomParticipant = participantSession.getParticipant();
 		if (roomParticipant != null) {
@@ -178,13 +213,15 @@ public class ParticipantControlImpl implements JsonRpcParticipantControl {
 		}
 	}
 
-	@Override
-	public void leaveRoom(Participant participant) throws IOException,
-	InterruptedException, ExecutionException {
-		roomManager.leaveRoom(participant);
-	}
-
-	@Override
+	/**
+	 * Represents a user's request to add a new {@link IceCandidate} to an
+	 * connected {@link WebRtcEndpoint}.
+	 * 
+	 * @param transaction
+	 *            a JSON RPC transaction
+	 * @param request
+	 *            JSON RPC request
+	 */
 	public void onIceCandidate(Transaction transaction,
 			Request<JsonObject> request) {
 		String endpointName = request.getParams()
@@ -204,7 +241,15 @@ public class ParticipantControlImpl implements JsonRpcParticipantControl {
 				new IceCandidate(candidate, sdpMid, sdpMLineIndex));
 	}
 
-	@Override
+	/**
+	 * Represents a user's request to send a message to all the participants in
+	 * the room.
+	 * 
+	 * @param transaction
+	 *            a JSON RPC transaction
+	 * @param request
+	 *            JSON RPC request
+	 */
 	public void sendMessage(Transaction transaction, Request<JsonObject> request) {
 		final String userName = request.getParams()
 				.get(JsonRpcProtocolElements.SENDMESSAGE_USER_PARAM)
@@ -219,16 +264,49 @@ public class ParticipantControlImpl implements JsonRpcParticipantControl {
 		log.debug("Message from {} in room {}: '{}'", userName, roomName,
 				message);
 		getParticipantSession(transaction).getParticipant().getRoom()
-				.sendMessage(roomName, userName, message);
+		.sendMessage(roomName, userName, message);
 	}
 
-	@Override
+	/**
+	 * Represents a request to remove the user from the room. Usually called
+	 * when the WebSocket has been closed unexpectedly.
+	 * 
+	 * @param participant
+	 *            user info obtained from the WebSocket session
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
+	public void leaveRoom(Participant participant) throws IOException,
+	InterruptedException, ExecutionException {
+		roomManager.leaveRoom(participant);
+	}
+
+	/**
+	 * The user's info stored in the WebSocket session as a
+	 * {@link ParticipantSession}. The session is obtained from the provided
+	 * {@link Transaction}.
+	 * 
+	 * @see JsonRpcUserControl#getParticipantSession(Session)
+	 * @param transaction
+	 *            a JSON RPC transaction
+	 * @return the {@link ParticipantSession} extracted from the session, a new
+	 *         instance if the user is new
+	 */
 	public ParticipantSession getParticipantSession(
 			Transaction transaction) {
 		return getParticipantSession(transaction.getSession());
 	}
 
-	@Override
+	/**
+	 * The user's info stored in the WebSocket session as a
+	 * {@link ParticipantSession}.
+	 * 
+	 * @param session
+	 *            a JSON RPC session
+	 * @return the {@link ParticipantSession} extracted from the session, a new
+	 *         instance if the user is new
+	 */
 	public ParticipantSession getParticipantSession(Session session) {
 		ParticipantSessionJsonRpc participantSession = (ParticipantSessionJsonRpc) session
 				.getAttributes().get(

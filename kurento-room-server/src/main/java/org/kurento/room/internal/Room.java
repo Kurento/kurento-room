@@ -12,7 +12,7 @@
  * Lesser General Public License for more details.
  *
  */
-package org.kurento.room.demo.internal;
+package org.kurento.room.internal;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,10 +25,10 @@ import org.kurento.client.Continuation;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
 import org.kurento.commons.exception.KurentoException;
-import org.kurento.room.demo.api.Participant;
-import org.kurento.room.demo.api.ParticipantSession;
-import org.kurento.room.demo.api.Room;
-import org.kurento.room.demo.api.RoomManagerException;
+import org.kurento.room.api.ParticipantSession;
+import org.kurento.room.api.RoomException;
+import org.kurento.room.api.TrickleIceEndpoint;
+import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,13 +40,13 @@ import com.google.gson.JsonObject;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 1.0.0
  */
-public class RoomImpl implements Room {
+public class Room {
 
 	private static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
 	private static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
 	private static final String PARTICIPANT_SEND_MESSAGE_METHOD = "sendMessage"; //CHAT
 
-	private final Logger log = LoggerFactory.getLogger(RoomImpl.class);
+	private final Logger log = LoggerFactory.getLogger(Room.class);
 
 	private final ConcurrentMap<String, Participant> participants = new ConcurrentHashMap<>();
 	private final String name;
@@ -59,25 +59,27 @@ public class RoomImpl implements Room {
 
 	private ExecutorService executor = Executors.newFixedThreadPool(1);
 
-	public RoomImpl(String roomName, KurentoClient kurento) {
+	private EndpointBuilder endpointBuilder;
+
+	public Room(String roomName, KurentoClient kurento,
+			EndpointBuilder endpointBuilder) {
 		this.name = roomName;
 		this.kurento = kurento;
+		this.endpointBuilder = endpointBuilder;
 		log.info("ROOM {} has been created", roomName);
 	}
 
-	@Override
 	public String getName() {
 		return name;
 	}
 
-	@Override
 	public Participant join(String userName, ParticipantSession session) {
 
 		checkClosed();
 
 		if (participants.containsKey(userName)) {
-			throw new RoomManagerException(
-					RoomManagerImpl.EXISTING_USER_IN_ROOM_ERROR_CODE, "User "
+			throw new RoomException(
+					RoomException.EXISTING_USER_IN_ROOM_ERROR_CODE, "User "
 							+ userName + " exists in room " + name);
 		}
 
@@ -87,8 +89,8 @@ public class RoomImpl implements Room {
 		}
 
 		log.info("ROOM {}: adding participant {}", userName, userName);
-		final Participant participant = new ParticipantImpl(userName, this,
-				session, this.pipeline);
+		final Participant participant = new Participant(userName, this,
+				session, this.pipeline, this.endpointBuilder);
 
 		log.debug(
 				"ROOM {}: notifying other participants {} of new participant {}",
@@ -119,7 +121,6 @@ public class RoomImpl implements Room {
 		return participant;
 	}
 
-	@Override
 	public void leave(Participant user) {
 
 		checkClosed();
@@ -129,7 +130,6 @@ public class RoomImpl implements Room {
 		user.close();
 	}
 
-	@Override
 	public Collection<Participant> getParticipants() {
 
 		checkClosed();
@@ -137,7 +137,6 @@ public class RoomImpl implements Room {
 		return participants.values();
 	}
 
-	@Override
 	public Participant getParticipant(String name) {
 
 		checkClosed();
@@ -145,7 +144,6 @@ public class RoomImpl implements Room {
 		return participants.get(name);
 	}
 
-	@Override
 	public void close() {
 
 		if (!closed) {
@@ -163,12 +161,12 @@ public class RoomImpl implements Room {
 
 					@Override
 					public void onSuccess(Void result) throws Exception {
-						log.trace("ROOM {}: Released Pipeline", RoomImpl.this.name);
+						log.trace("ROOM {}: Released Pipeline", Room.this.name);
 					}
 
 					@Override
 					public void onError(Throwable cause) throws Exception {
-						log.warn("PARTICIPANT " + RoomImpl.this.name
+						log.warn("PARTICIPANT " + Room.this.name
 								+ ": Could not release Pipeline", cause);
 					}
 				});
@@ -182,7 +180,6 @@ public class RoomImpl implements Room {
 		}
 	}
 
-	@Override
 	public void executeRoomTask(Runnable task) {
 
 		checkClosed();
@@ -198,13 +195,10 @@ public class RoomImpl implements Room {
 		}
 	}
 
-	@Override
 	public boolean isClosed() {
 		return closed;
 	}
 
-	//CHAT
-	@Override
 	public void sendMessage(String room, String user, String message) {
 
 		log.debug("ROOM {}: notifying all users that {} is sending a message {}",

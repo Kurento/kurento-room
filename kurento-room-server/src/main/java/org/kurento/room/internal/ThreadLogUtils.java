@@ -1,4 +1,4 @@
-package org.kurento.room.demo.internal;
+package org.kurento.room.internal;
 
 public class ThreadLogUtils {
 

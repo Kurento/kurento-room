@@ -12,9 +12,9 @@
  * Lesser General Public License for more details.
  *
  */
-package org.kurento.room.demo.internal;
+package org.kurento.room.internal;
 
-import static org.kurento.room.demo.internal.ThreadLogUtils.updateThreadName;
+import static org.kurento.room.internal.ThreadLogUtils.updateThreadName;
 
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -25,21 +25,19 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 import org.kurento.client.Continuation;
-import org.kurento.client.EventListener;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaPipeline;
-import org.kurento.client.OnIceCandidateEvent;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.jsonrpc.message.Response;
-import org.kurento.room.demo.api.Participant;
-import org.kurento.room.demo.api.ParticipantSession;
-import org.kurento.room.demo.api.Room;
-import org.kurento.room.demo.api.TrickleIceEndpoint;
-import org.kurento.room.demo.api.control.JsonRpcProtocolElements;
+import org.kurento.room.api.ParticipantSession;
+import org.kurento.room.api.TrickleIceEndpoint;
+import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
+import org.kurento.room.api.TrickleIceEndpoint.EndpointQualifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Configurable;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -49,10 +47,11 @@ import com.google.gson.JsonObject;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 1.0.0
  */
-public class ParticipantImpl implements Participant {
+@Configurable
+public class Participant {
 
 	private static final Logger log = LoggerFactory
-			.getLogger(ParticipantImpl.class);
+			.getLogger(Participant.class);
 
 	private final String name;
 	private final Room room;
@@ -60,7 +59,7 @@ public class ParticipantImpl implements Participant {
 	private final ParticipantSession session;
 	private final MediaPipeline pipeline;
 
-	private TrickleIceEndpoint receivingEndpoint = new IceWebRtcEndpoint();
+	private TrickleIceEndpoint receivingEndpoint;
 	private CountDownLatch endPointLatch = new CountDownLatch(1);
 
 	private final ConcurrentMap<String, TrickleIceEndpoint> sendingEndpoints = new ConcurrentHashMap<String, TrickleIceEndpoint>();
@@ -75,13 +74,22 @@ public class ParticipantImpl implements Participant {
 
 	private volatile boolean closed;
 
-	public ParticipantImpl(String name, Room room, ParticipantSession session,
-			MediaPipeline pipeline) {
+	private EndpointBuilder endpointBuilder;
+
+	public Participant(String name, Room room, ParticipantSession session,
+			MediaPipeline pipeline, EndpointBuilder endpointBuilder) {
 
 		this.pipeline = pipeline;
 		this.name = name;
 		this.session = session;
 		this.room = room;
+		this.endpointBuilder = endpointBuilder;
+		if (room.getParticipants().isEmpty())
+			this.receivingEndpoint = this.endpointBuilder.build(pipeline,
+					EndpointQualifier.FIRST, EndpointQualifier.LOCAL);
+		else
+			this.receivingEndpoint = this.endpointBuilder.build(pipeline,
+					EndpointQualifier.LOCAL);
 
 		this.senderThread = new Thread("sender:" + name) {
 			@Override
@@ -107,40 +115,21 @@ public class ParticipantImpl implements Participant {
 
 		for (Participant other : room.getParticipants())
 			if (!other.getName().equals(this.name))
-				sendingEndpoints.put(other.getName(), new IceWebRtcEndpoint());
+				sendingEndpoints.put(other.getName(),
+						endpointBuilder.build(
+								pipeline, EndpointQualifier.REMOTE));
 
 		this.senderThread.start();
 		this.notifThread.start();
 	}
 
-	@Override
 	public void createReceivingEndpoint() {
-		this.receivingEndpoint.setEndpoint(new WebRtcEndpoint.Builder(pipeline)
-		.build());
-		this.receivingEndpoint.getEndpoint().addOnIceCandidateListener(
-				new EventListener<OnIceCandidateEvent>() {
-					@Override
-					public void onEvent(OnIceCandidateEvent event) {
-						JsonObject params = new JsonObject();
-						params.addProperty(
-								JsonRpcProtocolElements.ON_ICE_EP_NAME_PARAM, name);
-						params.addProperty(
-								JsonRpcProtocolElements.ON_ICE_SDP_M_LINE_INDEX_PARAM,
-								event.getCandidate().getSdpMLineIndex());
-						params.addProperty(
-								JsonRpcProtocolElements.ON_ICE_SDP_MID_PARAM, event
-								.getCandidate().getSdpMid());
-						params.addProperty(
-								JsonRpcProtocolElements.ON_ICE_CANDIDATE_PARAM,
-								event.getCandidate().getCandidate());
-						ParticipantImpl.this.sendNotification(
-								JsonRpcProtocolElements.ICE_CANDIDATE_EVENT, params);
-					}
-				});
+		this.receivingEndpoint.createEndpoint();
+		this.receivingEndpoint.registerOnIceCandidateEventListener(name,
+				Participant.this);
 		endPointLatch.countDown();
 	}
 
-	@Override
 	public String getName() {
 		return name;
 	}
@@ -152,7 +141,6 @@ public class ParticipantImpl implements Participant {
 		return session;
 	}
 
-	@Override
 	public TrickleIceEndpoint getReceivingEndpoint() {
 		try {
 			endPointLatch.await();
@@ -162,12 +150,10 @@ public class ParticipantImpl implements Participant {
 		return this.receivingEndpoint;
 	}
 
-	@Override
 	public Room getRoom() {
 		return this.room;
 	}
 
-	@Override
 	public String receiveVideoFrom(Participant sender, String sdpOffer) {
 		final String senderName = sender.getName();
 
@@ -176,9 +162,7 @@ public class ParticipantImpl implements Participant {
 		log.trace("USER {}: SdpOffer for {} is {}", this.name, senderName,
 				sdpOffer);
 
-		WebRtcEndpoint receivingEndpoint = sender.getReceivingEndpoint()
-				.getEndpoint();
-		if (receivingEndpoint == null) {
+		if (sender.getReceivingEndpoint() == null) {
 			log.warn(
 					"PARTICIPANT {}: Trying to connect to a user without receiving endpoint (it seems is not yet fully connected)",
 					this.name);
@@ -188,60 +172,40 @@ public class ParticipantImpl implements Participant {
 		if (senderName.equals(this.name)) {
 			// FIXME: Use another message type for receiving sdp offer
 			log.debug("PARTICIPANT {}: configuring loopback", this.name);
-			String sdpAnswer = receivingEndpoint.processOffer(sdpOffer);
-			receivingEndpoint.gatherCandidates();
+			sender.getReceivingEndpoint().connect(this.getReceivingEndpoint());
+			String sdpAnswer = sender.getReceivingEndpoint().processOffer(
+					sdpOffer);
+			sender.getReceivingEndpoint().gatherCandidates();
 			return sdpAnswer;
 		}
 
 		log.debug("PARTICIPANT {}: Creating a sending endpoint to user {}",
 				this.name, senderName);
 
-		TrickleIceEndpoint iceSendingEndpoint = new IceWebRtcEndpoint();
+		TrickleIceEndpoint iceSendingEndpoint = endpointBuilder.build(pipeline,
+				EndpointQualifier.REMOTE);
 		TrickleIceEndpoint oldIceSendingEndpoint = this.sendingEndpoints
 				.putIfAbsent(senderName, iceSendingEndpoint);
 		if (oldIceSendingEndpoint != null)
 			iceSendingEndpoint = oldIceSendingEndpoint;
 
-		WebRtcEndpoint sendingEndpoint = new WebRtcEndpoint.Builder(
-				this.pipeline).build();
-		WebRtcEndpoint oldSendingEndpoint = iceSendingEndpoint
-				.setEndpoint(sendingEndpoint);
+		WebRtcEndpoint oldSendingEndpoint = iceSendingEndpoint.createEndpoint();
 		if (oldSendingEndpoint != null) {
 			log.warn(
-					"PARTICIPANT {}: Two threads have created at the same time a sending endpoint for user {}",
+					"PARTICIPANT {}: Two threads are trying to create at the same time a sending endpoint for user {}",
 					this.name, senderName);
-			this.releaseEndpoint(senderName, sendingEndpoint);
 			return null;
 		}
 
-		sendingEndpoint
-		.addOnIceCandidateListener(new EventListener<OnIceCandidateEvent>() {
-			@Override
-			public void onEvent(OnIceCandidateEvent event) {
-				JsonObject params = new JsonObject();
-				params.addProperty(
-						JsonRpcProtocolElements.ON_ICE_EP_NAME_PARAM,
-						senderName);
-				params.addProperty(
-						JsonRpcProtocolElements.ON_ICE_SDP_M_LINE_INDEX_PARAM,
-						event.getCandidate().getSdpMLineIndex());
-				params.addProperty(
-						JsonRpcProtocolElements.ON_ICE_SDP_MID_PARAM, event
-						.getCandidate().getSdpMid());
-				params.addProperty(
-						JsonRpcProtocolElements.ON_ICE_CANDIDATE_PARAM,
-						event.getCandidate().getCandidate());
-				ParticipantImpl.this.sendNotification(
-								JsonRpcProtocolElements.ICE_CANDIDATE_EVENT, params);
-			}
-		});
+		iceSendingEndpoint.registerOnIceCandidateEventListener(senderName,
+				Participant.this);
 
 		log.debug("PARTICIPANT {}: Created sending endpoint for user {}",
 				this.name, senderName);
 		try {
-			receivingEndpoint.connect(sendingEndpoint);
-			String sdpAnswer = sendingEndpoint.processOffer(sdpOffer);
-			sendingEndpoint.gatherCandidates();
+			sender.getReceivingEndpoint().connect(iceSendingEndpoint);
+			String sdpAnswer = iceSendingEndpoint.processOffer(sdpOffer);
+			iceSendingEndpoint.gatherCandidates();
 			return sdpAnswer;
 		} catch (KurentoServerException e) {
 
@@ -257,12 +221,11 @@ public class ParticipantImpl implements Participant {
 						e);
 
 			this.sendingEndpoints.remove(senderName);
-			this.releaseEndpoint(senderName, sendingEndpoint);
+			this.releaseEndpoint(senderName, iceSendingEndpoint.getEndpoint());
 		}
 		return null;
 	}
 
-	@Override
 	public void cancelSendingVideoTo(final String senderName) {
 
 		log.debug("PARTICIPANT {}: canceling video sending to {}", this.name,
@@ -283,7 +246,6 @@ public class ParticipantImpl implements Participant {
 		}
 	}
 
-	@Override
 	public void leaveFromRoom() throws IOException, InterruptedException,
 	ExecutionException {
 
@@ -297,7 +259,7 @@ public class ParticipantImpl implements Participant {
 				@Override
 				public void run() {
 					updateThreadName("room>" + threadName);
-					room.leave(ParticipantImpl.this);
+					room.leave(Participant.this);
 					updateThreadName("room");
 				}
 			});
@@ -307,7 +269,6 @@ public class ParticipantImpl implements Participant {
 		}
 	}
 
-	@Override
 	public void close() {
 		log.debug("PARTICIPANT {}: Closing user", this.name);
 
@@ -338,7 +299,6 @@ public class ParticipantImpl implements Participant {
 		this.notifThread.interrupt();
 	}
 
-	@Override
 	public void sendMessage(Request<JsonObject> request) {
 		log.debug("USER {}: Enqueueing message {}", name, request);
 		try {
@@ -349,7 +309,6 @@ public class ParticipantImpl implements Participant {
 		}
 	}
 
-	@Override
 	public void sendNotification(String method, JsonObject params) {
 		RpcNotification notification = new RpcNotification(method, params);
 		log.debug("USER {}: Enqueueing notification {}", name, notification);
@@ -361,9 +320,9 @@ public class ParticipantImpl implements Participant {
 		}
 	}
 
-	@Override
 	public TrickleIceEndpoint addSendingEndpoint(String newUserName) {
-		TrickleIceEndpoint iceSendingEndpoint = new IceWebRtcEndpoint();
+		TrickleIceEndpoint iceSendingEndpoint = endpointBuilder.build(pipeline,
+				EndpointQualifier.REMOTE);
 		TrickleIceEndpoint oldIceSendingEndpoint = this.sendingEndpoints
 				.putIfAbsent(newUserName, iceSendingEndpoint);
 		if (oldIceSendingEndpoint != null) {
@@ -378,7 +337,6 @@ public class ParticipantImpl implements Participant {
 		return iceSendingEndpoint;
 	}
 
-	@Override
 	public void addIceCandidate(String endpointName, IceCandidate iceCandidate) {
 		if (this.name.equals(endpointName))
 			this.receivingEndpoint.addIceCandidate(iceCandidate);
@@ -393,14 +351,14 @@ public class ParticipantImpl implements Participant {
 			public void onSuccess(Void result) throws Exception {
 				log.debug(
 						"PARTICIPANT {}: Released successfully sending EP for {}",
-						ParticipantImpl.this.name, senderName);
+						Participant.this.name, senderName);
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
 				log.warn(
 						"PARTICIPANT {}: Could not release sending EP for user {}",
-						ParticipantImpl.this.name, senderName, cause);
+						Participant.this.name, senderName, cause);
 			}
 		});
 	}
@@ -411,9 +369,9 @@ public class ParticipantImpl implements Participant {
 				Request<JsonObject> request = messages.take();
 
 				log.debug("Sending message {} to user {}", request,
-						ParticipantImpl.this.name);
+						Participant.this.name);
 
-				ParticipantImpl.this.session
+				Participant.this.session
 				.sendRequest(
 						request,
 						new org.kurento.jsonrpc.client.Continuation<Response<JsonElement>>() {
@@ -426,7 +384,7 @@ public class ParticipantImpl implements Participant {
 							public void onError(Throwable cause) {
 								log.error(
 										"Exception while sending message to user '"
-												+ ParticipantImpl.this.name
+												+ Participant.this.name
 												+ "'", cause);
 							}
 						});
@@ -434,7 +392,7 @@ public class ParticipantImpl implements Participant {
 				return;
 			} catch (Exception e) {
 				log.warn("Exception while sending message to user '"
-						+ ParticipantImpl.this.name + "'", e);
+						+ Participant.this.name + "'", e);
 			}
 		}
 	}
@@ -444,19 +402,18 @@ public class ParticipantImpl implements Participant {
 			try {
 				RpcNotification notification = notifications.take();
 				log.debug("Sending notification {} to user {}", notification,
-						ParticipantImpl.this.name);
-				ParticipantImpl.this.session.sendNotification(
+						Participant.this.name);
+				Participant.this.session.sendNotification(
 						notification.getMethod(), notification.getParams());
 			} catch (InterruptedException e) {
 				return;
 			} catch (Exception e) {
 				log.warn("Exception while sending notification to user '"
-						+ ParticipantImpl.this.name + "'", e);
+						+ Participant.this.name + "'", e);
 			}
 		}
 	}
 
-	@Override
 	public boolean isClosed() {
 		return closed;
 	}
@@ -483,7 +440,7 @@ public class ParticipantImpl implements Participant {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ParticipantImpl other = (ParticipantImpl) obj;
+		Participant other = (Participant) obj;
 		if (name == null) {
 			if (other.name != null)
 				return false;

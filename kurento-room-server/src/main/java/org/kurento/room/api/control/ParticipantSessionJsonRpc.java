@@ -13,7 +13,7 @@
  *
  */
 
-package org.kurento.room.demo.internal.control;
+package org.kurento.room.api.control;
 
 import java.io.IOException;
 
@@ -21,8 +21,8 @@ import org.kurento.jsonrpc.Session;
 import org.kurento.jsonrpc.client.Continuation;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.jsonrpc.message.Response;
-import org.kurento.room.demo.api.Participant;
-import org.kurento.room.demo.api.ParticipantSession;
+import org.kurento.room.api.ParticipantSession;
+import org.kurento.room.internal.Participant;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -60,10 +60,6 @@ public class ParticipantSessionJsonRpc implements ParticipantSession {
 			Continuation<Response<JsonElement>> continuation)
 					throws IOException {
 		session.sendRequest(request, continuation);
-	}
-
-	public Session getSession() {
-		return session;
 	}
 
 	@Override

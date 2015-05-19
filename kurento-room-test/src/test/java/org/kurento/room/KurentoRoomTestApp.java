@@ -1,6 +1,6 @@
 package org.kurento.room;
 
-import org.kurento.room.demo.KurentoRoomServerApp;
+import org.kurento.room.KurentoRoomServerApp;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;

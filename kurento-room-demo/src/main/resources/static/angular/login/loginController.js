@@ -21,7 +21,12 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
 
         var wsUri = 'ws://' + location.host + '/room';
 
-        var kurento = KurentoRoom(wsUri, function (error, kurento) {
+        //TODO obtain token dynamically from demo server
+        var rpcParams = {
+        	token : "abc123"
+        };
+        
+        var kurento = KurentoRoom(wsUri, rpcParams, function (error, kurento) {
 
             if (error)
                 return console.log(error);
@@ -39,11 +44,12 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
 
             localStream.addEventListener("access-accepted", function () {
                 room.addEventListener("room-connected", function (roomEvent) {
-
                     localStream.publish();
                     ServiceRoom.setLocalStream(localStream.getWebRtcPeer());
                     ServiceParticipant.addLocalParticipant(localStream);
                     var streams = roomEvent.streams;
+                    if (streams.length == 0) //I'm 1st so show my hat
+                    	localStream.subscribeToMyRemote();
                     for (var i = 0; i < streams.length; i++) {
                         ServiceParticipant.addParticipant(streams[i]);
                     }

@@ -12,7 +12,7 @@
  * Lesser General Public License for more details.
  *
  */
-package org.kurento.room.demo;
+package org.kurento.room;
 
 import static org.kurento.commons.PropertiesManager.getPropertyJson;
 
@@ -21,14 +21,18 @@ import java.util.List;
 import org.kurento.commons.ConfigFileManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.jsonrpc.internal.server.config.JsonRpcConfiguration;
+import org.kurento.jsonrpc.message.Request;
 import org.kurento.jsonrpc.server.JsonRpcConfigurer;
 import org.kurento.jsonrpc.server.JsonRpcHandlerRegistry;
-import org.kurento.room.demo.api.RoomManager;
-import org.kurento.room.demo.api.control.JsonRpcParticipantControl;
-import org.kurento.room.demo.internal.RoomManagerImpl;
-import org.kurento.room.demo.internal.control.ParticipantControlImpl;
-import org.kurento.room.demo.kms.FixedOneKmsManager;
-import org.kurento.room.demo.kms.KmsManager;
+import org.kurento.room.api.ParticipantSession;
+import org.kurento.room.api.RoomException;
+import org.kurento.room.api.RoomRequestsFilter;
+import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
+import org.kurento.room.api.control.JsonRpcUserControl;
+import org.kurento.room.internal.IceWebRtcEndpoint;
+import org.kurento.room.internal.RoomManager;
+import org.kurento.room.kms.FixedOneKmsManager;
+import org.kurento.room.kms.KmsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -40,6 +44,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * @author Ivan Gracia (izanmail@gmail.com)
@@ -77,23 +82,42 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	@Bean
 	public RoomManager roomManager() {
-		return new RoomManagerImpl();
+		return new RoomManager();
 	}
 
 	@Bean
-	public JsonRpcParticipantControl participantControl() {
-		return new ParticipantControlImpl();
+	public JsonRpcUserControl userControl() {
+		return new JsonRpcUserControl();
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
-	public RoomJsonRpcHandler groupCallHandler() {
+	public EndpointBuilder endpointBuilder() {
+		return new IceWebRtcEndpoint.Builder();
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	public RoomRequestsFilter reqFilter() {
+		return new RoomRequestsFilter() {
+			@Override
+			public void filterUserRequest(Request<JsonObject> request,
+					ParticipantSession participantSession,
+					SessionState sessionState) throws RoomException {
+				// empty filter
+			}
+		};
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	public RoomJsonRpcHandler roomHandler() {
 		return new RoomJsonRpcHandler();
 	}
 
 	@Override
 	public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
-		registry.addHandler(groupCallHandler(), "/room");
+		registry.addHandler(roomHandler(), "/room");
 	}
 
 	public static void main(String[] args) throws Exception {

@@ -13,17 +13,18 @@
  *
  */
 
-package org.kurento.room.demo.kms;
-
-import java.util.List;
+package org.kurento.room.kms;
 
 import org.kurento.client.KurentoClient;
 
-public class FixedNKmsManager extends KmsManager {
+public class FixedOneKmsManager extends KmsManager {
 
-	public FixedNKmsManager(List<String> kmsWsUri) {
-		for (String uri : kmsWsUri)
-			this.addKurentoClient(KurentoClient.create(uri));
+	public FixedOneKmsManager(String kmsWsUri) {
+		this(kmsWsUri, 1);
 	}
 
+	public FixedOneKmsManager(String kmsWsUri, int numKmss) {
+		for (int i = 0; i < numKmss; i++)
+			this.addKurentoClient(KurentoClient.create(kmsWsUri));
+	}
 }

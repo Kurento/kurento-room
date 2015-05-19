@@ -13,13 +13,14 @@
  *
  */
 
-package org.kurento.room.demo.api;
+package org.kurento.room.api;
 
 import java.io.IOException;
 
 import org.kurento.jsonrpc.client.Continuation;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.jsonrpc.message.Response;
+import org.kurento.room.internal.Participant;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

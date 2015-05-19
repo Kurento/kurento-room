@@ -12,9 +12,9 @@
  * Lesser General Public License for more details.
  *
  */
-package org.kurento.room.demo.internal;
+package org.kurento.room.internal;
 
-import static org.kurento.room.demo.internal.ThreadLogUtils.updateThreadName;
+import static org.kurento.room.internal.ThreadLogUtils.updateThreadName;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,13 +28,10 @@ import java.util.concurrent.Executors;
 
 import javax.annotation.PreDestroy;
 
-import org.kurento.room.demo.api.Participant;
-import org.kurento.room.demo.api.ParticipantSession;
-import org.kurento.room.demo.api.ReceiveVideoFromResponse;
-import org.kurento.room.demo.api.Room;
-import org.kurento.room.demo.api.RoomManager;
-import org.kurento.room.demo.api.RoomManagerException;
-import org.kurento.room.demo.kms.KmsManager;
+import org.kurento.room.api.ParticipantSession;
+import org.kurento.room.api.RoomException;
+import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
+import org.kurento.room.kms.KmsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,17 +41,19 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 1.0.0
  */
-public class RoomManagerImpl implements RoomManager {
+public class RoomManager {
 
-	private static final int SDP_ERROR_CODE = 101;
-	private static final int USER_NOT_FOUND_ERROR_CODE = 102;
-	private static final int ROOM_CLOSED_ERROR_CODE = 103;
-	public static final int EXISTING_USER_IN_ROOM_ERROR_CODE = 104;
+	public interface RMContinuation<F> {
+		void result(Throwable error, F result);
+	}
 
-	private final Logger log = LoggerFactory.getLogger(RoomManagerImpl.class);
+	private final Logger log = LoggerFactory.getLogger(RoomManager.class);
 
 	@Autowired
 	private KmsManager kmsManager;
+
+	@Autowired
+	private EndpointBuilder endpointBuilder;
 
 	private final ConcurrentMap<String, Room> rooms = new ConcurrentHashMap<>();
 
@@ -74,13 +73,13 @@ public class RoomManagerImpl implements RoomManager {
 	 * @return the room if it was already created, or a new one if it is the
 	 * first time this room is accessed
 	 */
-	@Override
 	public Room getRoom(String roomName) {
 
 		Room room = rooms.get(roomName);
 
 		if (room == null) {
-			room = new RoomImpl(roomName, kmsManager.getKurentoClient());
+			room = new Room(roomName, kmsManager.getKurentoClient(),
+					endpointBuilder);
 			Room oldRoom = rooms.putIfAbsent(roomName, room);
 			if (oldRoom != null) {
 				return oldRoom;
@@ -93,7 +92,6 @@ public class RoomManagerImpl implements RoomManager {
 		}
 	}
 
-	@Override
 	public void receiveVideoFrom(final Participant recvParticipant,
 			final String senderParticipantName, final String sdpOffer,
 			final RMContinuation<ReceiveVideoFromResponse> cont) {
@@ -123,7 +121,7 @@ public class RoomManagerImpl implements RoomManager {
 
 					} else {
 
-						cont.result(new RoomManagerException(SDP_ERROR_CODE,
+						cont.result(new RoomException(RoomException.SDP_ERROR_CODE,
 								"Error generating sdpAnswer for user "
 										+ recvParticipant.getName()), null);
 					}
@@ -135,8 +133,8 @@ public class RoomManagerImpl implements RoomManager {
 							recvParticipant.getName(), senderParticipantName,
 							recvParticipant.getRoom().getName());
 
-					cont.result(new RoomManagerException(
-							USER_NOT_FOUND_ERROR_CODE, "User "
+					cont.result(new RoomException(
+							RoomException.USER_NOT_FOUND_ERROR_CODE, "User "
 									+ recvParticipant.getName()
 									+ " not found in room " + room.getName()),
 									null);
@@ -147,7 +145,6 @@ public class RoomManagerImpl implements RoomManager {
 		});
 	}
 
-	@Override
 	public void joinRoom(String roomName, final String userName,
 			final ParticipantSession session,
 			final RMContinuation<Collection<Participant>> cont)
@@ -185,7 +182,7 @@ public class RoomManagerImpl implements RoomManager {
 							}
 						});
 
-					} catch (RoomManagerException e) {
+					} catch (RoomException e) {
 						cont.result(e, null);
 					}
 
@@ -196,13 +193,12 @@ public class RoomManagerImpl implements RoomManager {
 		} else {
 			log.error("Trying to join room {} but it is closing",
 					room.getName());
-			cont.result(new RoomManagerException(ROOM_CLOSED_ERROR_CODE,
+			cont.result(new RoomException(RoomException.ROOM_CLOSED_ERROR_CODE,
 					"Trying to join room '" + room.getName()
 					+ "' but it is closing"), null);
 		}
 	}
 
-	@Override
 	public void leaveRoom(final Participant user) throws IOException,
 	InterruptedException, ExecutionException {
 
@@ -229,7 +225,6 @@ public class RoomManagerImpl implements RoomManager {
 		}
 	}
 
-	@Override
 	public Map<String, Room> getAllRooms() {
 		return rooms;
 	}

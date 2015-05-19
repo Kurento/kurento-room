@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.kurento.room.demo.KurentoRoomServerApp;
+import org.kurento.room.KurentoRoomServerApp;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

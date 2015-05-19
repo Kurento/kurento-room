@@ -289,6 +289,11 @@ function Stream(kurento, local, room, options) {
     var elements = [];
     var participant = options.participant;
 
+    var displayMyRemote = false;
+    this.subscribeToMyRemote = function () {
+    	displayMyRemote = true;
+    }
+    
     this.getWrStream = function () {
         return wrStream;
     }
@@ -478,7 +483,7 @@ function Stream(kurento, local, room, options) {
 
         var pc = wp.peerConnection
         pc.setRemoteDescription(answer, function () {
-            if (!local) {
+            if (!local || displayMyRemote) {
                 // FIXME: This avoid to subscribe to your own stream remotely.
                 // Fix this
                 wrStream = pc.getRemoteStreams()[0];
@@ -537,13 +542,10 @@ function Stream(kurento, local, room, options) {
 
 // KurentoRoom --------------------------------
 
-function KurentoRoom(wsUri, callback) {
+function KurentoRoom(wsUri, rpcParams, callback) {
 
     if (!(this instanceof KurentoRoom))
-        return new KurentoRoom(wsUri, callback);
-
-    // Enable and disable iceServers from code
-//    kurentoUtils.WebRtcPeer.prototype.server.iceServers = [];
+        return new KurentoRoom(wsUri, rpcParams, callback);
 
     var that = this;
 
@@ -615,6 +617,14 @@ function KurentoRoom(wsUri, callback) {
     }
     
     this.sendRequest = function (method, params, callback) {
+    	console.dir(rpcParams);
+    	if (rpcParams && rpcParams !== "null" && rpcParams !== "undefined") {
+    		for(var index in rpcParams) {
+    			if (rpcParams.hasOwnProperty(index)) {
+    				params[index] = rpcParams[index];
+    			}
+    		}
+    	}
         rpc.encode(method, params, callback);
         console.log('Sent request: { method:"' + method + "', params: "
                 + JSON.stringify(params) + " }");

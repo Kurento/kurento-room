@@ -13,7 +13,7 @@
  *
  */
 
-package org.kurento.room.demo.kms;
+package org.kurento.room.kms;
 
 import java.util.ArrayList;
 import java.util.Iterator;
