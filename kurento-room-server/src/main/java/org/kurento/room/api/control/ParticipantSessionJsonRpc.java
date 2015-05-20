@@ -67,4 +67,9 @@ public class ParticipantSessionJsonRpc implements ParticipantSession {
 			throws IOException {
 		session.sendNotification(method, params);
 	}
+
+	@Override
+	public Boolean isHQ() {
+		return false;
+	}
 }

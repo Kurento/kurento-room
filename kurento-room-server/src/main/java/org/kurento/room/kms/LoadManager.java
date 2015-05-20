@@ -15,23 +15,10 @@
 
 package org.kurento.room.kms;
 
-import java.util.List;
+public interface LoadManager {
 
-import org.kurento.client.KurentoClient;
+	double calculateLoad(Kms kms);
 
-public class FixedNKmsManager extends KmsManager {
-
-	public FixedNKmsManager(List<String> kmsWsUri) {
-		for (String uri : kmsWsUri)
-			this.addKms(new Kms(KurentoClient.create(uri), uri));
-	}
-
-	public FixedNKmsManager(List<String> kmsWsUri, int kmsLoadLimit) {
-		for (String uri : kmsWsUri) {
-			Kms kms = new Kms(KurentoClient.create(uri), uri);
-			kms.setLoadManager(new MaxWebRtcLoadManager(kmsLoadLimit));
-			this.addKms(kms);
-		}
-	}
+	boolean allowMoreElements(Kms kms);
 
 }

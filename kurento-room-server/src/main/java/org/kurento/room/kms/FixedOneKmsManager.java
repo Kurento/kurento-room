@@ -25,6 +25,6 @@ public class FixedOneKmsManager extends KmsManager {
 
 	public FixedOneKmsManager(String kmsWsUri, int numKmss) {
 		for (int i = 0; i < numKmss; i++)
-			this.addKurentoClient(KurentoClient.create(kmsWsUri));
+			this.addKms(new Kms(KurentoClient.create(kmsWsUri), kmsWsUri));
 	}
 }

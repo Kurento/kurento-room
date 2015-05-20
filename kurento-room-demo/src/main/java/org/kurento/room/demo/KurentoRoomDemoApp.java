@@ -20,12 +20,10 @@ import java.util.List;
 
 import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
-import org.kurento.jsonrpc.message.Request;
 import org.kurento.room.KurentoRoomServerApp;
-import org.kurento.room.api.ParticipantSession;
-import org.kurento.room.api.RoomException;
 import org.kurento.room.api.RoomRequestsFilter;
 import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
+import org.kurento.room.api.control.JsonRpcUserControl;
 import org.kurento.room.kms.FixedNKmsManager;
 import org.kurento.room.kms.KmsManager;
 import org.slf4j.Logger;
@@ -35,7 +33,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 
 @SpringBootApplication
 public class KurentoRoomDemoApp {
@@ -47,6 +44,11 @@ public class KurentoRoomDemoApp {
 			.getProperty("app.uri", "http://localhost:8080");
 
 	@Bean
+	public JsonRpcUserControl userControl() {
+		return new JsonRpcSLAUserControl();
+	}
+
+	@Bean
 	public KmsManager kmsManager() {
 		JsonArray kmsUris = getPropertyJson(
 				KurentoRoomServerApp.KMSS_URIS_PROPERTY,
@@ -56,7 +58,7 @@ public class KurentoRoomDemoApp {
 		log.info("Configuring Kurento Room Server to use the following kmss: "
 				+ kmsWsUris);
 
-		return new FixedNKmsManager(kmsWsUris);
+		return new FixedNKmsManager(kmsWsUris, 2);
 	}
 
 	@Bean
@@ -73,31 +75,7 @@ public class KurentoRoomDemoApp {
 
 	@Bean
 	public RoomRequestsFilter reqFilter() {
-		return new RoomRequestsFilter() {
-			@Override
-			public void filterUserRequest(Request<JsonObject> request,
-					ParticipantSession participantSession,
-					SessionState sessionState) throws RoomException {
-				String ps = null;
-				if (participantSession != null
-						&& participantSession.getParticipant() != null)
-					ps = participantSession.getParticipant().toString();
-				log.info("REQ-FILTER> {} | {} | {}", sessionState, request, ps);
-				if (request != null) {
-					String token = null;
-					if (request.getParams().has("token")) {
-						token = request.getParams().get("token")
-								.getAsString();
-						log.debug("Security token: {}", token);
-						// TODO check token, etc ...
-					}
-					if (token == null)
-						throw new RoomException(
-								RoomException.REQ_FILTER_ERROR_CODE,
-								"Not authorized");
-				}
-			}
-		};
+		return new AuthSLAReqFilter();
 	}
 
 	public static void main(String[] args) throws Exception {

@@ -22,13 +22,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.kurento.client.Continuation;
-import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
 import org.kurento.commons.exception.KurentoException;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
-import org.kurento.room.api.TrickleIceEndpoint;
 import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
+import org.kurento.room.kms.Kms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +52,7 @@ public class Room {
 
 	private MediaPipeline pipeline;
 
-	private KurentoClient kurento;
+	private Kms kms;
 
 	private volatile boolean closed = false;
 
@@ -61,10 +60,10 @@ public class Room {
 
 	private EndpointBuilder endpointBuilder;
 
-	public Room(String roomName, KurentoClient kurento,
+	public Room(String roomName, Kms kms,
 			EndpointBuilder endpointBuilder) {
 		this.name = roomName;
-		this.kurento = kurento;
+		this.kms = kms;
 		this.endpointBuilder = endpointBuilder;
 		log.info("ROOM {} has been created", roomName);
 	}
@@ -85,7 +84,7 @@ public class Room {
 
 		if (pipeline == null) {
 			log.info("ROOM {}: Creating MediaPipeline", userName);
-			pipeline = kurento.createMediaPipeline();
+			pipeline = kms.newPipeline();
 		}
 
 		log.info("ROOM {}: adding participant {}", userName, userName);
@@ -170,6 +169,7 @@ public class Room {
 								+ ": Could not release Pipeline", cause);
 					}
 				});
+				kms.removePipeline(pipeline);
 			}
 
 			log.debug("Room {} closed", this.name);

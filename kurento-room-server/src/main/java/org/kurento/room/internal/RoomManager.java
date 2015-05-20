@@ -31,6 +31,7 @@ import javax.annotation.PreDestroy;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
 import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
+import org.kurento.room.kms.Kms;
 import org.kurento.room.kms.KmsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,18 +74,46 @@ public class RoomManager {
 	 * @return the room if it was already created, or a new one if it is the
 	 * first time this room is accessed
 	 */
-	public Room getRoom(String roomName) {
+	public Room getRoom(String roomName, Boolean hq) {
 
 		Room room = rooms.get(roomName);
 
 		if (room == null) {
-			room = new Room(roomName, kmsManager.getKurentoClient(),
-					endpointBuilder);
+			Kms kms = null;
+			String type = "";
+			if (hq != null) {
+				if (hq) {
+					kms = kmsManager.getLessLoadedKms();
+					type = ",less loaded KMS";
+				} else {
+					kms = kmsManager.getNextLessLoadedKms();
+					type = ",next less loaded KMS";
+					if (!kms.allowMoreElements())
+						kms = kmsManager.getLessLoadedKms();
+				}
+			} else {
+				kms = kmsManager.getKms();
+				if (!kms.allowMoreElements()) {
+					kms = kmsManager.getNextLessLoadedKms();
+					type = ",next less loaded KMS";
+					if (!kms.allowMoreElements())
+						kms = kmsManager.getLessLoadedKms();
+				}
+			}
+			if (!kms.allowMoreElements()) {
+				throw new RoomException(
+						RoomException.NO_MEDIA_RESOURCES_ERROR_CODE,
+						"No resources left to create new room");
+			}
+
+			room = new Room(roomName, kms, endpointBuilder);
 			Room oldRoom = rooms.putIfAbsent(roomName, room);
 			if (oldRoom != null) {
 				return oldRoom;
 			} else {
-				log.debug("Room {} not existent. Created new!", roomName);
+				log.warn(
+						"Room {} not existent. Created new! (highQ={}{},uri={})",
+						roomName, hq, type, kms.getUri());
 				return room;
 			}
 		} else {
@@ -154,7 +183,13 @@ public class RoomManager {
 
 		log.info("PARTICIPANT {}: trying to join room {}", userName, roomName);
 
-		final Room room = getRoom(roomName);
+		final Room room;
+		try {
+			room = getRoom(roomName, session.isHQ());
+		} catch (RoomException e) {
+			cont.result(e, null);
+			return;
+		}
 
 		if (!room.isClosed()) {
 

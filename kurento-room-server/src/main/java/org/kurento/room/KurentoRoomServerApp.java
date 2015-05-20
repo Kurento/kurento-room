@@ -86,6 +86,7 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
 	public JsonRpcUserControl userControl() {
 		return new JsonRpcUserControl();
 	}

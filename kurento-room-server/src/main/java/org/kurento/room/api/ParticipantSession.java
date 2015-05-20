@@ -31,6 +31,8 @@ public interface ParticipantSession {
 
 	public Participant getParticipant();
 
+	public Boolean isHQ();
+
 	public String getName();
 
 	public void sendRequest(

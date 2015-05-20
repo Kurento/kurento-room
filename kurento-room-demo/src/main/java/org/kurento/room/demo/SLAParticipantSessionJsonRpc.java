@@ -13,25 +13,25 @@
  *
  */
 
-package org.kurento.room.kms;
+package org.kurento.room.demo;
 
-import java.util.List;
+import org.kurento.jsonrpc.Session;
+import org.kurento.room.api.control.ParticipantSessionJsonRpc;
 
-import org.kurento.client.KurentoClient;
+public class SLAParticipantSessionJsonRpc extends ParticipantSessionJsonRpc {
 
-public class FixedNKmsManager extends KmsManager {
+	private Boolean hq = null;
 
-	public FixedNKmsManager(List<String> kmsWsUri) {
-		for (String uri : kmsWsUri)
-			this.addKms(new Kms(KurentoClient.create(uri), uri));
+	public SLAParticipantSessionJsonRpc(Session session) {
+		super(session);
 	}
 
-	public FixedNKmsManager(List<String> kmsWsUri, int kmsLoadLimit) {
-		for (String uri : kmsWsUri) {
-			Kms kms = new Kms(KurentoClient.create(uri), uri);
-			kms.setLoadManager(new MaxWebRtcLoadManager(kmsLoadLimit));
-			this.addKms(kms);
-		}
+	@Override
+	public Boolean isHQ() {
+		return hq;
 	}
 
+	public void setHQ(Boolean hq) {
+		this.hq = hq;
+	}
 }

@@ -69,7 +69,7 @@ public class PirateEndpoint extends IceWebRtcEndpoint {
 	 *
 	 */
 	public static class PirateEndpointBuilder implements
-			EndpointBuilder {
+	EndpointBuilder {
 
 		private String hatUrl;
 

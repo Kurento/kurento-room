@@ -4,7 +4,8 @@ public class RoomException extends RuntimeException {
 
 	private static final long serialVersionUID = -6184177376254906794L;
 
-	public static final int REQ_FILTER_ERROR_CODE = 105;
+	public static final int REQ_FILTER_ERROR_CODE = 106;
+	public static final int NO_MEDIA_RESOURCES_ERROR_CODE = 105;
 	public static final int EXISTING_USER_IN_ROOM_ERROR_CODE = 104;
 	public static final int ROOM_CLOSED_ERROR_CODE = 103;
 	public static final int USER_NOT_FOUND_ERROR_CODE = 102;
