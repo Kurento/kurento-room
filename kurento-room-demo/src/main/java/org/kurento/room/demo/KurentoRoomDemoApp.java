@@ -44,11 +44,6 @@ public class KurentoRoomDemoApp {
 			.getProperty("app.uri", "http://localhost:8080");
 
 	@Bean
-	public JsonRpcUserControl userControl() {
-		return new JsonRpcSLAUserControl();
-	}
-
-	@Bean
 	public KmsManager kmsManager() {
 		JsonArray kmsUris = getPropertyJson(
 				KurentoRoomServerApp.KMSS_URIS_PROPERTY,
@@ -71,6 +66,11 @@ public class KurentoRoomDemoApp {
 		else
 			hatUrl = appServerUrl + "/img/mario-wings.png";
 		return new PirateEndpoint.PirateEndpointBuilder(hatUrl);
+	}
+
+	@Bean
+	public JsonRpcUserControl userControl() {
+		return new JsonRpcSLAUserControl();
 	}
 
 	@Bean

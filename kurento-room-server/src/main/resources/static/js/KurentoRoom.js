@@ -542,10 +542,9 @@ function Stream(kurento, local, room, options) {
 
 // KurentoRoom --------------------------------
 
-function KurentoRoom(wsUri, rpcParams, callback) {
-
+function KurentoRoom(wsUri, callback) {
     if (!(this instanceof KurentoRoom))
-        return new KurentoRoom(wsUri, rpcParams, callback);
+        return new KurentoRoom(wsUri, callback);
 
     var that = this;
 
@@ -615,7 +614,13 @@ function KurentoRoom(wsUri, rpcParams, callback) {
             room.onIceCandidate(msg);
         }
     }
-    
+ 
+    var rpcParams;
+
+    this.setRpcParams = function (params) {
+    	rpcParams = params;
+    }
+
     this.sendRequest = function (method, params, callback) {
     	console.dir(rpcParams);
     	if (rpcParams && rpcParams !== "null" && rpcParams !== "undefined") {

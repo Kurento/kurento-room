@@ -90,7 +90,7 @@ public abstract class KmsManager {
 		for (Kms kms : kmss) {
 			double load = kms.getLoad();
 			kmsLoads.add(new KmsLoad(kms, load));
-			log.warn("Calc load {} for kms: {}", load, kms.getUri());
+			log.trace("Calc load {} for kms: {}", load, kms.getUri());
 		}
 		return kmsLoads;
 	}

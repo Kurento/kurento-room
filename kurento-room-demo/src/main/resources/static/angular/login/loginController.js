@@ -26,10 +26,12 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
         	token : "abc123"
         };
         
-        var kurento = KurentoRoom(wsUri, rpcParams, function (error, kurento) {
+        var kurento = KurentoRoom(wsUri, function (error, kurento) {
 
             if (error)
                 return console.log(error);
+
+            kurento.setRpcParams(rpcParams);
 
             room = kurento.Room({
                 room: $scope.roomName,
