@@ -78,6 +78,7 @@ public class JsonRpcUserControl {
 				.getAsString();
 
 		ParticipantSession participantSession = getParticipantSession(transaction);
+		participantSession.setName(userName);
 
 		transaction.startAsync();
 

@@ -30,9 +30,9 @@ import javax.annotation.PreDestroy;
 
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
+import org.kurento.room.api.SessionInterceptor;
 import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
 import org.kurento.room.kms.Kms;
-import org.kurento.room.kms.KmsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +51,11 @@ public class RoomManager {
 	private final Logger log = LoggerFactory.getLogger(RoomManager.class);
 
 	@Autowired
-	private KmsManager kmsManager;
+	private SessionInterceptor interceptor;
+
+	public void setSessionFilter(SessionInterceptor interceptor) {
+		this.interceptor = interceptor;
+	}
 
 	@Autowired
 	private EndpointBuilder endpointBuilder;
@@ -70,50 +74,26 @@ public class RoomManager {
 	}
 
 	/**
-	 * @param roomName the name of the room
+	 * @param roomName
+	 *            the name of the room
+	 * @param participantSession
+	 *            current session
 	 * @return the room if it was already created, or a new one if it is the
-	 * first time this room is accessed
+	 *         first time this room is accessed
 	 */
-	public Room getRoom(String roomName, Boolean hq) {
+	public Room getRoom(String roomName, ParticipantSession participantSession) {
 
 		Room room = rooms.get(roomName);
 
 		if (room == null) {
-			Kms kms = null;
-			String type = "";
-			if (hq != null) {
-				if (hq) {
-					kms = kmsManager.getLessLoadedKms();
-					type = ",less loaded KMS";
-				} else {
-					kms = kmsManager.getNextLessLoadedKms();
-					type = ",next less loaded KMS";
-					if (!kms.allowMoreElements())
-						kms = kmsManager.getLessLoadedKms();
-				}
-			} else {
-				kms = kmsManager.getKms();
-				if (!kms.allowMoreElements()) {
-					kms = kmsManager.getNextLessLoadedKms();
-					type = ",next less loaded KMS";
-					if (!kms.allowMoreElements())
-						kms = kmsManager.getLessLoadedKms();
-				}
-			}
-			if (!kms.allowMoreElements()) {
-				throw new RoomException(
-						RoomException.NO_MEDIA_RESOURCES_ERROR_CODE,
-						"No resources left to create new room");
-			}
-
+			Kms kms = interceptor.getKmsForNewRoom(participantSession);
 			room = new Room(roomName, kms, endpointBuilder);
 			Room oldRoom = rooms.putIfAbsent(roomName, room);
 			if (oldRoom != null) {
 				return oldRoom;
 			} else {
-				log.warn(
-						"Room {} not existent. Created new! (highQ={}{},uri={})",
-						roomName, hq, type, kms.getUri());
+				log.warn("Room {} not existent. Created new on Kms uri={})",
+						kms.getUri());
 				return room;
 			}
 		} else {
@@ -185,7 +165,7 @@ public class RoomManager {
 
 		final Room room;
 		try {
-			room = getRoom(roomName, session.isHQ());
+			room = getRoom(roomName, session);
 		} catch (RoomException e) {
 			cont.result(e, null);
 			return;

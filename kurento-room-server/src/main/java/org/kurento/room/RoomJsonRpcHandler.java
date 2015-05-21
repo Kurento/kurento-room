@@ -22,8 +22,8 @@ import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
-import org.kurento.room.api.RoomRequestsFilter;
-import org.kurento.room.api.RoomRequestsFilter.SessionState;
+import org.kurento.room.api.SessionInterceptor;
+import org.kurento.room.api.SessionInterceptor.SessionState;
 import org.kurento.room.api.control.JsonRpcProtocolElements;
 import org.kurento.room.api.control.JsonRpcUserControl;
 import org.kurento.room.internal.Participant;
@@ -49,7 +49,11 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	private JsonRpcUserControl userControl;
 
 	@Autowired
-	private RoomRequestsFilter reqFilter;
+	private SessionInterceptor interceptor;
+
+	public void setSessionFilter(SessionInterceptor interceptor) {
+		this.interceptor = interceptor;
+	}
 
 	@Override
 	public final void handleRequest(final Transaction transaction,
@@ -63,13 +67,11 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 		if (participantSession.getParticipant() != null) {
 			log.debug("Incoming message from user '{}': {}",
 					participantSession.getName(), request);
-			if (!invokeReqFilter(transaction, request, participantSession,
-					SessionState.REGISTERED))
+			if (!invokeReqFilter(transaction, request, SessionState.REGISTERED))
 				return;
 		} else {
 			log.debug("Incoming message from new user: {}", request);
-			if (!invokeReqFilter(transaction, request, participantSession,
-					SessionState.NEW))
+			if (!invokeReqFilter(transaction, request, SessionState.NEW))
 				return;
 		}
 
@@ -105,9 +107,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 		Participant participant = participantSession.getParticipant();
 		if (participant != null) {
 			updateThreadName(participant.getName() + "|wsclosed");
-			if (invokeReqFilter(null, null, participantSession,
-					SessionState.DISCONNECTED))
-				userControl.leaveRoom(participant);
+			userControl.leaveRoom(participant);
 			updateThreadName(HANDLER_THREAD_NAME);
 		}
 	}
@@ -123,11 +123,10 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	}
 
 	private boolean invokeReqFilter(Transaction transaction,
-			Request<JsonObject> request, ParticipantSession participantSession,
-			SessionState sessionState) throws IOException {
+			Request<JsonObject> request, SessionState sessionState)
+					throws IOException {
 		try {
-			reqFilter.filterUserRequest(request, participantSession,
-					sessionState);
+			interceptor.authorizeUserRequest(request, sessionState);
 		} catch (RoomException e) {
 			log.warn("Request filtered with error", e);
 			if (transaction != null)

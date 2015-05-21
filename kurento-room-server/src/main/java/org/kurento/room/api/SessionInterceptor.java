@@ -16,7 +16,9 @@
 package org.kurento.room.api;
 
 import org.kurento.jsonrpc.message.Request;
-import org.kurento.room.internal.Participant;
+import org.kurento.room.internal.Room;
+import org.kurento.room.internal.RoomManager;
+import org.kurento.room.kms.Kms;
 
 import com.google.gson.JsonObject;
 
@@ -25,7 +27,7 @@ import com.google.gson.JsonObject;
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public interface RoomRequestsFilter {
+public interface SessionInterceptor {
 
 	/**
 	 * The user's state depending on the info that can be gathered from the JSON
@@ -35,15 +37,12 @@ public interface RoomRequestsFilter {
 	 */
 	public enum SessionState {
 		/**
-		 * The user info is not yet registered in this session.
+		 * The message doesn't belong to a registered user session.
 		 */
 		NEW,
 		/**
-		 * The user session has been closed, indicating a disconnection.
-		 */
-		DISCONNECTED,
-		/**
-		 * The current message will be processed inside a registered session.
+		 * The current message will be processed inside a registered user
+		 * session.
 		 */
 		REGISTERED;
 	}
@@ -53,19 +52,27 @@ public interface RoomRequestsFilter {
 	 * request.
 	 * 
 	 * @param request
-	 *            JSON RPC request, can be null if the session is
-	 *            {@link SessionState#DISCONNECTED}
-	 * @param participantSession
-	 *            the user info stored in the current JSON RPC session; the
-	 *            contained {@link Participant} could be null if the session is
-	 *            {@link SessionState#NEW}
+	 *            JSON RPC request
 	 * @param sessionState
 	 *            the session's state
 	 * @throws RoomException
 	 *             if thrown, the handler will not continue processing the
 	 *             request, but will respond with an error message
 	 */
-	public void filterUserRequest(Request<JsonObject> request,
-			ParticipantSession participantSession, SessionState sessionState)
-					throws RoomException;
+	public void authorizeUserRequest(Request<JsonObject> request,
+			SessionState sessionState)
+			throws RoomException;
+
+	/**
+	 * Invoked by the {@link RoomManager} before creating a new room on behalf
+	 * of the participant in session.
+	 * 
+	 * @param participantSession
+	 *            the participant
+	 * @return {@link Kms} that allows creating a new {@link Room}
+	 * @throws RoomException
+	 *             if thrown, the Room cannot be created
+	 */
+	public Kms getKmsForNewRoom(ParticipantSession participantSession)
+			throws RoomException;
 }

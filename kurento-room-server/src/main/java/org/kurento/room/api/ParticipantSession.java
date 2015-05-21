@@ -31,9 +31,9 @@ public interface ParticipantSession {
 
 	public Participant getParticipant();
 
-	public Boolean isHQ();
-
 	public String getName();
+
+	public void setName(String name);
 
 	public void sendRequest(
 			Request<JsonObject> request,

@@ -28,7 +28,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class ParticipantSessionJsonRpc implements ParticipantSession {
+	private static final String JOHN_DOE = "<UnknownParticipant>";
 
+	private String name = JOHN_DOE;
 	private Session session;
 	private Participant roomParticipant;
 
@@ -51,8 +53,13 @@ public class ParticipantSessionJsonRpc implements ParticipantSession {
 		if (roomParticipant != null) {
 			return roomParticipant.getName();
 		} else {
-			return "<UnknownParticipant>";
+			return name;
 		}
+	}
+
+	@Override
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	@Override
@@ -66,10 +73,5 @@ public class ParticipantSessionJsonRpc implements ParticipantSession {
 	public void sendNotification(String method, Object params)
 			throws IOException {
 		session.sendNotification(method, params);
-	}
-
-	@Override
-	public Boolean isHQ() {
-		return false;
 	}
 }

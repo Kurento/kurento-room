@@ -21,14 +21,12 @@ import java.util.List;
 import org.kurento.commons.ConfigFileManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.jsonrpc.internal.server.config.JsonRpcConfiguration;
-import org.kurento.jsonrpc.message.Request;
 import org.kurento.jsonrpc.server.JsonRpcConfigurer;
 import org.kurento.jsonrpc.server.JsonRpcHandlerRegistry;
-import org.kurento.room.api.ParticipantSession;
-import org.kurento.room.api.RoomException;
-import org.kurento.room.api.RoomRequestsFilter;
+import org.kurento.room.api.SessionInterceptor;
 import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
 import org.kurento.room.api.control.JsonRpcUserControl;
+import org.kurento.room.internal.DefaultSessionInterceptor;
 import org.kurento.room.internal.IceWebRtcEndpoint;
 import org.kurento.room.internal.RoomManager;
 import org.kurento.room.kms.FixedOneKmsManager;
@@ -44,7 +42,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 
 /**
  * @author Ivan Gracia (izanmail@gmail.com)
@@ -99,15 +96,8 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public RoomRequestsFilter reqFilter() {
-		return new RoomRequestsFilter() {
-			@Override
-			public void filterUserRequest(Request<JsonObject> request,
-					ParticipantSession participantSession,
-					SessionState sessionState) throws RoomException {
-				// empty filter
-			}
-		};
+	public SessionInterceptor interceptor() {
+		return new DefaultSessionInterceptor();
 	}
 
 	@Bean

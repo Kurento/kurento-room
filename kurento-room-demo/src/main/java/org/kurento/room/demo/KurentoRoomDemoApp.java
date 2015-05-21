@@ -21,9 +21,8 @@ import java.util.List;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.room.KurentoRoomServerApp;
-import org.kurento.room.api.RoomRequestsFilter;
+import org.kurento.room.api.SessionInterceptor;
 import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
-import org.kurento.room.api.control.JsonRpcUserControl;
 import org.kurento.room.kms.FixedNKmsManager;
 import org.kurento.room.kms.KmsManager;
 import org.slf4j.Logger;
@@ -69,13 +68,8 @@ public class KurentoRoomDemoApp {
 	}
 
 	@Bean
-	public JsonRpcUserControl userControl() {
-		return new JsonRpcSLAUserControl();
-	}
-
-	@Bean
-	public RoomRequestsFilter reqFilter() {
-		return new AuthSLAReqFilter();
+	public SessionInterceptor interceptor() {
+		return new AuthSLASessionInterceptor();
 	}
 
 	public static void main(String[] args) throws Exception {
