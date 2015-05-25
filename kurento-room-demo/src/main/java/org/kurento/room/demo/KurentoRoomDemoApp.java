@@ -22,7 +22,6 @@ import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.room.KurentoRoomServerApp;
 import org.kurento.room.api.SessionInterceptor;
-import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
 import org.kurento.room.kms.FixedNKmsManager;
 import org.kurento.room.kms.KmsManager;
 import org.slf4j.Logger;
@@ -56,7 +55,9 @@ public class KurentoRoomDemoApp {
 	}
 
 	@Bean
-	public EndpointBuilder endpointBuilder() {
+	public SessionInterceptor interceptor() {
+		AuthSLASessionInterceptor interceptor = new AuthSLASessionInterceptor();
+
 		String appServerUrl = System.getProperty("app.server.url",
 				DEFAULT_APP_SERVER_URL);
 		String hatUrl;
@@ -64,12 +65,9 @@ public class KurentoRoomDemoApp {
 			hatUrl = appServerUrl + "img/mario-wings.png";
 		else
 			hatUrl = appServerUrl + "/img/mario-wings.png";
-		return new PirateEndpoint.PirateEndpointBuilder(hatUrl);
-	}
+		interceptor.setHatUrl(hatUrl);
 
-	@Bean
-	public SessionInterceptor interceptor() {
-		return new AuthSLASessionInterceptor();
+		return interceptor;
 	}
 
 	public static void main(String[] args) throws Exception {

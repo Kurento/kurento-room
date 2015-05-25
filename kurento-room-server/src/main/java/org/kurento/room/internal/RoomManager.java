@@ -31,7 +31,7 @@ import javax.annotation.PreDestroy;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
 import org.kurento.room.api.SessionInterceptor;
-import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
+import org.kurento.room.api.control.ReceiveVideoFromResponse;
 import org.kurento.room.kms.Kms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,9 +56,6 @@ public class RoomManager {
 	public void setSessionFilter(SessionInterceptor interceptor) {
 		this.interceptor = interceptor;
 	}
-
-	@Autowired
-	private EndpointBuilder endpointBuilder;
 
 	private final ConcurrentMap<String, Room> rooms = new ConcurrentHashMap<>();
 
@@ -87,7 +84,7 @@ public class RoomManager {
 
 		if (room == null) {
 			Kms kms = interceptor.getKmsForNewRoom(participantSession);
-			room = new Room(roomName, kms, endpointBuilder);
+			room = new Room(roomName, kms);
 			Room oldRoom = rooms.putIfAbsent(roomName, room);
 			if (oldRoom != null) {
 				return oldRoom;
@@ -99,6 +96,35 @@ public class RoomManager {
 		} else {
 			return room;
 		}
+	}
+
+	public void publishVideo(final Participant participant,
+			final String sdpOffer,
+			final RMContinuation<ReceiveVideoFromResponse> cont) {
+		executor.submit(new Runnable() {
+			@Override
+			public void run() {
+				String name = participant.getName();
+				updateThreadName("pub:" + name);
+
+				Room room = participant.getRoom();
+
+				interceptor.shapePreparingMedia(participant.getPublisher(),
+						room.getPipeline(), room.getActivePublishers() == 0);
+
+				String sdpAnswer = participant.publishToRoom(sdpOffer);
+
+				if (sdpAnswer != null)
+					cont.result(null, new ReceiveVideoFromResponse(name,
+							sdpAnswer));
+				else
+					cont.result(new RoomException(RoomException.SDP_ERROR_CODE,
+							"Error generating publishing sdpAnswer for user "
+									+ name), null);
+
+				updateThreadName("roomManager");
+			}
+		});
 	}
 
 	public void receiveVideoFrom(final Participant recvParticipant,

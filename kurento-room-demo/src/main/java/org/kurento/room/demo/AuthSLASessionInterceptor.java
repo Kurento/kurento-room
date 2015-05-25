@@ -15,7 +15,10 @@
 
 package org.kurento.room.demo;
 
+import org.kurento.client.FaceOverlayFilter;
+import org.kurento.client.MediaPipeline;
 import org.kurento.jsonrpc.message.Request;
+import org.kurento.room.api.MediaShapingEndpoint;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
 import org.kurento.room.api.SessionInterceptor;
@@ -35,8 +38,14 @@ public class AuthSLASessionInterceptor implements SessionInterceptor {
 	@Autowired
 	private KmsManager kmsManager;
 
+	private String hatUrl;
+
 	public void setKmsManager(KmsManager kmsManager) {
 		this.kmsManager = kmsManager;
+	}
+
+	public void setHatUrl(String hatUrl) {
+		this.hatUrl = hatUrl;
 	}
 
 	@Override
@@ -92,6 +101,25 @@ public class AuthSLASessionInterceptor implements SessionInterceptor {
 
 	private boolean canCreateRoom(String userName) {
 		return userName.toLowerCase().startsWith("special");
+	}
+
+	@Override
+	public void shapePreparingMedia(MediaShapingEndpoint publisher,
+			MediaPipeline pipeline, boolean isOnlyPublisher)
+					throws RoomException {
+		if (!isOnlyPublisher) // only the first publisher will have a hat
+			return;
+		FaceOverlayFilter faceOverlayFilterPirate = new FaceOverlayFilter.Builder(
+				pipeline).build();
+		faceOverlayFilterPirate.setOverlayedImage(this.hatUrl, -0.35F, -1.2F,
+				1.6F, 1.6F);
+		publisher.apply(faceOverlayFilterPirate);
+	}
+
+	@Override
+	public void shapeStreamingMedia(MediaShapingEndpoint publisher,
+			MediaPipeline pipeline, boolean isOnlyPublisher) {
+		// not used ... yet
 	}
 
 }

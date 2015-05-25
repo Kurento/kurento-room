@@ -15,6 +15,7 @@
 
 package org.kurento.room.api;
 
+import org.kurento.client.MediaPipeline;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.room.internal.Room;
 import org.kurento.room.internal.RoomManager;
@@ -61,7 +62,7 @@ public interface SessionInterceptor {
 	 */
 	public void authorizeUserRequest(Request<JsonObject> request,
 			SessionState sessionState)
-			throws RoomException;
+					throws RoomException;
 
 	/**
 	 * Invoked by the {@link RoomManager} before creating a new room on behalf
@@ -75,4 +76,37 @@ public interface SessionInterceptor {
 	 */
 	public Kms getKmsForNewRoom(ParticipantSession participantSession)
 			throws RoomException;
+
+	/**
+	 * Invoked right before a publisher element starts streaming media.
+	 * 
+	 * @param publisher
+	 *            publisher's interface to shape its media
+	 * @param pipeline
+	 *            the {@link MediaPipeline} used by this publisher
+	 * @param isOnlyPublisher
+	 *            if true, there are no publishers currently streaming media in
+	 *            this room
+	 * @throws RoomException
+	 *             if thrown, the media could not be shaped
+	 */
+	public void shapePreparingMedia(MediaShapingEndpoint publisher,
+			MediaPipeline pipeline, boolean isOnlyPublisher)
+					throws RoomException;
+
+	/**
+	 * Invoked on a publisher element which is currently streaming media.
+	 * 
+	 * @param publisher
+	 *            publisher's interface to shape its media
+	 * @param pipeline
+	 *            the {@link MediaPipeline} used by this publisher
+	 * @param isOnlyPublisher
+	 *            if true, there are no other publishers (besides this one)
+	 *            currently streaming media in this room
+	 * @throws RoomException
+	 *             if thrown, the media could not be shaped
+	 */
+	public void shapeStreamingMedia(MediaShapingEndpoint publisher,
+			MediaPipeline pipeline, boolean isOnlyPublisher);
 }

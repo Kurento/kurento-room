@@ -13,7 +13,7 @@
  *
  */
 
-package org.kurento.room.internal;
+package org.kurento.room.api.control;
 
 public class ReceiveVideoFromResponse {
 

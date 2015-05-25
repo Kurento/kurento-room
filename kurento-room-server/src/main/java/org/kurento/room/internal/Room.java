@@ -17,16 +17,17 @@ package org.kurento.room.internal;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.kurento.client.Continuation;
 import org.kurento.client.MediaPipeline;
 import org.kurento.commons.exception.KurentoException;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
-import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
 import org.kurento.room.kms.Kms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,25 +52,33 @@ public class Room {
 	private final String name;
 
 	private MediaPipeline pipeline;
+	private CountDownLatch pipelineLatch = new CountDownLatch(1);
 
 	private Kms kms;
 
 	private volatile boolean closed = false;
 
+	private volatile AtomicInteger activePublishers = new AtomicInteger(0);
+
 	private ExecutorService executor = Executors.newFixedThreadPool(1);
 
-	private EndpointBuilder endpointBuilder;
-
-	public Room(String roomName, Kms kms,
-			EndpointBuilder endpointBuilder) {
+	public Room(String roomName, Kms kms) {
 		this.name = roomName;
 		this.kms = kms;
-		this.endpointBuilder = endpointBuilder;
 		log.info("ROOM {} has been created", roomName);
 	}
 
 	public String getName() {
 		return name;
+	}
+
+	public MediaPipeline getPipeline() {
+		try {
+			pipelineLatch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		return this.pipeline;
 	}
 
 	public Participant join(String userName, ParticipantSession session) {
@@ -85,11 +94,12 @@ public class Room {
 		if (pipeline == null) {
 			log.info("ROOM {}: Creating MediaPipeline", userName);
 			pipeline = kms.newPipeline();
+			pipelineLatch.countDown();
 		}
 
 		log.info("ROOM {}: adding participant {}", userName, userName);
 		final Participant participant = new Participant(userName, this,
-				session, this.pipeline, this.endpointBuilder);
+				session, this.pipeline);
 
 		log.debug(
 				"ROOM {}: notifying other participants {} of new participant {}",
@@ -108,7 +118,7 @@ public class Room {
 			participant1.sendNotification(PARTICIPANT_JOINED_METHOD, params);
 
 			if (!participant1.getName().equals(userName)) // sanity check
-				participant1.addSendingEndpoint(userName);
+				participant1.addSubscriber(userName);
 		}
 
 		participants.put(participant.getName(), participant);
@@ -238,5 +248,17 @@ public class Room {
 			participant.cancelSendingVideoTo(name);
 			participant.sendNotification(PARTICIPANT_LEFT_METHOD, params);
 		}
+	}
+
+	public int getActivePublishers() {
+		return activePublishers.get();
+	}
+
+	public void registerPublisher() {
+		this.activePublishers.incrementAndGet();
+	}
+
+	public void deregisterPublisher() {
+		this.activePublishers.decrementAndGet();
 	}
 }

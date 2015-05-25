@@ -15,7 +15,9 @@
 
 package org.kurento.room.internal;
 
+import org.kurento.client.MediaPipeline;
 import org.kurento.jsonrpc.message.Request;
+import org.kurento.room.api.MediaShapingEndpoint;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
 import org.kurento.room.api.SessionInterceptor;
@@ -65,6 +67,19 @@ public class DefaultSessionInterceptor implements SessionInterceptor {
 		}
 		log.debug("Offering Kms: {}, uri={}", type, kms.getUri());
 		return kms;
+	}
+
+	@Override
+	public void shapePreparingMedia(MediaShapingEndpoint publisher,
+			MediaPipeline pipeline, boolean isOnlyPublisher)
+					throws RoomException {
+		// default is empty
+	}
+
+	@Override
+	public void shapeStreamingMedia(MediaShapingEndpoint publisher,
+			MediaPipeline pipeline, boolean isOnlyPublisher) {
+		// default is empty
 	}
 
 }

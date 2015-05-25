@@ -29,7 +29,6 @@ import org.kurento.jsonrpc.message.ResponseError;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
 import org.kurento.room.internal.Participant;
-import org.kurento.room.internal.ReceiveVideoFromResponse;
 import org.kurento.room.internal.RoomManager;
 import org.kurento.room.internal.RoomManager.RMContinuation;
 import org.slf4j.Logger;

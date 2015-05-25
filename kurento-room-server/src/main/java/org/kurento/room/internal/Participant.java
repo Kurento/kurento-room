@@ -32,9 +32,9 @@ import org.kurento.client.internal.server.KurentoServerException;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.jsonrpc.message.Response;
 import org.kurento.room.api.ParticipantSession;
-import org.kurento.room.api.TrickleIceEndpoint;
-import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
-import org.kurento.room.api.TrickleIceEndpoint.EndpointQualifier;
+import org.kurento.room.endpoint.IceWebRtcEndpoint;
+import org.kurento.room.endpoint.PublisherEndpoint;
+import org.kurento.room.endpoint.SubscriberEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -59,10 +59,10 @@ public class Participant {
 	private final ParticipantSession session;
 	private final MediaPipeline pipeline;
 
-	private TrickleIceEndpoint receivingEndpoint;
+	private PublisherEndpoint publisher;
 	private CountDownLatch endPointLatch = new CountDownLatch(1);
 
-	private final ConcurrentMap<String, TrickleIceEndpoint> sendingEndpoints = new ConcurrentHashMap<String, TrickleIceEndpoint>();
+	private final ConcurrentMap<String, SubscriberEndpoint> subscribers = new ConcurrentHashMap<String, SubscriberEndpoint>();
 
 	private BlockingQueue<Request<JsonObject>> messages = new ArrayBlockingQueue<>(
 			10);
@@ -74,22 +74,14 @@ public class Participant {
 
 	private volatile boolean closed;
 
-	private EndpointBuilder endpointBuilder;
-
 	public Participant(String name, Room room, ParticipantSession session,
-			MediaPipeline pipeline, EndpointBuilder endpointBuilder) {
+			MediaPipeline pipeline) {
 
 		this.pipeline = pipeline;
 		this.name = name;
 		this.session = session;
 		this.room = room;
-		this.endpointBuilder = endpointBuilder;
-		if (room.getParticipants().isEmpty())
-			this.receivingEndpoint = this.endpointBuilder.build(pipeline,
-					EndpointQualifier.FIRST, EndpointQualifier.LOCAL);
-		else
-			this.receivingEndpoint = this.endpointBuilder.build(pipeline,
-					EndpointQualifier.LOCAL);
+		this.publisher = new PublisherEndpoint(this, name, pipeline);
 
 		this.senderThread = new Thread("sender:" + name) {
 			@Override
@@ -115,18 +107,15 @@ public class Participant {
 
 		for (Participant other : room.getParticipants())
 			if (!other.getName().equals(this.name))
-				sendingEndpoints.put(other.getName(),
-						endpointBuilder.build(
-								pipeline, EndpointQualifier.REMOTE));
+				subscribers.put(other.getName(), new SubscriberEndpoint(this,
+						other.getName(), pipeline));
 
 		this.senderThread.start();
 		this.notifThread.start();
 	}
 
 	public void createReceivingEndpoint() {
-		this.receivingEndpoint.createEndpoint();
-		this.receivingEndpoint.registerOnIceCandidateEventListener(name,
-				Participant.this);
+		this.publisher.createEndpoint();
 		endPointLatch.countDown();
 	}
 
@@ -141,17 +130,28 @@ public class Participant {
 		return session;
 	}
 
-	public TrickleIceEndpoint getReceivingEndpoint() {
+	public PublisherEndpoint getPublisher() {
 		try {
 			endPointLatch.await();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
-		return this.receivingEndpoint;
+		return this.publisher;
 	}
 
 	public Room getRoom() {
 		return this.room;
+	}
+
+	public String publishToRoom(String sdpOffer) {
+		log.info("USER {}: Request to publish video in room {}", this.name,
+				this.room.getName());
+		log.trace("USER {}: Publishing SdpOffer is {}", this.name, sdpOffer);
+		String sdpAnswer = this.getPublisher().publish(sdpOffer);
+		log.trace("USER {}: Publishing SdpAnswer is {}", this.name, sdpAnswer);
+		log.info("USER {}: Is now publishing video in room {}", this.name,
+				this.room.getName());
+		return sdpAnswer;
 	}
 
 	public String receiveVideoFrom(Participant sender, String sdpOffer) {
@@ -162,7 +162,7 @@ public class Participant {
 		log.trace("USER {}: SdpOffer for {} is {}", this.name, senderName,
 				sdpOffer);
 
-		if (sender.getReceivingEndpoint() == null) {
+		if (sender.getPublisher() == null) {
 			log.warn(
 					"PARTICIPANT {}: Trying to connect to a user without receiving endpoint (it seems is not yet fully connected)",
 					this.name);
@@ -172,43 +172,44 @@ public class Participant {
 		if (senderName.equals(this.name)) {
 			// FIXME: Use another message type for receiving sdp offer
 			log.debug("PARTICIPANT {}: configuring loopback", this.name);
-			sender.getReceivingEndpoint().connect(this.getReceivingEndpoint());
-			String sdpAnswer = sender.getReceivingEndpoint().processOffer(
-					sdpOffer);
-			sender.getReceivingEndpoint().gatherCandidates();
-			return sdpAnswer;
+			// TODO throw exception???
+			return null;
+			// sender.getPublisher().connect(this.getPublisher().getEndpoint());
+			// String sdpAnswer = sender.getPublisher().processOffer(
+			// sdpOffer);
+			// sender.getPublisher().gatherCandidates();
+			// return sdpAnswer;
 		}
 
-		log.debug("PARTICIPANT {}: Creating a sending endpoint to user {}",
+		log.debug("PARTICIPANT {}: Creating a subscriber endpoint to user {}",
 				this.name, senderName);
 
-		TrickleIceEndpoint iceSendingEndpoint = endpointBuilder.build(pipeline,
-				EndpointQualifier.REMOTE);
-		TrickleIceEndpoint oldIceSendingEndpoint = this.sendingEndpoints
-				.putIfAbsent(senderName, iceSendingEndpoint);
-		if (oldIceSendingEndpoint != null)
-			iceSendingEndpoint = oldIceSendingEndpoint;
+		SubscriberEndpoint subscriber = new SubscriberEndpoint(this,
+				senderName, pipeline);
+		SubscriberEndpoint oldSubscriber = this.subscribers.putIfAbsent(
+				senderName, subscriber);
+		if (oldSubscriber != null)
+			subscriber = oldSubscriber;
 
-		WebRtcEndpoint oldSendingEndpoint = iceSendingEndpoint.createEndpoint();
-		if (oldSendingEndpoint != null) {
+		WebRtcEndpoint oldWrEndpoint = subscriber.createEndpoint();
+		if (oldWrEndpoint != null) {
 			log.warn(
-					"PARTICIPANT {}: Two threads are trying to create at the same time a sending endpoint for user {}",
+					"PARTICIPANT {}: Two threads are trying to create at the same time a subscriber endpoint for user {}",
 					this.name, senderName);
 			return null;
 		}
 
-		iceSendingEndpoint.registerOnIceCandidateEventListener(senderName,
-				Participant.this);
-
-		log.debug("PARTICIPANT {}: Created sending endpoint for user {}",
+		log.debug("PARTICIPANT {}: Created subscriber endpoint for user {}",
 				this.name, senderName);
 		try {
-			sender.getReceivingEndpoint().connect(iceSendingEndpoint);
-			String sdpAnswer = iceSendingEndpoint.processOffer(sdpOffer);
-			iceSendingEndpoint.gatherCandidates();
+			String sdpAnswer = subscriber.subscribe(sdpOffer,
+					sender.getPublisher());
+			log.trace("USER {}: Subscribing SdpAnswer is {}", this.name,
+					sdpAnswer);
+			log.info("USER {}: Is now receiving video from {} in room {}",
+					this.name, senderName, this.room.getName());
 			return sdpAnswer;
 		} catch (KurentoServerException e) {
-
 			// TODO Check object status when KurentoClient set this info in the
 			// object
 			if (e.getCode() == 40101)
@@ -219,9 +220,8 @@ public class Participant {
 				log.error(
 						"Exception connecting receiving endpoint to sending endpoint",
 						e);
-
-			this.sendingEndpoints.remove(senderName);
-			this.releaseEndpoint(senderName, iceSendingEndpoint.getEndpoint());
+			this.subscribers.remove(senderName);
+			this.releaseEndpoint(senderName, subscriber.getEndpoint());
 		}
 		return null;
 	}
@@ -231,7 +231,7 @@ public class Participant {
 		log.debug("PARTICIPANT {}: canceling video sending to {}", this.name,
 				senderName);
 
-		final TrickleIceEndpoint sendingEndpoint = sendingEndpoints
+		IceWebRtcEndpoint sendingEndpoint = subscribers
 				.remove(senderName);
 
 		if (sendingEndpoint == null || sendingEndpoint.getEndpoint() == null) {
@@ -274,9 +274,9 @@ public class Participant {
 
 		this.closed = true;
 
-		for (final String remoteParticipantName : sendingEndpoints.keySet()) {
+		for (final String remoteParticipantName : subscribers.keySet()) {
 
-			final TrickleIceEndpoint ep = this.sendingEndpoints
+			IceWebRtcEndpoint ep = this.subscribers
 					.get(remoteParticipantName);
 
 			if (ep.getEndpoint() != null) {
@@ -289,10 +289,10 @@ public class Participant {
 						this.name, remoteParticipantName);
 		}
 
-		if (receivingEndpoint != null
-				&& receivingEndpoint.getEndpoint() != null) {
-			releaseEndpoint(name, receivingEndpoint.getEndpoint());
-			receivingEndpoint = null;
+		if (publisher != null
+				&& publisher.getEndpoint() != null) {
+			releaseEndpoint(name, publisher.getEndpoint());
+			publisher = null;
 		}
 
 		this.senderThread.interrupt();
@@ -320,10 +320,10 @@ public class Participant {
 		}
 	}
 
-	public TrickleIceEndpoint addSendingEndpoint(String newUserName) {
-		TrickleIceEndpoint iceSendingEndpoint = endpointBuilder.build(pipeline,
-				EndpointQualifier.REMOTE);
-		TrickleIceEndpoint oldIceSendingEndpoint = this.sendingEndpoints
+	public SubscriberEndpoint addSubscriber(String newUserName) {
+		SubscriberEndpoint iceSendingEndpoint = new SubscriberEndpoint(this,
+				newUserName, pipeline);
+		SubscriberEndpoint oldIceSendingEndpoint = this.subscribers
 				.putIfAbsent(newUserName, iceSendingEndpoint);
 		if (oldIceSendingEndpoint != null) {
 			iceSendingEndpoint = oldIceSendingEndpoint;
@@ -339,9 +339,9 @@ public class Participant {
 
 	public void addIceCandidate(String endpointName, IceCandidate iceCandidate) {
 		if (this.name.equals(endpointName))
-			this.receivingEndpoint.addIceCandidate(iceCandidate);
+			this.publisher.addIceCandidate(iceCandidate);
 		else
-			this.addSendingEndpoint(endpointName).addIceCandidate(iceCandidate);
+			this.addSubscriber(endpointName).addIceCandidate(iceCandidate);
 	}
 
 	private void releaseEndpoint(final String senderName,

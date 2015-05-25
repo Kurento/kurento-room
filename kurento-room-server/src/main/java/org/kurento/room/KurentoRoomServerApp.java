@@ -24,10 +24,8 @@ import org.kurento.jsonrpc.internal.server.config.JsonRpcConfiguration;
 import org.kurento.jsonrpc.server.JsonRpcConfigurer;
 import org.kurento.jsonrpc.server.JsonRpcHandlerRegistry;
 import org.kurento.room.api.SessionInterceptor;
-import org.kurento.room.api.TrickleIceEndpoint.EndpointBuilder;
 import org.kurento.room.api.control.JsonRpcUserControl;
 import org.kurento.room.internal.DefaultSessionInterceptor;
-import org.kurento.room.internal.IceWebRtcEndpoint;
 import org.kurento.room.internal.RoomManager;
 import org.kurento.room.kms.FixedOneKmsManager;
 import org.kurento.room.kms.KmsManager;
@@ -86,12 +84,6 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 	@ConditionalOnMissingBean
 	public JsonRpcUserControl userControl() {
 		return new JsonRpcUserControl();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public EndpointBuilder endpointBuilder() {
-		return new IceWebRtcEndpoint.Builder();
 	}
 
 	@Bean
