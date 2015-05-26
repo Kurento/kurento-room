@@ -4,5 +4,12 @@
    },
    "app": {
       "uri": "http://localhost:8080/"
+   },
+   "demo": {
+      "hat": {
+         "filter": true,
+         "onlyOnFirst": true
+      },
+      "authRegex": ".*"
    }
 }

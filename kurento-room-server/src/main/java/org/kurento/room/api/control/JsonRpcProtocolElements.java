@@ -27,6 +27,8 @@ public class JsonRpcProtocolElements {
 	public static final String JOIN_ROOM_METHOD = "joinRoom";
 	public static final String JOIN_ROOM_USER_PARAM = "user";
 	public static final String JOIN_ROOM_ROOM_PARAM = "room";
+	public static final String PUBLISH_VIDEO_METHOD = "publishVideo";
+	public static final String PUBLISH_VIDEO_SDPOFFER_PARAM = "sdpOffer";
 	public static final String RECEIVE_VIDEO_METHOD = "receiveVideoFrom";
 	public static final String RECEIVE_VIDEO_SDPOFFER_PARAM = "sdpOffer";
 	public static final String RECEIVE_VIDEO_SENDER_PARAM = "sender";

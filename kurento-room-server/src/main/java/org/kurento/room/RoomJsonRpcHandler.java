@@ -76,14 +76,17 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 		}
 
 		switch (request.getMethod()) {
+		case JsonRpcProtocolElements.JOIN_ROOM_METHOD:
+			userControl.joinRoom(transaction, request);
+			break;
+		case JsonRpcProtocolElements.PUBLISH_VIDEO_METHOD:
+			userControl.publishVideo(transaction, request);
+			break;
 		case JsonRpcProtocolElements.RECEIVE_VIDEO_METHOD:
 			userControl.receiveVideoFrom(transaction, request);
 			break;
 		case JsonRpcProtocolElements.ON_ICE_CANDIDATE_METHOD:
 			userControl.onIceCandidate(transaction, request);
-			break;
-		case JsonRpcProtocolElements.JOIN_ROOM_METHOD:
-			userControl.joinRoom(transaction, request);
 			break;
 		case JsonRpcProtocolElements.LEAVE_ROOM_METHOD:
 			userControl.leaveRoom(transaction);

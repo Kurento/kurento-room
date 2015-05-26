@@ -15,6 +15,9 @@
 
 package org.kurento.room.demo;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.kurento.client.FaceOverlayFilter;
 import org.kurento.client.MediaPipeline;
 import org.kurento.jsonrpc.message.Request;
@@ -39,6 +42,10 @@ public class AuthSLASessionInterceptor implements SessionInterceptor {
 	private KmsManager kmsManager;
 
 	private String hatUrl;
+	private boolean onlyOnFirst = true;
+
+	private String authRegex;
+	private static Pattern authPattern = null;
 
 	public void setKmsManager(KmsManager kmsManager) {
 		this.kmsManager = kmsManager;
@@ -46,6 +53,16 @@ public class AuthSLASessionInterceptor implements SessionInterceptor {
 
 	public void setHatUrl(String hatUrl) {
 		this.hatUrl = hatUrl;
+	}
+
+	public void setHatOnlyOnFirst(boolean onlyOnFirst) {
+		this.onlyOnFirst = onlyOnFirst;
+	}
+
+	public synchronized void setAuthRegex(String regex) {
+		this.authRegex = (regex != null ? regex.trim() : null);
+		if (authRegex != null && !authRegex.isEmpty())
+			authPattern = Pattern.compile(authRegex, Pattern.UNICODE_CASE | Pattern.CASE_INSENSITIVE);
 	}
 
 	@Override
@@ -100,20 +117,23 @@ public class AuthSLASessionInterceptor implements SessionInterceptor {
 	}
 
 	private boolean canCreateRoom(String userName) {
-		return userName.toLowerCase().startsWith("special");
+		if (authPattern == null)
+			return true;
+		Matcher m = authPattern.matcher(userName);
+		return m.matches();
 	}
 
 	@Override
 	public void shapePreparingMedia(MediaShapingEndpoint publisher,
 			MediaPipeline pipeline, boolean isOnlyPublisher)
 					throws RoomException {
-		if (!isOnlyPublisher) // only the first publisher will have a hat
+		if (onlyOnFirst && !isOnlyPublisher) // only the first publisher will have a hat
 			return;
-		FaceOverlayFilter faceOverlayFilterPirate = new FaceOverlayFilter.Builder(
+		FaceOverlayFilter faceOverlayFilter = new FaceOverlayFilter.Builder(
 				pipeline).build();
-		faceOverlayFilterPirate.setOverlayedImage(this.hatUrl, -0.35F, -1.2F,
+		faceOverlayFilter.setOverlayedImage(this.hatUrl, -0.35F, -1.2F,
 				1.6F, 1.6F);
-		publisher.apply(faceOverlayFilterPirate);
+		publisher.apply(faceOverlayFilter);
 	}
 
 	@Override

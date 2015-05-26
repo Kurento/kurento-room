@@ -43,6 +43,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShaping
 
 	public synchronized String publish(String sdpOffer) {
 		registerOnIceCandidateEventListener();
+		connect(endpoint); //loopback
 		String sdpAnswer = processOffer(sdpOffer);
 		gatherCandidates();
 		return sdpAnswer;
@@ -121,7 +122,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShaping
 			throw new RoomException(RoomException.WEBRTC_ENDPOINT_ERROR_CODE,
 					"Can't connect null WebRtcEndpoint");
 		MediaElement current = endpoint;
-		String prevId = elementIds.getLast();
+		String prevId = elementIds.peekLast();
 		while (prevId != null) {
 			MediaElement prev = elements.get(prevId);
 			if (prev == null)
@@ -130,6 +131,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShaping
 						"No media element with id " + prevId);
 			current.connect(prev);
 			current = prev;
+			prevId = getPrevious(prevId);
 		}
 		current.connect(passThru);
 		connected = true;

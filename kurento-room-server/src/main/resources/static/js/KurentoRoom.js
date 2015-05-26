@@ -76,13 +76,20 @@ function Room(kurento, options) {
         stream.subscribe();
     }
 
-    this.onParticipantJoined = function (msg) {
+    this.onParticipantPublished = function (msg) {
 
         var participant = new Participant(kurento, false, that, msg);
 
-        participants[participant.getID()] = participant;
-
-        ee.emitEvent('participant-joined', [{
+        var pid = participant.getID();
+        if (!(pid in participants)) {
+        	console.info("Publisher not found in participants list by its id", pid);
+        } else {
+        	console.log("Publisher found in participants list by its id", pid);
+        }
+        //replacing old participant (this one has streams)
+        participants[pid] = participant;
+        
+        ee.emitEvent('participant-published', [{
                 participant: participant
             }]);
 
@@ -99,6 +106,24 @@ function Room(kurento, options) {
                 stream.subscribe();
             }
         }
+    } 
+    
+    this.onParticipantJoined = function (msg) {
+        var participant = new Participant(kurento, false, that, msg);
+        var pid = participant.getID();
+        if (!(pid in participants)) {
+        	console.log("New participant to participants list with id", pid);
+        	participants[pid] = participant;
+        } else {
+        	//use existing so that we don't lose streams info
+        	log.info("Participant already exists in participants list with " +
+        			"the same id, old:", participants[pid], ", joined now:", participant);
+        	participant = participants[pid];
+        }
+
+        ee.emitEvent('participant-joined', [{
+                participant: participant
+            }]);
     }
 
     this.onParticipantLeft = function (msg) {
@@ -289,9 +314,12 @@ function Stream(kurento, local, room, options) {
     var elements = [];
     var participant = options.participant;
 
-    var displayMyRemote = false;
+    var showMyRemote = false;
     this.subscribeToMyRemote = function () {
-    	displayMyRemote = true;
+    	showMyRemote = true;
+    }
+    this.displayMyRemote = function () {
+    	return showMyRemote;
     }
     
     this.getWrStream = function () {
@@ -396,6 +424,25 @@ function Stream(kurento, local, room, options) {
         });
     }
 
+    this.publishVideoCallback = function (error, sdpOfferParam, wp) {
+    	if (error) {
+    		return console.error ("SDP offer error");
+    	}
+    	console.log('Invoking SDP offer callback function - publisher: ' + that.getGlobalID());
+        kurento.sendRequest("publishVideo", {
+            sdpOffer: sdpOfferParam
+        }, function (error, response) {
+            if (error) {
+                console.error(JSON.stringify(error));
+            } else {
+            	that.room.emitEvent('stream-published', [{
+                    stream: that
+                }])
+                that.processSdpAnswer(response.sdpAnswer);
+            }
+        });
+    }
+    
     this.startVideoCallback = function (error, sdpOfferParam, wp) {
     	if (error) {
     		return console.error ("SDP offer error");
@@ -429,12 +476,21 @@ function Stream(kurento, local, room, options) {
              		mediaConstraints: constraints,
              		onicecandidate: participant.onIceCandidate.bind(participant)
              }
-        	wp = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(options, function (error) {
-            	if(error) {
-            		return console.error(error);
-            	}
-            	this.generateOffer(that.startVideoCallback.bind(that));
-            });
+        	if (that.displayMyRemote) {
+        		wp = new kurentoUtils.WebRtcPeer.WebRtcPeerSendrecv(options, function (error) {
+                	if(error) {
+                		return console.error(error);
+                	}
+                	this.generateOffer(sdpOfferCallback.bind(that));
+                });
+        	} else {
+        		wp = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(options, function (error) {
+                	if(error) {
+                		return console.error(error);
+                	}
+                	this.generateOffer(sdpOfferCallback.bind(that));
+                });
+        	}        	
         } else {
         	 var options = {
         			 onicecandidate: participant.onIceCandidate.bind(participant)
@@ -443,7 +499,7 @@ function Stream(kurento, local, room, options) {
             	if(error) {
             		return console.error(error);
             	}
-            	this.generateOffer(that.startVideoCallback.bind(that));
+            	this.generateOffer(sdpOfferCallback.bind(that));
             });
         }
         wp.stream = wrStream;
@@ -454,7 +510,7 @@ function Stream(kurento, local, room, options) {
 
         // FIXME: Throw error when stream is not local
 
-        initWebRtcPeer();
+        initWebRtcPeer(that.publishVideoCallback);
 
         // FIXME: Now we have coupled connecting to a room and adding a
         // stream to this room. But in the new API, there are two steps.
@@ -469,7 +525,7 @@ function Stream(kurento, local, room, options) {
         // negotiate SDP
 
         // Refactor this to avoid code duplication
-        initWebRtcPeer();
+        initWebRtcPeer(that.startVideoCallback);
     }
 
     this.processSdpAnswer = function (sdpAnswer) {
@@ -481,9 +537,9 @@ function Stream(kurento, local, room, options) {
 
         console.info(that.getGlobalID() + ': SDP answer received, setting remote description');
 
-        var pc = wp.peerConnection
+        var pc = wp.peerConnection;
         pc.setRemoteDescription(answer, function () {
-            if (!local || displayMyRemote) {
+            if (!local || that.displayMyRemote()) {
                 // FIXME: This avoid to subscribe to your own stream remotely.
                 // Fix this
                 wrStream = pc.getRemoteStreams()[0];
@@ -523,6 +579,7 @@ function Stream(kurento, local, room, options) {
             disposeElement(videoElements[i]);
         }
 
+        wp.dispose();
         var pc = wp.peerConnection
         if (pc && pc.signalingState != 'closed')
             pc.close();
@@ -576,6 +633,9 @@ function KurentoRoom(wsUri, callback) {
             case 'participantJoined':
                 onParticipantJoined(request.params);
                 break;
+            case 'participantPublished':
+                onParticipantPublished(request.params);
+                break;
             case 'participantLeft':
                 onParticipantLeft(request.params);
                 break;
@@ -597,6 +657,12 @@ function KurentoRoom(wsUri, callback) {
         }
     }
 
+    function onParticipantPublished(msg) {
+        if (room !== undefined) {
+            room.onParticipantPublished(msg);
+        }
+    }
+    
     function onParticipantLeft(msg) {
         if (room !== undefined) {
             room.onParticipantLeft(msg);

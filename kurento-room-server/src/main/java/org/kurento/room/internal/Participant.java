@@ -72,6 +72,7 @@ public class Participant {
 			10);
 	private Thread notifThread;
 
+	private volatile boolean streaming = false;
 	private volatile boolean closed;
 
 	public Participant(String name, Room room, ParticipantSession session,
@@ -151,6 +152,7 @@ public class Participant {
 		log.trace("USER {}: Publishing SdpAnswer is {}", this.name, sdpAnswer);
 		log.info("USER {}: Is now publishing video in room {}", this.name,
 				this.room.getName());
+		this.streaming = true;
 		return sdpAnswer;
 	}
 
@@ -173,12 +175,7 @@ public class Participant {
 			// FIXME: Use another message type for receiving sdp offer
 			log.debug("PARTICIPANT {}: configuring loopback", this.name);
 			// TODO throw exception???
-			return null;
-			// sender.getPublisher().connect(this.getPublisher().getEndpoint());
-			// String sdpAnswer = sender.getPublisher().processOffer(
-			// sdpOffer);
-			// sender.getPublisher().gatherCandidates();
-			// return sdpAnswer;
+			//			return null;
 		}
 
 		log.debug("PARTICIPANT {}: Creating a subscriber endpoint to user {}",
@@ -323,16 +320,16 @@ public class Participant {
 	public SubscriberEndpoint addSubscriber(String newUserName) {
 		SubscriberEndpoint iceSendingEndpoint = new SubscriberEndpoint(this,
 				newUserName, pipeline);
-		SubscriberEndpoint oldIceSendingEndpoint = this.subscribers
+		SubscriberEndpoint existingIceSendingEndpoint = this.subscribers
 				.putIfAbsent(newUserName, iceSendingEndpoint);
-		if (oldIceSendingEndpoint != null) {
-			iceSendingEndpoint = oldIceSendingEndpoint;
-			log.debug(
-					"PARTICIPANT {}: New placeholder for WebRtcEndpoint with ICE candidates queue for user {}",
+		if (existingIceSendingEndpoint != null) {
+			iceSendingEndpoint = existingIceSendingEndpoint;
+			log.trace(
+					"PARTICIPANT {}: There is an existing placeholder for WebRtcEndpoint with ICE candidates queue for user {}",
 					this.name, newUserName);
 		} else
 			log.debug(
-					"PARTICIPANT {}: There is an existing placeholder for WebRtcEndpoint with ICE candidates queue for user {}",
+					"PARTICIPANT {}: New placeholder for WebRtcEndpoint with ICE candidates queue for user {}",
 					this.name, newUserName);
 		return iceSendingEndpoint;
 	}
@@ -416,6 +413,10 @@ public class Participant {
 
 	public boolean isClosed() {
 		return closed;
+	}
+
+	public boolean isStreaming() {
+		return streaming;
 	}
 
 	@Override

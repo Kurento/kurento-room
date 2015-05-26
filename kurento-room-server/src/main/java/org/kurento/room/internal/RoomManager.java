@@ -31,6 +31,7 @@ import javax.annotation.PreDestroy;
 import org.kurento.room.api.ParticipantSession;
 import org.kurento.room.api.RoomException;
 import org.kurento.room.api.SessionInterceptor;
+import org.kurento.room.api.control.PublishVideoResponse;
 import org.kurento.room.api.control.ReceiveVideoFromResponse;
 import org.kurento.room.kms.Kms;
 import org.slf4j.Logger;
@@ -100,7 +101,7 @@ public class RoomManager {
 
 	public void publishVideo(final Participant participant,
 			final String sdpOffer,
-			final RMContinuation<ReceiveVideoFromResponse> cont) {
+			final RMContinuation<PublishVideoResponse> cont) {
 		executor.submit(new Runnable() {
 			@Override
 			public void run() {
@@ -109,18 +110,26 @@ public class RoomManager {
 
 				Room room = participant.getRoom();
 
+				executor.submit(new Runnable() {
+					@Override
+					public void run() {
+						participant.createReceivingEndpoint();
+					}
+				});
+
 				interceptor.shapePreparingMedia(participant.getPublisher(),
 						room.getPipeline(), room.getActivePublishers() == 0);
 
 				String sdpAnswer = participant.publishToRoom(sdpOffer);
 
 				if (sdpAnswer != null)
-					cont.result(null, new ReceiveVideoFromResponse(name,
-							sdpAnswer));
+					cont.result(null, new PublishVideoResponse(sdpAnswer));
 				else
 					cont.result(new RoomException(RoomException.SDP_ERROR_CODE,
 							"Error generating publishing sdpAnswer for user "
 									+ name), null);
+
+				room.newPublisher(participant);
 
 				updateThreadName("roomManager");
 			}
@@ -215,13 +224,6 @@ public class RoomManager {
 						session.setParticipant(participant);
 
 						cont.result(null, participants);
-
-						executor.submit(new Runnable() {
-							@Override
-							public void run() {
-								participant.createReceivingEndpoint();
-							}
-						});
 
 					} catch (RoomException e) {
 						cont.result(e, null);

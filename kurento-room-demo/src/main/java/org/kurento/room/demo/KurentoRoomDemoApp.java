@@ -41,6 +41,10 @@ public class KurentoRoomDemoApp {
 	private final String DEFAULT_APP_SERVER_URL = PropertiesManager
 			.getProperty("app.uri", "http://localhost:8080");
 
+	private final String DEMO_AUTH_REGEX = PropertiesManager.getProperty("demo.authRegex", "");
+	private final boolean DEMO_HAT_FILTER = PropertiesManager.getProperty("demo.hat.filter", false);
+	private final boolean DEMO_HAT_ONLY_ON_FIRST = PropertiesManager.getProperty("demo.hat.onlyOnFirst", false);
+
 	@Bean
 	public KmsManager kmsManager() {
 		JsonArray kmsUris = getPropertyJson(
@@ -57,16 +61,18 @@ public class KurentoRoomDemoApp {
 	@Bean
 	public SessionInterceptor interceptor() {
 		AuthSLASessionInterceptor interceptor = new AuthSLASessionInterceptor();
-
-		String appServerUrl = System.getProperty("app.server.url",
-				DEFAULT_APP_SERVER_URL);
-		String hatUrl;
-		if (appServerUrl.endsWith("/"))
-			hatUrl = appServerUrl + "img/mario-wings.png";
-		else
-			hatUrl = appServerUrl + "/img/mario-wings.png";
-		interceptor.setHatUrl(hatUrl);
-
+		if (DEMO_HAT_FILTER) {
+			String appServerUrl = System.getProperty("app.server.url",
+					DEFAULT_APP_SERVER_URL);
+			String hatUrl;
+			if (appServerUrl.endsWith("/"))
+				hatUrl = appServerUrl + "img/mario-wings.png";
+			else
+				hatUrl = appServerUrl + "/img/mario-wings.png";
+			interceptor.setHatUrl(hatUrl);
+			interceptor.setHatOnlyOnFirst(DEMO_HAT_ONLY_ON_FIRST);
+		}
+		interceptor.setAuthRegex(DEMO_AUTH_REGEX);
 		return interceptor;
 	}
 

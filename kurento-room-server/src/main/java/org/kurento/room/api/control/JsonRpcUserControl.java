@@ -107,12 +107,13 @@ public class JsonRpcUserControl {
 							JsonObject participantJson = new JsonObject();
 							participantJson.addProperty("id",
 									participant.getName());
-							JsonObject stream = new JsonObject();
-							stream.addProperty("id", "webcam");
-							JsonArray streamsArray = new JsonArray();
-							streamsArray.add(stream);
-							participantJson
-							.add("streams", streamsArray);
+							if (participant.isStreaming()) {
+								JsonObject stream = new JsonObject();
+								stream.addProperty("id", "webcam");
+								JsonArray streamsArray = new JsonArray();
+								streamsArray.add(stream);
+								participantJson.add("streams", streamsArray);
+							}
 
 							result.add(participantJson);
 						}
@@ -121,6 +122,40 @@ public class JsonRpcUserControl {
 					}
 				} catch (IOException e) {
 					log.error("Exception responding to user", e);
+				}
+			}
+		});
+	}
+
+	public void publishVideo(final Transaction transaction,
+			final Request<JsonObject> request) {
+		ParticipantSession participantSession = getParticipantSession(transaction);
+		final String sdpOffer = request.getParams()
+				.get(JsonRpcProtocolElements.PUBLISH_VIDEO_SDPOFFER_PARAM)
+				.getAsString();
+
+		transaction.startAsync();
+
+		roomManager.publishVideo(participantSession.getParticipant(), sdpOffer,
+				new RMContinuation<PublishVideoResponse>() {
+			@Override
+			public void result(Throwable error,
+					PublishVideoResponse result) {
+				Response<JsonObject> response;
+				if (error != null && error instanceof RoomException) {
+					RoomException e = (RoomException) error;
+					response = new Response<>(new ResponseError(e
+							.getCode(), e.getMessage()));
+				} else {
+					JsonObject resultJson = new JsonObject();
+					resultJson.addProperty("sdpAnswer", result.sdpAnswer);
+					response = new Response<>(resultJson);
+				}
+				try {
+					transaction.sendResponseObject(response);
+				} catch (IOException e) {
+					log.error("Exception sending response to request: "
+							+ request);
 				}
 			}
 		});

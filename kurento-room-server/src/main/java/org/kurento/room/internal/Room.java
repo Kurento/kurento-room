@@ -44,6 +44,7 @@ public class Room {
 
 	private static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
 	private static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
+	private static final String PARTICIPANT_PUBLISHED_METHOD = "participantPublished";
 	private static final String PARTICIPANT_SEND_MESSAGE_METHOD = "sendMessage"; //CHAT
 
 	private final Logger log = LoggerFactory.getLogger(Room.class);
@@ -58,7 +59,7 @@ public class Room {
 
 	private volatile boolean closed = false;
 
-	private volatile AtomicInteger activePublishers = new AtomicInteger(0);
+	private AtomicInteger activePublishers = new AtomicInteger(0);
 
 	private ExecutorService executor = Executors.newFixedThreadPool(1);
 
@@ -107,18 +108,12 @@ public class Room {
 
 		JsonObject params = new JsonObject();
 		params.addProperty("id", participant.getName());
-		JsonObject stream = new JsonObject();
-		stream.addProperty("id", "webcam");
-		JsonArray streamsArray = new JsonArray();
-		streamsArray.add(stream);
-		params.add("streams", streamsArray);
 
-		for (final Participant participant1 : participants.values()) {
-
+		for (Participant participant1 : participants.values()) {
+			if (participant.equals(participant1))
+				continue;
 			participant1.sendNotification(PARTICIPANT_JOINED_METHOD, params);
-
-			if (!participant1.getName().equals(userName)) // sanity check
-				participant1.addSubscriber(userName);
+			participant1.addSubscriber(userName);
 		}
 
 		participants.put(participant.getName(), participant);
@@ -130,11 +125,36 @@ public class Room {
 		return participant;
 	}
 
+	public void newPublisher(Participant participant) {
+		registerPublisher();
+
+		JsonObject params = new JsonObject();
+		params.addProperty("id", participant.getName());
+		JsonObject stream = new JsonObject();
+		stream.addProperty("id", "webcam");
+		JsonArray streamsArray = new JsonArray();
+		streamsArray.add(stream);
+		params.add("streams", streamsArray);
+
+		for (Participant participant1 : participants.values()) {
+			if (participant.equals(participant1))
+				continue;
+			participant1.sendNotification(PARTICIPANT_PUBLISHED_METHOD, params);
+			participant1.addSubscriber(participant.getName());
+		}
+
+		log.debug(
+				"ROOM {}: Notified other participants {} of publisher {}",
+				name, participants.values(), participant.getName());
+	}
+
 	public void leave(Participant user) {
 
 		checkClosed();
 
 		log.debug("PARTICIPANT {}: Leaving room {}", user.getName(), this.name);
+		if (user.isStreaming())
+			this.deregisterPublisher();
 		this.removeParticipant(user.getName());
 		user.close();
 	}

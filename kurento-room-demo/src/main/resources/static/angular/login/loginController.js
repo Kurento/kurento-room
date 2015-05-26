@@ -46,12 +46,12 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
 
             localStream.addEventListener("access-accepted", function () {
                 room.addEventListener("room-connected", function (roomEvent) {
-                    localStream.publish();
+                	var streams = roomEvent.streams;
+                    if (streams.length == 0) //I'm 1st publisher so show my stream from remote
+                    	localStream.subscribeToMyRemote();
+                	localStream.publish();
                     ServiceRoom.setLocalStream(localStream.getWebRtcPeer());
                     ServiceParticipant.addLocalParticipant(localStream);
-                    var streams = roomEvent.streams;
-                    if (streams.length == 0) //I'm 1st so show my hat
-                    	localStream.subscribeToMyRemote();
                     for (var i = 0; i < streams.length; i++) {
                         ServiceParticipant.addParticipant(streams[i]);
                     }
