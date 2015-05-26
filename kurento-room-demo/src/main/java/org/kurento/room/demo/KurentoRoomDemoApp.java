@@ -61,6 +61,8 @@ public class KurentoRoomDemoApp {
 	@Bean
 	public SessionInterceptor interceptor() {
 		AuthSLASessionInterceptor interceptor = new AuthSLASessionInterceptor();
+		interceptor.setEnableHatFilter(DEMO_HAT_FILTER);
+		interceptor.setHatOnlyOnFirst(DEMO_HAT_ONLY_ON_FIRST);
 		if (DEMO_HAT_FILTER) {
 			String appServerUrl = System.getProperty("app.server.url",
 					DEFAULT_APP_SERVER_URL);
@@ -70,7 +72,6 @@ public class KurentoRoomDemoApp {
 			else
 				hatUrl = appServerUrl + "/img/mario-wings.png";
 			interceptor.setHatUrl(hatUrl);
-			interceptor.setHatOnlyOnFirst(DEMO_HAT_ONLY_ON_FIRST);
 		}
 		interceptor.setAuthRegex(DEMO_AUTH_REGEX);
 		return interceptor;

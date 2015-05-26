@@ -41,6 +41,7 @@ public class AuthSLASessionInterceptor implements SessionInterceptor {
 	@Autowired
 	private KmsManager kmsManager;
 
+	private boolean enableHatFilter = false;
 	private String hatUrl;
 	private boolean onlyOnFirst = true;
 
@@ -49,6 +50,10 @@ public class AuthSLASessionInterceptor implements SessionInterceptor {
 
 	public void setKmsManager(KmsManager kmsManager) {
 		this.kmsManager = kmsManager;
+	}
+
+	public void setEnableHatFilter(boolean enableFilter) {
+		enableHatFilter = enableFilter;
 	}
 
 	public void setHatUrl(String hatUrl) {
@@ -127,7 +132,7 @@ public class AuthSLASessionInterceptor implements SessionInterceptor {
 	public void shapePreparingMedia(MediaShapingEndpoint publisher,
 			MediaPipeline pipeline, boolean isOnlyPublisher)
 					throws RoomException {
-		if (onlyOnFirst && !isOnlyPublisher) // only the first publisher will have a hat
+		if (!enableHatFilter || (onlyOnFirst && !isOnlyPublisher)) // only the first publisher will have a hat
 			return;
 		FaceOverlayFilter faceOverlayFilter = new FaceOverlayFilter.Builder(
 				pipeline).build();

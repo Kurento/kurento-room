@@ -146,8 +146,7 @@ function Room(kurento, options) {
 
             participant.dispose();
         } else {
-            console
-                    .error("Participant " + msg.name
+            console.error("Participant " + msg.name
                             + " unknown. Participants: "
                             + JSON.stringify(participants));
         }
@@ -160,17 +159,13 @@ function Room(kurento, options) {
         var message = msg.message;
 
         if (user !== undefined) {
-
             ee.emitEvent('newMessage', [{
                     room: room,
                     user: user,
                     message: message
                 }]);
-
-
         } else {
-            console
-                    .error();
+            console.error();
         }
     }
     
@@ -184,7 +179,6 @@ function Room(kurento, options) {
     	var streams = participant.getStreams();
         for (var key in streams) {
         	var stream = streams[key];
-        	console.log("Stream #" + key + ": " + stream.getGlobalID());
         	if (key == "webcam") {
         		stream.getWebRtcPeer().addIceCandidate(candidate, function (error) {
         			if (error) {
@@ -269,8 +263,8 @@ function Participant(kurento, local, room, options) {
     }
     
 	this.onIceCandidate = function (candidate) {
-		console.log((local ? "Local" : "Remote") + " candidate for " + that.getID() 
-				+ ": " + JSON.stringify(candidate));
+		console.debug((local ? "Local" : "Remote"), "candidate for", 
+				that.getID(), JSON.stringify(candidate));
 		kurento.sendRequest("onIceCandidate", {
 			endpointName: that.getID(),
 	        candidate: candidate.candidate,
@@ -309,6 +303,7 @@ function Stream(kurento, local, room, options) {
     } else {
         id = "webcam";
     }
+    var video;
 
     var videoElements = [];
     var elements = [];
@@ -320,6 +315,17 @@ function Stream(kurento, local, room, options) {
     }
     this.displayMyRemote = function () {
     	return showMyRemote;
+    }
+
+    var localMirrored = false;
+    this.mirrorLocalStream = function (wr) {
+    	showMyRemote = true;
+    	localMirrored = true;
+    	if (wr)
+    		wrStream = wr;
+    }
+    this.isLocalMirrored = function () {
+    	return localMirrored;
     }
     
     this.getWrStream = function () {
@@ -335,28 +341,28 @@ function Stream(kurento, local, room, options) {
     }
 
     this.playOnlyVideo = function (element) {
-
-        var video = document.createElement('video');
-
-        if (typeof element === "string") {
-            document.getElementById(element).appendChild(video);
-        } else {
-            element.appendChild(video);
-        }
+        video = document.createElement('video');
 
         video.id = 'native-video-' + that.getGlobalID();
         video.autoplay = true;
         video.controls = false;
         if (wrStream) {
-            video.src = URL.createObjectURL(wrStream);
+        	video.src = URL.createObjectURL(wrStream);
             $("#video-" + that.getGlobalID()).show();
             hideSpinner(that.getGlobalID());
-        }
+        } else
+        	console.log("No wrStream yet for", that.getGlobalID());
 
         videoElements.push(video);
 
         if (local) {
             video.setAttribute("muted", "muted");
+        }
+        
+        if (typeof element === "string") {
+            document.getElementById(element).appendChild(video);
+        } else {
+            element.appendChild(video);
         }
     }
 
@@ -427,7 +433,7 @@ function Stream(kurento, local, room, options) {
     this.publishVideoCallback = function (error, sdpOfferParam, wp) {
     	if (error) {
     		return console.error ("SDP offer error");
-    	}
+    	}	
     	console.log('Invoking SDP offer callback function - publisher: ' + that.getGlobalID());
         kurento.sendRequest("publishVideo", {
             sdpOffer: sdpOfferParam
@@ -473,10 +479,11 @@ function Stream(kurento, local, room, options) {
                     }
                 };
         	 var options = {
+        			videoStream: wrStream,
              		mediaConstraints: constraints,
              		onicecandidate: participant.onIceCandidate.bind(participant)
              }
-        	if (that.displayMyRemote) {
+        	if (that.displayMyRemote()) {
         		wp = new kurentoUtils.WebRtcPeer.WebRtcPeerSendrecv(options, function (error) {
                 	if(error) {
                 		return console.error(error);
@@ -502,7 +509,6 @@ function Stream(kurento, local, room, options) {
             	this.generateOffer(sdpOfferCallback.bind(that));
             });
         }
-        wp.stream = wrStream;
         console.log(that.getGlobalID() + " waiting for SDP offer");
     }
 
@@ -524,7 +530,6 @@ function Stream(kurento, local, room, options) {
         // automatically to all other participants. We use this method only to
         // negotiate SDP
 
-        // Refactor this to avoid code duplication
         initWebRtcPeer(that.startVideoCallback);
     }
 
@@ -578,22 +583,21 @@ function Stream(kurento, local, room, options) {
         for (i = 0; i < videoElements.length; i++) {
             disposeElement(videoElements[i]);
         }
-
-        wp.dispose();
-        var pc = wp.peerConnection
-        if (pc && pc.signalingState != 'closed')
-            pc.close();
-
-        if (wrStream) {
-            wrStream.getAudioTracks().forEach(function (track) {
-                track.stop && track.stop()
-            })
-            wrStream.getVideoTracks().forEach(function (track) {
-                track.stop && track.stop()
-            })
+        
+        if (wp) {
+        	wp.dispose();
+        } else { 
+        	if (wrStream) {
+	        	wrStream.getAudioTracks().forEach(function (track) {
+	                track.stop && track.stop()
+	            })
+	            wrStream.getVideoTracks().forEach(function (track) {
+	                track.stop && track.stop()
+	            })
+        	}
         }
 
-        console.log(that.getGlobalID() + ": Stream " + id + " disposed");
+        console.log(that.getGlobalID() + ": Stream '" + id + "' disposed");
     }
 }
 
@@ -688,7 +692,6 @@ function KurentoRoom(wsUri, callback) {
     }
 
     this.sendRequest = function (method, params, callback) {
-    	console.dir(rpcParams);
     	if (rpcParams && rpcParams !== "null" && rpcParams !== "undefined") {
     		for(var index in rpcParams) {
     			if (rpcParams.hasOwnProperty(index)) {
@@ -697,8 +700,8 @@ function KurentoRoom(wsUri, callback) {
     		}
     	}
         rpc.encode(method, params, callback);
-        console.log('Sent request: { method:"' + method + "', params: "
-                + JSON.stringify(params) + " }");
+        console.log('Sent request: { method:"' + method + '", params: '
+                + JSON.stringify(params) + ' }');
     };
 
     this.close = function () {

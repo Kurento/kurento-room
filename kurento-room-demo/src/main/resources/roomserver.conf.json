@@ -7,7 +7,7 @@
    },
    "demo": {
       "hat": {
-         "filter": true,
+         "filter": false,
          "onlyOnFirst": true
       },
       "authRegex": ".*"

@@ -25,6 +25,8 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
         var rpcParams = {
         	token : "abc123"
         };
+        var displayPublished = false;
+        var mirrorLocal = false;
         
         var kurento = KurentoRoom(wsUri, function (error, kurento) {
 
@@ -47,16 +49,27 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
             localStream.addEventListener("access-accepted", function () {
                 room.addEventListener("room-connected", function (roomEvent) {
                 	var streams = roomEvent.streams;
-                    if (streams.length == 0) //I'm 1st publisher so show my stream from remote
+                    if (displayPublished && streams.length == 0) //I'm 1st publisher so show my stream from remote
                     	localStream.subscribeToMyRemote();
                 	localStream.publish();
                     ServiceRoom.setLocalStream(localStream.getWebRtcPeer());
-                    ServiceParticipant.addLocalParticipant(localStream);
                     for (var i = 0; i < streams.length; i++) {
                         ServiceParticipant.addParticipant(streams[i]);
                     }
                 });
 
+                room.addEventListener("stream-published", function (streamEvent) {
+                	 ServiceParticipant.addLocalParticipant(localStream);
+                	 if (mirrorLocal && localStream.displayMyRemote()) {
+                		 var localVideo = kurento.Stream(room, {
+                             video: true,
+                             id: "localStream"
+                         });
+                		 localVideo.mirrorLocalStream(localStream.getWrStream());
+                		 ServiceParticipant.addParticipant(localVideo);
+                	 }
+                });
+                
                 room.addEventListener("stream-added", function (streamEvent) {
                     ServiceParticipant.addParticipant(streamEvent.stream);
                 });
