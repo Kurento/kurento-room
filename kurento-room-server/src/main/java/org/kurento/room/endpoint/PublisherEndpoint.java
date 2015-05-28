@@ -15,12 +15,15 @@
 
 package org.kurento.room.endpoint;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
+import org.kurento.client.PassThrough;
+import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.api.MediaShapingEndpoint;
 import org.kurento.room.api.RoomException;
 import org.kurento.room.internal.Participant;
@@ -32,6 +35,8 @@ import org.kurento.room.internal.Participant;
  */
 public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShapingEndpoint {
 
+	private PassThrough passThru = null;
+
 	private Map<String, MediaElement> elements = new HashMap<String, MediaElement>();
 	private LinkedList<String> elementIds = new LinkedList<String>();
 	private boolean connected = false;
@@ -39,6 +44,21 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShaping
 	public PublisherEndpoint(Participant owner, String endpointName,
 			MediaPipeline pipeline) {
 		super(owner, endpointName, pipeline);
+	}
+
+	@Override
+	protected void internalEndpointInitialization() {
+		super.internalEndpointInitialization();
+		passThru = new PassThrough.Builder(getPipeline()).build();
+	}
+
+	/**
+	 * @return all media elements created for this publisher, except for the
+	 *         main element ({@link WebRtcEndpoint})
+	 */
+	public synchronized Collection<MediaElement> getMediaElements() {
+		if (passThru != null) elements.put(passThru.getId(), passThru);
+		return elements.values();
 	}
 
 	public synchronized String publish(String sdpOffer) {

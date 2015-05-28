@@ -54,7 +54,7 @@ public class RoomManager {
 	@Autowired
 	private SessionInterceptor interceptor;
 
-	public void setSessionFilter(SessionInterceptor interceptor) {
+	public void setSessionInterceptor(SessionInterceptor interceptor) {
 		this.interceptor = interceptor;
 	}
 
@@ -91,7 +91,7 @@ public class RoomManager {
 				return oldRoom;
 			} else {
 				log.warn("Room {} not existent. Created new on Kms uri={})",
-						kms.getUri());
+						roomName, kms.getUri());
 				return room;
 			}
 		} else {

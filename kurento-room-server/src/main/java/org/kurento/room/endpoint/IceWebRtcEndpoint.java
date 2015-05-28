@@ -21,7 +21,6 @@ import org.kurento.client.EventListener;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.OnIceCandidateEvent;
-import org.kurento.client.PassThrough;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.commons.exception.KurentoException;
 import org.kurento.room.api.RoomException;
@@ -45,7 +44,7 @@ public abstract class IceWebRtcEndpoint {
 
 	private MediaPipeline pipeline = null;
 	protected WebRtcEndpoint endpoint = null;
-	protected PassThrough passThru = null;
+
 	private LinkedList<IceCandidate> candidates = new LinkedList<IceCandidate>();
 
 	/**
@@ -76,10 +75,6 @@ public abstract class IceWebRtcEndpoint {
 		return endpoint;
 	}
 
-	protected PassThrough getPassThru() {
-		return passThru;
-	}
-
 	/**
 	 * If this object doesn't have a {@link WebRtcEndpoint}, it is created in a
 	 * thread-safe way using the internal {@link MediaPipeline}. Otherwise no
@@ -89,10 +84,8 @@ public abstract class IceWebRtcEndpoint {
 	 */
 	public synchronized WebRtcEndpoint createEndpoint() {
 		WebRtcEndpoint old = this.endpoint;
-		if (this.endpoint == null) {
-			this.endpoint = new WebRtcEndpoint.Builder(pipeline).build();
-			this.passThru = new PassThrough.Builder(pipeline).build();
-		}
+		if (this.endpoint == null)
+			internalEndpointInitialization();
 		while (!candidates.isEmpty())
 			this.endpoint.addIceCandidate(candidates.removeFirst());
 		return old;
@@ -145,6 +138,13 @@ public abstract class IceWebRtcEndpoint {
 			candidates.addLast(candidate);
 		else
 			endpoint.addIceCandidate(candidate);
+	}
+
+	/**
+	 * Create the endpoint and any other additional elements (if needed).
+	 */
+	protected void internalEndpointInitialization() {
+		this.endpoint = new WebRtcEndpoint.Builder(pipeline).build();
 	}
 
 	/**

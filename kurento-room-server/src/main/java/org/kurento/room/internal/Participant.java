@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.kurento.client.Continuation;
 import org.kurento.client.IceCandidate;
+import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
@@ -218,7 +219,7 @@ public class Participant {
 						"Exception connecting receiving endpoint to sending endpoint",
 						e);
 			this.subscribers.remove(senderName);
-			this.releaseEndpoint(senderName, subscriber.getEndpoint());
+			this.releaseElement(senderName, subscriber.getEndpoint());
 		}
 		return null;
 	}
@@ -239,7 +240,7 @@ public class Participant {
 			log.debug("PARTICIPANT {}: Cancelling sending endpoint to user {}",
 					this.name, senderName);
 
-			releaseEndpoint(senderName, sendingEndpoint.getEndpoint());
+			releaseElement(senderName, sendingEndpoint.getEndpoint());
 		}
 	}
 
@@ -277,7 +278,7 @@ public class Participant {
 					.get(remoteParticipantName);
 
 			if (ep.getEndpoint() != null) {
-				releaseEndpoint(remoteParticipantName, ep.getEndpoint());
+				releaseElement(remoteParticipantName, ep.getEndpoint());
 				log.debug("PARTICIPANT {}: Released sending EP for {}",
 						this.name, remoteParticipantName);
 			} else
@@ -288,7 +289,9 @@ public class Participant {
 
 		if (publisher != null
 				&& publisher.getEndpoint() != null) {
-			releaseEndpoint(name, publisher.getEndpoint());
+			for (MediaElement el : publisher.getMediaElements())
+				releaseElement(name, el);
+			releaseElement(name, publisher.getEndpoint());
 			publisher = null;
 		}
 
@@ -341,21 +344,21 @@ public class Participant {
 			this.addSubscriber(endpointName).addIceCandidate(iceCandidate);
 	}
 
-	private void releaseEndpoint(final String senderName,
-			final WebRtcEndpoint sendingEndpoint) {
-		sendingEndpoint.release(new Continuation<Void>() {
+	private void releaseElement(final String senderName,
+			final MediaElement element) {
+		element.release(new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {
 				log.debug(
-						"PARTICIPANT {}: Released successfully sending EP for {}",
-						Participant.this.name, senderName);
+						"PARTICIPANT {}: Released successfully {} for {}",
+						Participant.this.name, element.getClass().getName(), senderName);
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
 				log.warn(
-						"PARTICIPANT {}: Could not release sending EP for user {}",
-						Participant.this.name, senderName, cause);
+						"PARTICIPANT {}: Could not release {} for {}",
+						Participant.this.name, element.getClass().getName(), senderName, cause);
 			}
 		});
 	}

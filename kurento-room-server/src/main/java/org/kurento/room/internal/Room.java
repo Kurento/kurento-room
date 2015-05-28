@@ -206,7 +206,7 @@ public class Room {
 
 			this.closed = true;
 		} else {
-			log.warn("Closing a yet closed room {}", this.name);
+			log.warn("Closing an already closed room {}", this.name);
 		}
 	}
 
