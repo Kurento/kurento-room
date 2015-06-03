@@ -2,12 +2,10 @@
 
 Copyright © 2013 Kurento. Licensed under [LGPL License].
 
-kurento-room
-==========
+kurento-room-manager
+======================
 
-Kurento Room is composed by several modules to offer group communications by
-means of WebRTC. The modules are: kurento-room-sdk, kurento-room-server, kurento-room-client,
-kurento-room-demo and kurento-room-test.
+The kurento-room-sdk offers the Java API for developing room-enabled apps.
 
 What is Kurento
 ---------------
