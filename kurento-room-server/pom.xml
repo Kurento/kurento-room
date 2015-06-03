@@ -123,6 +123,10 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-sdk</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
 			<artifactId>kurento-jsonrpc-server</artifactId>
 			<exclusions>
 				<exclusion>

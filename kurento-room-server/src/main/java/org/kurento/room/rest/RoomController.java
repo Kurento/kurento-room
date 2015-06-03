@@ -2,7 +2,7 @@ package org.kurento.room.rest;
 
 import java.util.Set;
 
-import org.kurento.room.internal.RoomManager;
+import org.kurento.room.RoomManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +19,6 @@ public class RoomController {
 
 	@RequestMapping("/getAllRooms")
 	public Set<String> getAllRooms() {
-		return roomManager.getAllRooms().keySet();
+		return roomManager.getRooms();
 	}
 }

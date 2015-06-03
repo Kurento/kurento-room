@@ -138,23 +138,18 @@ public class RoomManager {
 	 * notifications to the other participants in the room to inform about the
 	 * one that has just left.
 	 * 
-	 * @param userName
-	 *            name or identifier of the user in the room
-	 * @param roomName
-	 *            room’s name
 	 * @param request
 	 *            instance of {@link ParticipantRequest} POJO
 	 */
-	public void leaveRoom(String userName, String roomName,
-			ParticipantRequest request) {
-		log.info("Request [LEAVE_ROOM] user={}, room={} ({})", userName,
-				roomName, request);
+	public void leaveRoom(ParticipantRequest request) {
+		log.info("Request [LEAVE_ROOM] ({})", request);
 		try {
-			Room room = getRoom(roomName, request, false);
-			if (room == null)
-				throw new RoomException(Code.ROOM_NOT_FOUND_ERROR_CODE,
-						"Room '" + roomName + "' not found");
-
+			Participant participant = getParticipant(request.getParticipantId());
+			if (participant == null)
+				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
+						"No participant with id '" + request.getParticipantId()
+						+ "' was found");
+			Room room = participant.getRoom();
 			if (!room.isClosed()) {
 				room.leave(request.getParticipantId());
 				Set<String> remainingParticipantIds = room.getParticipantIds();
@@ -163,14 +158,14 @@ public class RoomManager {
 					rooms.remove(room.getName());
 					log.info("Room '{}' removed and closed", room.getName());
 				}
-				roomEventHandler.onParticipantLeft(request, userName,
+				roomEventHandler.onParticipantLeft(request, participant.getName(),
 						remainingParticipantIds, null);
 			} else {
 				log.warn("Trying to leave from room '{}' but it is closing",
-						roomName);
+						room.getName());
 			}
 		} catch (RoomException e) {
-			roomEventHandler.onParticipantLeft(request, userName, null, e);
+			roomEventHandler.onParticipantLeft(request, null, null, e);
 		}
 	}
 

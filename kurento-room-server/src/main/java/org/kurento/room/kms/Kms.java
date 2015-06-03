@@ -22,8 +22,10 @@ import java.util.List;
 
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
+import org.kurento.room.api.KurentoClientProvider;
+import org.kurento.room.exception.RoomException;
 
-public class Kms {
+public class Kms implements KurentoClientProvider {
 
 	public interface KmsCallback<F> {
 		void execute(F target);
@@ -78,5 +80,11 @@ public class Kms {
 
 	public String getUri() {
 		return kmsUri;
+	}
+
+	@Override
+	public KurentoClient getKurentoClient(String participantId)
+			throws RoomException {
+		return this.client;
 	}
 }

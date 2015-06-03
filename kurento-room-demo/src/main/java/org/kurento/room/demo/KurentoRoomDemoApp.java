@@ -21,7 +21,6 @@ import java.util.List;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.room.KurentoRoomServerApp;
-import org.kurento.room.api.SessionInterceptor;
 import org.kurento.room.kms.FixedNKmsManager;
 import org.kurento.room.kms.KmsManager;
 import org.slf4j.Logger;
@@ -57,25 +56,25 @@ public class KurentoRoomDemoApp {
 
 		return new FixedNKmsManager(kmsWsUris, 2);
 	}
-
-	@Bean
-	public SessionInterceptor interceptor() {
-		AuthSLASessionInterceptor interceptor = new AuthSLASessionInterceptor();
-		interceptor.setEnableHatFilter(DEMO_HAT_FILTER);
-		interceptor.setHatOnlyOnFirst(DEMO_HAT_ONLY_ON_FIRST);
-		if (DEMO_HAT_FILTER) {
-			String appServerUrl = System.getProperty("app.server.url",
-					DEFAULT_APP_SERVER_URL);
-			String hatUrl;
-			if (appServerUrl.endsWith("/"))
-				hatUrl = appServerUrl + "img/mario-wings.png";
-			else
-				hatUrl = appServerUrl + "/img/mario-wings.png";
-			interceptor.setHatUrl(hatUrl);
-		}
-		interceptor.setAuthRegex(DEMO_AUTH_REGEX);
-		return interceptor;
-	}
+	//
+	//	@Bean
+	//	public SessionInterceptor interceptor() {
+	//		AuthSLASessionInterceptor interceptor = new AuthSLASessionInterceptor();
+	//		interceptor.setEnableHatFilter(DEMO_HAT_FILTER);
+	//		interceptor.setHatOnlyOnFirst(DEMO_HAT_ONLY_ON_FIRST);
+	//		if (DEMO_HAT_FILTER) {
+	//			String appServerUrl = System.getProperty("app.server.url",
+	//					DEFAULT_APP_SERVER_URL);
+	//			String hatUrl;
+	//			if (appServerUrl.endsWith("/"))
+	//				hatUrl = appServerUrl + "img/mario-wings.png";
+	//			else
+	//				hatUrl = appServerUrl + "/img/mario-wings.png";
+	//			interceptor.setHatUrl(hatUrl);
+	//		}
+	//		interceptor.setAuthRegex(DEMO_AUTH_REGEX);
+	//		return interceptor;
+	//	}
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(KurentoRoomServerApp.class, args);

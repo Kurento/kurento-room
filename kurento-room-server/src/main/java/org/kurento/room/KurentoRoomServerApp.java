@@ -23,12 +23,10 @@ import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.jsonrpc.internal.server.config.JsonRpcConfiguration;
 import org.kurento.jsonrpc.server.JsonRpcConfigurer;
 import org.kurento.jsonrpc.server.JsonRpcHandlerRegistry;
-import org.kurento.room.api.SessionInterceptor;
-import org.kurento.room.api.control.JsonRpcUserControl;
-import org.kurento.room.internal.DefaultSessionInterceptor;
-import org.kurento.room.internal.RoomManager;
 import org.kurento.room.kms.FixedOneKmsManager;
 import org.kurento.room.kms.KmsManager;
+import org.kurento.room.rpc.JsonRpcNotificationService;
+import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -62,6 +60,8 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 	private static final Logger log = LoggerFactory
 			.getLogger(KurentoRoomServerApp.class);
 
+	private static JsonRpcNotificationService userNotificationService = new JsonRpcNotificationService();
+
 	@Bean
 	@ConditionalOnMissingBean
 	public KmsManager kmsManager() {
@@ -77,7 +77,7 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	@Bean
 	public RoomManager roomManager() {
-		return new RoomManager();
+		return new RoomManager(userNotificationService, kmsManager());
 	}
 
 	@Bean
@@ -88,14 +88,8 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public SessionInterceptor interceptor() {
-		return new DefaultSessionInterceptor();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
 	public RoomJsonRpcHandler roomHandler() {
-		return new RoomJsonRpcHandler();
+		return new RoomJsonRpcHandler(userNotificationService);
 	}
 
 	@Override

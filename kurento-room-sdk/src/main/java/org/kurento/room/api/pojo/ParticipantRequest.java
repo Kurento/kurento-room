@@ -19,7 +19,7 @@ public class ParticipantRequest {
 	private String requestId = null;
 	private String participantId = null;
 
-	public ParticipantRequest(String requestId, String participantId) {
+	public ParticipantRequest(String participantId, String requestId) {
 		super();
 		this.requestId = requestId;
 		this.participantId = participantId;

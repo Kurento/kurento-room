@@ -13,7 +13,7 @@
  *
  */
 
-package org.kurento.room.api.control;
+package org.kurento.room.rpc;
 
 public class JsonRpcProtocolElements {
 

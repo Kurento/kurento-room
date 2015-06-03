@@ -20,10 +20,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.kurento.client.KurentoClient;
+import org.kurento.room.api.KurentoClientProvider;
+import org.kurento.room.exception.RoomException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class KmsManager {
+public abstract class KmsManager implements KurentoClientProvider {
 
 	public static class KmsLoad implements Comparable<KmsLoad> {
 
@@ -53,6 +56,12 @@ public abstract class KmsManager {
 
 	private List<Kms> kmss = new ArrayList<Kms>();
 	private Iterator<Kms> usageIterator = null;
+
+	@Override
+	public KurentoClient getKurentoClient(String participantId)
+			throws RoomException {
+		return getKms().getKurentoClient(participantId);
+	}
 
 	/**
 	 * Returns a {@link Kms} using a round-robin strategy.
