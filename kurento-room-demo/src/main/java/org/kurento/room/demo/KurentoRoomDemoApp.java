@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 import com.google.gson.JsonArray;
@@ -46,6 +47,8 @@ public class KurentoRoomDemoApp {
 	private final String DEMO_AUTH_REGEX = PropertiesManager.getProperty("demo.authRegex", "");
 	private final boolean DEMO_HAT_FILTER = PropertiesManager.getProperty("demo.hat.filter", false);
 	private final boolean DEMO_HAT_ONLY_ON_FIRST = PropertiesManager.getProperty("demo.hat.onlyOnFirst", false);
+
+	private static ConfigurableApplicationContext context;
 
 	@Bean
 	public KmsManager kmsManager() {
@@ -80,7 +83,24 @@ public class KurentoRoomDemoApp {
 		return uc;
 	}
 
+
+	public static ConfigurableApplicationContext start(Object... sources) {
+
+		Object[] newSources = new Object[sources.length + 1];
+		newSources[0] = KurentoRoomServerApp.class;
+		for (int i = 0; i < sources.length; i++)
+			newSources[i + 1] = sources[i];
+
+		SpringApplication application = new SpringApplication(newSources);
+		context = application.run();
+		return context;
+	}
+
 	public static void main(String[] args) throws Exception {
-		SpringApplication.run(KurentoRoomServerApp.class, args);
+		start();
+	}
+
+	public static void stop() {
+		context.stop();
 	}
 }

@@ -59,7 +59,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-server</artifactId>
+			<artifactId>kurento-room-demo</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

@@ -7,14 +7,14 @@
 
             <div class="card__content">
                 <lx-text-field label="Username">
-                    <input type="text" ng-model="room.userName" required>
+                    <input type="text" id="name" ng-model="room.userName" required>
                 </lx-text-field>
 
                 <div class="grid">
 
                     <div class="grid__col6">
                         <lx-text-field label="Room">
-                            <input type="text" ng-model="room.roomName" >
+                            <input type="text" id="roomName" ng-model="room.roomName" >
                         </lx-text-field>
                     </div>
 
@@ -40,7 +40,7 @@
                         <button class="btn btn--l btn--blue btn--raised" lx-ripple type="button" ng-click="clear()">Clear</button>
                     </div>
                     <div class="grid__col6">
-                        <button class="btn btn--l btn--green btn--raised" lx-ripple type="submit" >Join room!</button>
+                        <button id="joinBtn" class="btn btn--l btn--green btn--raised" lx-ripple type="submit" >Join room!</button>
                     </div>
                 </div>
                 <br>

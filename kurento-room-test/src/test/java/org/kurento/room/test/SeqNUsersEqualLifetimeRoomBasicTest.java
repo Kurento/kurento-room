@@ -19,30 +19,20 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.kurento.room.KurentoRoomServerApp;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.test.IntegrationTest;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 
 /**
- * Room demo integration test.
+ * Room demo integration test (basic version).
  *
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
-@WebAppConfiguration
-@IntegrationTest
-public class SeqNUsersEqualLifetimeRoomDemoTest extends RoomDemoTestBase {
+public class SeqNUsersEqualLifetimeRoomBasicTest extends RoomTestBase {
 
 	private Logger log = LoggerFactory
-			.getLogger(SeqNUsersEqualLifetimeRoomDemoTest.class);
+			.getLogger(SeqNUsersEqualLifetimeRoomBasicTest.class);
 
 	private static final int PLAY_TIME = 5; // seconds
 

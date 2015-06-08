@@ -46,7 +46,7 @@
     </developers>
 
     <modules>
-		<module>kurento-room-sdk</module>
+    	<module>kurento-room-sdk</module>
         <module>kurento-room-server</module>
         <module>kurento-room-demo</module>
         <module>kurento-room-test</module>

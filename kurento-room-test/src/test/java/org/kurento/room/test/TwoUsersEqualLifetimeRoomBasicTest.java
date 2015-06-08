@@ -18,25 +18,15 @@ package org.kurento.room.test;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.kurento.room.KurentoRoomServerApp;
 import org.openqa.selenium.WebDriver;
-import org.springframework.boot.test.IntegrationTest;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 
 /**
- * Room demo integration test.
+ * Room demo integration test (basic version).
  *
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
-@WebAppConfiguration
-@IntegrationTest
-public class TwoUsersEqualLifetimeRoomDemoTest extends RoomDemoTestBase {
+public class TwoUsersEqualLifetimeRoomBasicTest extends RoomTestBase {
 
 	private static final int PLAY_TIME = 5; // seconds
 

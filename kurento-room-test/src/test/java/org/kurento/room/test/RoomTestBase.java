@@ -31,6 +31,8 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Assert;
+import org.junit.runner.RunWith;
+import org.kurento.room.KurentoRoomServerApp;
 import org.kurento.test.base.KurentoTest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -44,24 +46,32 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.IntegrationTest;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
 
 import com.google.common.base.Function;
 
 /**
- * Room demo integration test.
+ * Base class for integration testing of Room API.
  *
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-public class RoomDemoTestBase extends KurentoTest {
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
+@WebAppConfiguration
+@IntegrationTest
+public class RoomTestBase extends KurentoTest {
 
 	public interface UserLifecycle {
 		public void run(int numUser, WebDriver browser) throws Exception;
 	}
 
-	private Logger log = LoggerFactory.getLogger(RoomDemoTestBase.class);
+	protected Logger log = LoggerFactory.getLogger(RoomTestBase.class);
 
-	protected static final String APP_URL = "http://127.0.0.1:8080/room.html";
+	protected static String APP_URL = "http://127.0.0.1:8080/room.html";
 
 	private static final int TEST_TIMEOUT = 20; // seconds
 
@@ -105,7 +115,7 @@ public class RoomDemoTestBase extends KurentoTest {
 
 	protected void exitFromRoom(WebDriver userBrowser) {
 		try {
-			userBrowser.findElement(By.id("button-leave")).click();
+			userBrowser.findElement(By.id("buttonLeaveRoom")).click();
 		} catch (ElementNotVisibleException e) {
 			log.warn("Button leave is not visible. Session can't be closed");
 		}
@@ -118,7 +128,7 @@ public class RoomDemoTestBase extends KurentoTest {
 
 		userBrowser.findElement(By.id("name")).sendKeys(userName);
 		userBrowser.findElement(By.id("roomName")).sendKeys(roomName);
-		execFunc(userBrowser, "register()");
+		userBrowser.findElement(By.id("joinBtn")).submit();
 
 		log.info("User '" + userName + "' joined to room '" + roomName + "'");
 	}
@@ -276,12 +286,12 @@ public class RoomDemoTestBase extends KurentoTest {
 		for (WebDriver browser : browsers) {
 
 			browser.manage().window()
-					.setSize(new Dimension(BROWSER_WIDTH, BROWSER_HEIGHT));
+			.setSize(new Dimension(BROWSER_WIDTH, BROWSER_HEIGHT));
 			browser.manage()
-					.window()
-					.setPosition(
-							new Point(col * BROWSER_WIDTH + LEFT_BAR_WIDTH, row
-									* BROWSER_HEIGHT));
+			.window()
+			.setPosition(
+					new Point(col * BROWSER_WIDTH + LEFT_BAR_WIDTH, row
+							* BROWSER_HEIGHT));
 
 			col++;
 

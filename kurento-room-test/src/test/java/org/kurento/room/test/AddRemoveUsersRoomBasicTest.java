@@ -18,30 +18,20 @@ package org.kurento.room.test;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.kurento.room.KurentoRoomServerApp;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.test.IntegrationTest;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 
 /**
- * Room demo integration test.
+ * Room demo integration test (basic version).
  *
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = KurentoRoomServerApp.class)
-@WebAppConfiguration
-@IntegrationTest
-public class AddRemoveUsersRoomDemoTest extends RoomDemoTestBase {
+public class AddRemoveUsersRoomBasicTest extends RoomTestBase {
 
 	private Logger log = LoggerFactory
-			.getLogger(AddRemoveUsersRoomDemoTest.class);
+			.getLogger(AddRemoveUsersRoomBasicTest.class);
 
 	private static final int PLAY_TIME = 5; // seconds
 
@@ -59,6 +49,7 @@ public class AddRemoveUsersRoomDemoTest extends RoomDemoTestBase {
 		// parallelUsers(NUM_USERS, (numUser, browser) -> {
 
 		parallelUsers(NUM_USERS, new UserLifecycle() {
+			@Override
 			public void run(int numUser, final WebDriver browser)
 					throws InterruptedException, ExecutionException {
 
