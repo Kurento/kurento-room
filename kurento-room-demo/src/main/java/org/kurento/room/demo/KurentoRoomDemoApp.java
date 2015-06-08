@@ -21,8 +21,8 @@ import java.util.List;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.room.KurentoRoomServerApp;
-import org.kurento.room.kms.FixedNKmsManager;
 import org.kurento.room.kms.KmsManager;
+import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -40,6 +40,9 @@ public class KurentoRoomDemoApp {
 	private final String DEFAULT_APP_SERVER_URL = PropertiesManager
 			.getProperty("app.uri", "http://localhost:8080");
 
+	private final Integer DEMO_KMS_NODE_LIMIT = PropertiesManager
+			.getProperty("demo.kmsLimit", 10);
+
 	private final String DEMO_AUTH_REGEX = PropertiesManager.getProperty("demo.authRegex", "");
 	private final boolean DEMO_HAT_FILTER = PropertiesManager.getProperty("demo.hat.filter", false);
 	private final boolean DEMO_HAT_ONLY_ON_FIRST = PropertiesManager.getProperty("demo.hat.onlyOnFirst", false);
@@ -54,27 +57,28 @@ public class KurentoRoomDemoApp {
 		log.info("Configuring Kurento Room Server to use the following kmss: "
 				+ kmsWsUris);
 
-		return new FixedNKmsManager(kmsWsUris, 2);
+		FixedNKmsManager fixedKmsManager = new FixedNKmsManager(kmsWsUris, DEMO_KMS_NODE_LIMIT);
+		fixedKmsManager.setAuthRegex(DEMO_AUTH_REGEX);
+		return fixedKmsManager;
 	}
-	//
-	//	@Bean
-	//	public SessionInterceptor interceptor() {
-	//		AuthSLASessionInterceptor interceptor = new AuthSLASessionInterceptor();
-	//		interceptor.setEnableHatFilter(DEMO_HAT_FILTER);
-	//		interceptor.setHatOnlyOnFirst(DEMO_HAT_ONLY_ON_FIRST);
-	//		if (DEMO_HAT_FILTER) {
-	//			String appServerUrl = System.getProperty("app.server.url",
-	//					DEFAULT_APP_SERVER_URL);
-	//			String hatUrl;
-	//			if (appServerUrl.endsWith("/"))
-	//				hatUrl = appServerUrl + "img/mario-wings.png";
-	//			else
-	//				hatUrl = appServerUrl + "/img/mario-wings.png";
-	//			interceptor.setHatUrl(hatUrl);
-	//		}
-	//		interceptor.setAuthRegex(DEMO_AUTH_REGEX);
-	//		return interceptor;
-	//	}
+
+	@Bean
+	public JsonRpcUserControl userControl() {
+		DemoJsonRpcUserControl uc = new DemoJsonRpcUserControl();
+		uc.setEnableHatFilter(DEMO_HAT_FILTER);
+		uc.setHatOnlyOnFirst(DEMO_HAT_ONLY_ON_FIRST);
+		if (DEMO_HAT_FILTER) {
+			String appServerUrl = System.getProperty("app.server.url",
+					DEFAULT_APP_SERVER_URL);
+			String hatUrl;
+			if (appServerUrl.endsWith("/"))
+				hatUrl = appServerUrl + "img/mario-wings.png";
+			else
+				hatUrl = appServerUrl + "/img/mario-wings.png";
+			uc.setHatUrl(hatUrl);
+		}
+		return uc;
+	}
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(KurentoRoomServerApp.class, args);

@@ -60,13 +60,14 @@ public abstract class KmsManager implements KurentoClientProvider {
 	@Override
 	public KurentoClient getKurentoClient(String participantId)
 			throws RoomException {
-		return getKms().getKurentoClient(participantId);
+		return getKms(participantId).getKurentoClient();
 	}
 
 	/**
 	 * Returns a {@link Kms} using a round-robin strategy.
+	 * @param participantId session's id
 	 */
-	public synchronized Kms getKms() {
+	public synchronized Kms getKms(String participantId) {
 		if (usageIterator == null || !usageIterator.hasNext())
 			usageIterator = kmss.iterator();
 		return usageIterator.next();
@@ -99,7 +100,7 @@ public abstract class KmsManager implements KurentoClientProvider {
 		for (Kms kms : kmss) {
 			double load = kms.getLoad();
 			kmsLoads.add(new KmsLoad(kms, load));
-			log.trace("Calc load {} for kms: {}", load, kms.getUri());
+			log.info("Calc load {} for kms: {}", load, kms.getUri());
 		}
 		return kmsLoads;
 	}

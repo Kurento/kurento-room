@@ -10,6 +10,7 @@
          "filter": false,
          "onlyOnFirst": true
       },
-      "authRegex": ".*"
+      "authRegex": ".*",
+      "kmsLimit": 10
    }
 }

@@ -110,7 +110,6 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 		for (String pid : remainingParticipantIds)
 			notifService.sendNotification(pid, PARTICIPANT_LEFT_METHOD, params);
 
-		// TODO or null instead of empty JsonObj?
 		notifService.sendResponse(request, new JsonObject());
 		notifService.closeSession(request);
 	}
@@ -164,7 +163,6 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 			return;
 		}
 
-		// TODO or null instead of empty JsonObj?
 		notifService.sendResponse(request, new JsonObject());
 
 		JsonObject params = new JsonObject();
@@ -185,7 +183,6 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 			return;
 		}
 
-		// TODO or null instead of empty JsonObj?
 		notifService.sendResponse(request, new JsonObject());
 	}
 

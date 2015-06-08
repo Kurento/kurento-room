@@ -15,23 +15,10 @@
 
 package org.kurento.room.kms;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-
 import org.kurento.client.KurentoClient;
-import org.kurento.client.MediaPipeline;
-import org.kurento.room.api.KurentoClientProvider;
-import org.kurento.room.exception.RoomException;
 
-public class Kms implements KurentoClientProvider {
+public class Kms {
 
-	public interface KmsCallback<F> {
-		void execute(F target);
-	}
-
-	private List<MediaPipeline> pipelines = Collections.synchronizedList(new ArrayList<MediaPipeline>());
 	private LoadManager loadManager = new MaxWebRtcLoadManager(10000);
 	private KurentoClient client;
 	private String kmsUri;
@@ -39,31 +26,6 @@ public class Kms implements KurentoClientProvider {
 	public Kms(KurentoClient client, String kmsUri) {
 		this.client = client;
 		this.kmsUri = kmsUri;
-	}
-
-	public MediaPipeline newPipeline() {
-		MediaPipeline pipeline = client.createMediaPipeline();
-		pipelines.add(pipeline);
-		return pipeline;
-	}
-
-	public void removePipeline(MediaPipeline pipeline) {
-		synchronized (pipelines) {
-			Iterator<MediaPipeline> it = pipelines.iterator();
-			while (it.hasNext()) {
-				MediaPipeline mp = it.next();
-				if (mp.getId().equals(pipeline.getId()))
-					it.remove();
-			}
-		}
-	}
-
-	public void executeForEachPipeline(KmsCallback<MediaPipeline> cont) {
-		synchronized (pipelines) {
-			Iterator<MediaPipeline> it = pipelines.iterator();
-			while (it.hasNext())
-				cont.execute(it.next());
-		}
 	}
 
 	public void setLoadManager(LoadManager loadManager) {
@@ -82,9 +44,7 @@ public class Kms implements KurentoClientProvider {
 		return kmsUri;
 	}
 
-	@Override
-	public KurentoClient getKurentoClient(String participantId)
-			throws RoomException {
+	public KurentoClient getKurentoClient() {
 		return this.client;
 	}
 }

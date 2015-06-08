@@ -91,12 +91,10 @@ public class Room {
 			pipelineLatch.countDown();
 		}
 
-		log.info("ROOM {}: adding participant {}", name, userName);
-
 		participants.put(participantId, new Participant(participantId,
 				userName, this, this.pipeline));
 
-		log.debug("ROOM {}: Added participant {}");
+		log.info("ROOM {}: Added participant {}", name, userName);
 	}
 
 	public void newPublisher(Participant participant) {

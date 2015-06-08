@@ -15,14 +15,14 @@
 
 package org.kurento.room.kms;
 
-import org.kurento.client.MediaPipeline;
-import org.kurento.room.kms.Kms.KmsCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MaxWebRtcLoadManager implements LoadManager {
+	private static final Logger log = LoggerFactory
+			.getLogger(MaxWebRtcLoadManager.class);
 
 	private int maxWebRtcPerKms;
-
-	private int currentMediaCount;
 
 	public MaxWebRtcLoadManager(int maxWebRtcPerKms) {
 		this.maxWebRtcPerKms = maxWebRtcPerKms;
@@ -44,17 +44,12 @@ public class MaxWebRtcLoadManager implements LoadManager {
 	}
 
 	private synchronized int countWebRtcEndpoints(Kms kms) {
-		currentMediaCount = 0;
-		kms.executeForEachPipeline(new KmsCallback<MediaPipeline>() {
-			@Override
-			public void execute(MediaPipeline target) {
-				incCurrentMediaCount(target.getChilds().size());
-			}
-		});
-		return currentMediaCount;
-	}
-
-	private void incCurrentMediaCount(int value) {
-		this.currentMediaCount += value;
+		try {
+			return kms.getKurentoClient().getServerManager().getPipelines()
+					.size();
+		} catch (Throwable e) {
+			log.warn("Error counting KurentoClient pipelines", e);
+			return 0;
+		}
 	}
 }

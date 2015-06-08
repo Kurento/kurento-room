@@ -43,26 +43,31 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	@Autowired
 	private JsonRpcUserControl userControl;
 
-	//	@Autowired
+	@Autowired
 	private JsonRpcNotificationService notificationService;
-
-	public RoomJsonRpcHandler(JsonRpcNotificationService notificationService) {
-		this.notificationService = notificationService;
-	}
 
 	@Override
 	public final void handleRequest(Transaction transaction,
 			Request<JsonObject> request) throws Exception {
 
-		updateThreadName(HANDLER_THREAD_NAME + "_"
-				+ transaction.getSession().getSessionId());
+		String sessionId = null;
+		try {
+			sessionId = transaction.getSession().getSessionId();
+		} catch (Throwable e) {
+			log.warn("Error getting session id from transaction {}",
+					transaction, e);
+			throw e;
+		}
 
-		log.debug("Session #{} - request: {} (requestSessionId={})", transaction.getSession().getSessionId(), request, request.getSessionId());
+		updateThreadName(HANDLER_THREAD_NAME + "_" + sessionId);
+
+		log.debug("Session #{} - request: {} (requestSessionId={})", sessionId,
+				request, request.getSessionId());
 
 		notificationService.addTransaction(transaction, request);
 
 		ParticipantRequest participantRequest = new ParticipantRequest(
-				transaction.getSession().getSessionId(), Integer.toString(request.getId()));
+				sessionId, Integer.toString(request.getId()));
 
 		transaction.startAsync();
 

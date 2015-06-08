@@ -15,6 +15,7 @@
 
 package org.kurento.room.rpc;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -50,5 +51,9 @@ public class SessionWrapper {
 
 	public void removeTransaction(Integer requestId) {
 		transactions.remove(requestId);
+	}
+
+	public Collection<Transaction> getTransactions() {
+		return transactions.values();
 	}
 }

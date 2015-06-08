@@ -135,8 +135,8 @@ public class Participant {
 		if (senderName.equals(this.name)) {
 			// FIXME: Use another message type for receiving sdp offer
 			log.debug("PARTICIPANT {}: configuring loopback", this.name);
-			// TODO throw exception???
-			// return null;
+			// TODO throw exception
+			// OR return null; ???
 		}
 
 		log.debug("PARTICIPANT {}: Creating a subscriber endpoint to user {}",
@@ -168,7 +168,7 @@ public class Participant {
 					this.name, senderName, this.room.getName());
 			return sdpAnswer;
 		} catch (KurentoServerException e) {
-			// TODO Check object status when KurentoClient set this info in the
+			// TODO Check object status when KurentoClient sets this info in the
 			// object
 			if (e.getCode() == 40101)
 				log.warn("Receiving endpoint is released when trying "
@@ -195,7 +195,8 @@ public class Participant {
 							+ "But there is no such sending endpoint",
 							this.name, senderName);
 		} else {
-			log.debug("PARTICIPANT {}: Cancelling sending endpoint linked to user {}",
+			log.debug(
+					"PARTICIPANT {}: Cancelling sending endpoint linked to user {}",
 					this.name, senderName);
 
 			releaseElement(senderName, sendingEndpoint.getEndpoint());

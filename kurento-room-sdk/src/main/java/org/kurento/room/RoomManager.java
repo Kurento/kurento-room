@@ -111,8 +111,6 @@ public class RoomManager {
 		log.info("Request [JOIN_ROOM] user={}, room={} ({})", userName,
 				roomName, request);
 		try {
-			log.info("PARTICIPANT {}: trying to join room {}", userName,
-					roomName);
 			Room room = getRoom(roomName, request, true);
 			if (!room.isClosed()) {
 				Set<UserParticipant> existingParticipants = getParticipants(roomName);
@@ -127,6 +125,8 @@ public class RoomManager {
 						+ "' but it is closing");
 			}
 		} catch (RoomException e) {
+			log.warn("PARTICIPANT {}: Error joining/creating room {}",
+					userName, roomName, e);
 			roomEventHandler.onParticipantJoined(request, userName, null, e);
 		}
 	}
@@ -158,13 +158,14 @@ public class RoomManager {
 					rooms.remove(room.getName());
 					log.info("Room '{}' removed and closed", room.getName());
 				}
-				roomEventHandler.onParticipantLeft(request, participant.getName(),
-						remainingParticipantIds, null);
+				roomEventHandler.onParticipantLeft(request,
+						participant.getName(), remainingParticipantIds, null);
 			} else {
 				log.warn("Trying to leave from room '{}' but it is closing",
 						room.getName());
 			}
 		} catch (RoomException e) {
+			log.warn("Error leaving room", e);
 			roomEventHandler.onParticipantLeft(request, null, null, e);
 		}
 	}
@@ -222,6 +223,7 @@ public class RoomManager {
 						"Error generating SDP answer for publishing user "
 								+ name);
 		} catch (RoomException e) {
+			log.warn("Error publishing media", e);
 			roomEventHandler.onPublishVideo(request, null, null, null, e);
 		}
 	}
@@ -277,6 +279,7 @@ public class RoomManager {
 						"Error generating SDP answer for receiving user "
 								+ name + " from " + remoteName);
 		} catch (RoomException e) {
+			log.warn("Error receiving media", e);
 			roomEventHandler.onReceiveMedia(request, null, e);
 		}
 	}
@@ -320,6 +323,7 @@ public class RoomManager {
 			roomEventHandler.onSendMessage(request, message, userName,
 					roomName, room.getParticipantIds(), null);
 		} catch (RoomException e) {
+			log.warn("Error sending message", e);
 			roomEventHandler.onSendMessage(request, null, null, null, null, e);
 		}
 	}
@@ -360,6 +364,7 @@ public class RoomManager {
 					candidate, sdpMid, sdpMLineIndex));
 			roomEventHandler.onRecvIceCandidate(request, null);
 		} catch (RoomException e) {
+			log.warn("Error receiving ICE candidate", e);
 			roomEventHandler.onRecvIceCandidate(request, e);
 		}
 	}
@@ -557,6 +562,7 @@ public class RoomManager {
 						.getServerManager().getName());
 			return true;
 		} catch (RoomException e) {
+			log.warn("Error creating room {}", roomName, e);
 			throw new AdminException("Error creating room - " + e.toString());
 		}
 	}
@@ -698,18 +704,15 @@ public class RoomManager {
 					.getParticipantId());
 			room = new Room(roomName, kurentoClient, roomEventHandler);
 			Room oldRoom = rooms.putIfAbsent(roomName, room);
-			if (oldRoom != null) {
+			if (oldRoom != null)
 				return oldRoom;
-			} else {
-				log.warn(
-						"No room '{}' exists yet. Created one using KurentoClient '{}')",
-						roomName, kurentoClient.getServerManager().getName());
+			else {
+				log.warn("Created room '{}' using the provided KurentoClient",
+						roomName);
 				roomEventHandler.onRoomCreated(request, roomName);
-				return room;
 			}
-		} else {
-			return room;
 		}
+		return room;
 	}
 
 	private Participant getParticipant(ParticipantRequest request) {

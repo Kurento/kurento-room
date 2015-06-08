@@ -30,13 +30,19 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonObject;
 
+/**
+ * JSON-RPC implementation of {@link UserNotificationService} for WebSockets.
+ * 
+ * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
+ */
 public class JsonRpcNotificationService implements UserNotificationService {
 	private static final Logger log = LoggerFactory
 			.getLogger(JsonRpcNotificationService.class);
 
 	private static ConcurrentMap<String, SessionWrapper> sessions = new ConcurrentHashMap<String, SessionWrapper>();
 
-	public void addTransaction(Transaction t, Request<JsonObject> request) {
+	public SessionWrapper addTransaction(Transaction t,
+			Request<JsonObject> request) {
 		String sessionId = t.getSession().getSessionId();
 		SessionWrapper sw = sessions.get(sessionId);
 		if (sw == null) {
@@ -49,9 +55,18 @@ public class JsonRpcNotificationService implements UserNotificationService {
 			}
 		}
 		sw.addTransaction(request.getId(), t);
+		return sw;
 	}
 
-	private Transaction getTransaction(ParticipantRequest participantRequest) {
+	public Session getSession(String sessionId) {
+		SessionWrapper sw = sessions.get(sessionId);
+		if (sw == null)
+			return null;
+		return sw.getSession();
+	}
+
+	private Transaction getAndRemoveTransaction(
+			ParticipantRequest participantRequest) {
 		Integer tid = null;
 		String tidVal = participantRequest.getRequestId();
 		try {
@@ -68,13 +83,17 @@ public class JsonRpcNotificationService implements UserNotificationService {
 			log.warn("Invalid session id {}", sessionId);
 			return null;
 		}
-		return sw.getTransaction(tid);
+		log.trace("#{} - {} transactions", sessionId, sw.getTransactions()
+				.size());
+		Transaction t = sw.getTransaction(tid);
+		sw.removeTransaction(tid);
+		return t;
 	}
 
 	@Override
 	public void sendResponse(ParticipantRequest participantRequest,
 			Object result) {
-		Transaction t = getTransaction(participantRequest);
+		Transaction t = getAndRemoveTransaction(participantRequest);
 		if (t == null) {
 			log.error("No transaction found for {}, unable to send result {}",
 					participantRequest, result);
@@ -85,25 +104,23 @@ public class JsonRpcNotificationService implements UserNotificationService {
 		} catch (IOException e) {
 			log.error("Exception responding to user", e);
 		}
-		// TODO remove transaction from map?
 	}
 
 	@Override
 	public void sendErrorResponse(ParticipantRequest participantRequest,
 			Object data, RoomException error) {
-		Transaction t = getTransaction(participantRequest);
+		Transaction t = getAndRemoveTransaction(participantRequest);
 		if (t == null) {
 			log.error("No transaction found for {}, unable to send result {}",
 					participantRequest, data);
 			return;
 		}
 		try {
-			t.sendError(error.getCodeValue(), error.getMessage(),
-					data.toString());
+			String dataVal = (data != null ? data.toString() : null);
+			t.sendError(error.getCodeValue(), error.getMessage(), dataVal);
 		} catch (IOException e) {
 			log.error("Exception sending error response to user", e);
 		}
-		// TODO remove transaction from map?
 	}
 
 	@Override
@@ -120,19 +137,6 @@ public class JsonRpcNotificationService implements UserNotificationService {
 
 		try {
 			s.sendNotification(method, params);
-			// not supported s.sendNotification(method, params, new
-			// Continuation<JsonElement>() {
-			// @Override
-			// public void onSuccess(JsonElement result) {
-			// }
-			//
-			// @Override
-			// public void onError(Throwable cause) {
-			// log.error(
-			// "Exception while sending '{}: {}' notification using session id {}",
-			// method, params, participantId, cause);
-			// }
-			// });
 		} catch (IOException e) {
 			log.error("Exception sending notification to user", e);
 		}

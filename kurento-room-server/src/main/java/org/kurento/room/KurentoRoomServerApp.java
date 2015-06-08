@@ -76,6 +76,12 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
+	public JsonRpcNotificationService notificationService() {
+		return userNotificationService;
+	}
+
+	@Bean
 	public RoomManager roomManager() {
 		return new RoomManager(userNotificationService, kmsManager());
 	}
@@ -89,7 +95,7 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 	@Bean
 	@ConditionalOnMissingBean
 	public RoomJsonRpcHandler roomHandler() {
-		return new RoomJsonRpcHandler(userNotificationService);
+		return new RoomJsonRpcHandler();
 	}
 
 	@Override
