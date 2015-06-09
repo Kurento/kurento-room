@@ -21,7 +21,10 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
     };
 
     window.onbeforeunload = function () {
-        ServiceRoom.getKurento().close();
+    	//not necessary if not connected
+    	if (ServiceParticipant.isConnected()) {
+    		ServiceRoom.getKurento().close();
+    	}
     };
 
 
@@ -67,7 +70,7 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
     $scope.message;
 
     $scope.sendMessage = function () {
-        console.log($scope.message);
+        console.log("Sending message", $scope.message);
         var kurento = ServiceRoom.getKurento();
         kurento.sendMessage($scope.roomName, $scope.userName, $scope.message);
         $scope.message = "";

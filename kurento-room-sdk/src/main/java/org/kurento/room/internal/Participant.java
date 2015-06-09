@@ -182,7 +182,7 @@ public class Participant {
 		return null;
 	}
 
-	public void cancelReceivingVideo(final String senderName) {
+	public void cancelReceivingMedia(String senderName) {
 
 		log.debug("PARTICIPANT {}: canceling video recv from {}", this.name,
 				senderName);

@@ -64,7 +64,12 @@ function Participants() {
     var participants = {};
     var roomName;
     var that = this;
-
+    var connected = true;
+    
+    this.isConnected = function() {
+    	return connected;
+    }
+    
     this.getRoomName = function () {
         console.log("room - getRoom " + roomName);
         roomName = room.name;
@@ -243,7 +248,16 @@ function Participants() {
 
     this.showError = function ($window, LxNotificationService, e) {
         LxNotificationService.alert('Error!', e.error.message, 'Reconnect', function(answer) {
+        	connected = false;
             $window.location.href = '#/login';
+        });
+    };
+    
+    this.forceClose = function ($window, LxNotificationService, msg) {
+        LxNotificationService.alert('Warning!', msg, 'Reload', function(answer) {
+        	that.removeParticipants();
+        	connected = false;
+            $window.location.href = '/';
         });
     };
 }

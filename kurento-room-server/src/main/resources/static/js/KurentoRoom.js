@@ -165,7 +165,7 @@ function Room(kurento, options) {
                     message: message
                 }]);
         } else {
-            console.error();
+            console.error("User undefined in new message:", msg);
         }
     }
     
@@ -191,9 +191,22 @@ function Room(kurento, options) {
         }
     }
     
-    this.leave = function () {
-
-        if (connected) {
+    this.onRoomClosed = function (msg) {
+    	console.log("Room closed: " + JSON.stringify(msg));
+        var room = msg.room;
+        if (room !== undefined) {
+        	 ee.emitEvent('room-closed', [{
+                 room: room
+        	 }]);
+        } else {
+        	console.error("Room undefined in on room closed", msg);
+        }
+    }
+    
+    this.leave = function (forced) {
+    	forced = !!forced;
+    	console.log("Leaving room (forced=" + forced + ")");
+        if (connected && !forced) {
             kurento.sendRequest('leaveRoom', function (error, response) {
                 if (error) {
                     console.error(error);
@@ -207,7 +220,7 @@ function Room(kurento, options) {
             participants[key].dispose();
         }
     }
-
+    
     this.getStreams = function () {
         return streams;
     }
@@ -649,6 +662,9 @@ function KurentoRoom(wsUri, callback) {
             case 'iceCandidate':
                 onIceCandidate(request.params);
                 break;
+            case 'roomClosed':
+            	onRoomClosed(request.params);
+            	break;
             default:
                 console.error('Unrecognized request: ' + JSON.stringify(request));
         }
@@ -685,6 +701,12 @@ function KurentoRoom(wsUri, callback) {
         }
     }
  
+    function onRoomClosed(msg) {
+        if (room !== undefined) {
+            room.onRoomClosed(msg);
+        }
+    }
+    
     var rpcParams;
 
     this.setRpcParams = function (params) {
@@ -704,9 +726,9 @@ function KurentoRoom(wsUri, callback) {
                 + JSON.stringify(params) + ' }');
     };
 
-    this.close = function () {
+    this.close = function (forced) {
         if (room !== undefined) {
-            room.leave();
+            room.leave(forced);
         }
         ws.close();
     };

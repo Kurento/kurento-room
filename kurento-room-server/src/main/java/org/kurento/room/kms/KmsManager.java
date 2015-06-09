@@ -100,7 +100,7 @@ public abstract class KmsManager implements KurentoClientProvider {
 		for (Kms kms : kmss) {
 			double load = kms.getLoad();
 			kmsLoads.add(new KmsLoad(kms, load));
-			log.info("Calc load {} for kms: {}", load, kms.getUri());
+			log.trace("Calc load {} for kms: {}", load, kms.getUri());
 		}
 		return kmsLoads;
 	}

@@ -109,24 +109,24 @@ public class RoomManager {
 	public void joinRoom(String userName, String roomName,
 			ParticipantRequest request) {
 		log.info("Request [JOIN_ROOM] user={}, room={} ({})", userName,
-				roomName, request);
+			roomName, request);
 		try {
 			Room room = getRoom(roomName, request, true);
 			if (!room.isClosed()) {
 				Set<UserParticipant> existingParticipants = getParticipants(roomName);
 				room.join(request.getParticipantId(), userName);
 				roomEventHandler.onParticipantJoined(request, userName,
-						existingParticipants, null);
+					existingParticipants, null);
 			} else {
 				log.error("Trying to join room {} but it is closing",
-						room.getName());
+					room.getName());
 				throw new RoomException(Code.ROOM_CLOSED_ERROR_CODE,
-						"Trying to join room '" + room.getName()
-						+ "' but it is closing");
+					"Trying to join room '" + room.getName()
+							+ "' but it is closing");
 			}
 		} catch (RoomException e) {
 			log.warn("PARTICIPANT {}: Error joining/creating room {}",
-					userName, roomName, e);
+				userName, roomName, e);
 			roomEventHandler.onParticipantJoined(request, userName, null, e);
 		}
 	}
@@ -147,8 +147,8 @@ public class RoomManager {
 			Participant participant = getParticipant(request.getParticipantId());
 			if (participant == null)
 				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
-						"No participant with id '" + request.getParticipantId()
-						+ "' was found");
+					"No participant with id '" + request.getParticipantId()
+							+ "' was found");
 			Room room = participant.getRoom();
 			if (!room.isClosed()) {
 				room.leave(request.getParticipantId());
@@ -159,10 +159,10 @@ public class RoomManager {
 					log.info("Room '{}' removed and closed", room.getName());
 				}
 				roomEventHandler.onParticipantLeft(request,
-						participant.getName(), remainingParticipantIds, null);
+					participant.getName(), remainingParticipantIds, null);
 			} else {
 				log.warn("Trying to leave from room '{}' but it is closing",
-						room.getName());
+					room.getName());
 			}
 		} catch (RoomException e) {
 			log.warn("Error leaving room", e);
@@ -196,14 +196,14 @@ public class RoomManager {
 	public void publishMedia(String sdpOffer, ParticipantRequest request,
 			MediaElement... mediaElements) {
 		log.info("Request [PUBLISH_MEDIA] sdpOffer={} mediaElements={} ({})",
-				sdpOffer, mediaElements, request);
+			sdpOffer, mediaElements, request);
 
 		try {
 			Participant participant = getParticipant(request);
 			if (participant == null)
 				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
-						"No participant with id '" + request.getParticipantId()
-						+ "' was found");
+					"No participant with id '" + request.getParticipantId()
+							+ "' was found");
 			String name = participant.getName();
 			Room room = participant.getRoom();
 
@@ -217,11 +217,10 @@ public class RoomManager {
 
 			if (sdpAnswer != null)
 				roomEventHandler.onPublishVideo(request, name, sdpAnswer,
-						room.getParticipantIds(), null);
+					room.getParticipantIds(), null);
 			else
 				throw new RoomException(Code.SDP_ERROR_CODE,
-						"Error generating SDP answer for publishing user "
-								+ name);
+					"Error generating SDP answer for publishing user " + name);
 		} catch (RoomException e) {
 			log.warn("Error publishing media", e);
 			roomEventHandler.onPublishVideo(request, null, null, null, e);
@@ -247,37 +246,37 @@ public class RoomManager {
 	public void receiveMedia(String remoteName, String sdpOffer,
 			ParticipantRequest request) {
 		log.info(
-				"Request [RECEIVE_MEDIA] remoteParticipant={} sdpOffer={} ({})",
-				remoteName, sdpOffer, request);
+			"Request [RECEIVE_MEDIA] remoteParticipant={} sdpOffer={} ({})",
+			remoteName, sdpOffer, request);
 
 		try {
 			Participant participant = getParticipant(request);
 			if (participant == null)
 				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
-						"No participant with id '" + request.getParticipantId()
-						+ "' was found");
+					"No participant with id '" + request.getParticipantId()
+							+ "' was found");
 			String name = participant.getName();
 			Room room = participant.getRoom();
 
 			Participant senderParticipant = room
-					.getParticipantByName(remoteName);
+				.getParticipantByName(remoteName);
 			if (senderParticipant == null) {
 				log.warn(
-						"PARTICIPANT {}: Requesting to recv video from user {} "
-								+ "in room {} but it is not found", name,
-								remoteName, room.getName());
+					"PARTICIPANT {}: Requesting to recv video from user {} "
+							+ "in room {} but it is not found", name,
+					remoteName, room.getName());
 				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE, "User "
 						+ remoteName + " not found in room " + room.getName());
 			}
 
 			String sdpAnswer = participant.receiveVideoFrom(senderParticipant,
-					sdpOffer);
+				sdpOffer);
 			if (sdpAnswer != null)
 				roomEventHandler.onReceiveMedia(request, sdpAnswer, null);
 			else
 				throw new RoomException(Code.SDP_ERROR_CODE,
-						"Error generating SDP answer for receiving user "
-								+ name + " from " + remoteName);
+					"Error generating SDP answer for receiving user " + name
+							+ " from " + remoteName);
 		} catch (RoomException e) {
 			log.warn("Error receiving media", e);
 			roomEventHandler.onReceiveMedia(request, null, e);
@@ -308,20 +307,20 @@ public class RoomManager {
 			Participant participant = getParticipant(request);
 			if (participant == null)
 				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
-						"No participant with id '" + request.getParticipantId()
-						+ "' was found");
+					"No participant with id '" + request.getParticipantId()
+							+ "' was found");
 			String name = participant.getName();
 			if (!name.equals(userName))
 				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
-						"Provided username '" + userName
-						+ "' differs from the participant's name");
+					"Provided username '" + userName
+							+ "' differs from the participant's name");
 			Room room = participant.getRoom();
 			if (!room.getName().equals(roomName))
 				throw new RoomException(Code.ROOM_NOT_FOUND_ERROR_CODE,
-						"Provided room name '" + roomName
-						+ "' differs from the participant's room");
+					"Provided room name '" + roomName
+							+ "' differs from the participant's room");
 			roomEventHandler.onSendMessage(request, message, userName,
-					roomName, room.getParticipantIds(), null);
+				roomName, room.getParticipantIds(), null);
 		} catch (RoomException e) {
 			log.warn("Error sending message", e);
 			roomEventHandler.onSendMessage(request, null, null, null, null, e);
@@ -353,15 +352,15 @@ public class RoomManager {
 			int sdpMLineIndex, String sdpMid, ParticipantRequest request) {
 		log.info("Request [ICE_CANDIDATE] endpoint={} candidate={} "
 				+ "sdpMLineIdx={} sdpMid={} ({})", endpointName, candidate,
-				sdpMLineIndex, sdpMid, request);
+			sdpMLineIndex, sdpMid, request);
 		try {
 			Participant participant = getParticipant(request);
 			if (participant == null)
 				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
-						"No participant with id '" + request.getParticipantId()
-						+ "' was found");
+					"No participant with id '" + request.getParticipantId()
+							+ "' was found");
 			participant.addIceCandidate(endpointName, new IceCandidate(
-					candidate, sdpMid, sdpMLineIndex));
+				candidate, sdpMid, sdpMLineIndex));
 			roomEventHandler.onRecvIceCandidate(request, null);
 		} catch (RoomException e) {
 			log.warn("Error receiving ICE candidate", e);
@@ -375,13 +374,19 @@ public class RoomManager {
 	 * directive (javax.annotation package) so that it will be automatically
 	 * called when the RoomManager instance is container-managed. <br/>
 	 * <strong>Side effects:</strong> The room event handler should send
-	 * notifications to the existing participants in the room to inform that the
-	 * room was forcefully closed.
+	 * notifications to all participants to inform that their room has been
+	 * forcibly closed.
+	 * 
+	 * @see RoomManager#closeRoom(String)
 	 */
 	@PreDestroy
 	public void close() {
-		for (Room room : rooms.values())
-			room.close();
+		for (String roomName : rooms.keySet())
+			try {
+				closeRoom(roomName);
+			} catch (Exception e) {
+				log.warn("Error closing room '{}'", roomName, e);
+			}
 	}
 
 	/**
@@ -413,7 +418,7 @@ public class RoomManager {
 		for (Participant p : participants)
 			if (!p.isClosed())
 				userParts.add(new UserParticipant(p.getId(), p.getName(), p
-						.isStreaming()));
+					.isStreaming()));
 		return userParts;
 	}
 
@@ -438,7 +443,7 @@ public class RoomManager {
 		for (Participant p : participants)
 			if (!p.isClosed() && p.isStreaming())
 				userParts
-				.add(new UserParticipant(p.getId(), p.getName(), true));
+					.add(new UserParticipant(p.getId(), p.getName(), true));
 		return userParts;
 	}
 
@@ -466,7 +471,7 @@ public class RoomManager {
 		for (Participant p : participants)
 			if (!p.isClosed() && p.isSubscribed())
 				userParts.add(new UserParticipant(p.getId(), p.getName(), p
-						.isStreaming()));
+					.isStreaming()));
 		return userParts;
 	}
 
@@ -488,7 +493,7 @@ public class RoomManager {
 			throw new AdminException("No participant with id '" + participantId
 					+ "' was found");
 		Set<String> subscribedEndpoints = participant
-				.getConnectedSubscribedEndpoints();
+			.getConnectedSubscribedEndpoints();
 		Room room = participant.getRoom();
 		Set<UserParticipant> userParts = new HashSet<UserParticipant>();
 		for (String epName : subscribedEndpoints) {
@@ -525,7 +530,7 @@ public class RoomManager {
 			if (p.equals(participant))
 				continue;
 			Set<String> subscribedEndpoints = p
-					.getConnectedSubscribedEndpoints();
+				.getConnectedSubscribedEndpoints();
 			if (subscribedEndpoints.contains(endpointName))
 				userParts.add(new UserParticipant(p.getId(), p.getName()));
 		}
@@ -559,7 +564,7 @@ public class RoomManager {
 			} else
 				log.warn("No room '{}' exists yet. Created one "
 						+ "using KurentoClient '{}')", roomName, kurentoClient
-						.getServerManager().getName());
+					.getServerManager().getName());
 			return true;
 		} catch (RoomException e) {
 			log.warn("Error creating room {}", roomName, e);
@@ -591,7 +596,7 @@ public class RoomManager {
 	 * will use another Media Pipeline). Existing participants will be evicted. <br/>
 	 * <strong>Side effects:</strong> The room event handler should send
 	 * notifications to the existing participants in the room to inform that the
-	 * room was forcefully closed.
+	 * room was forcibly closed.
 	 * 
 	 * @param roomName
 	 *            name or identifier of the room
@@ -604,18 +609,20 @@ public class RoomManager {
 			throw new AdminException("Room '" + roomName + "' not found");
 		if (room.isClosed())
 			throw new AdminException("Room '" + roomName + "' already closed");
-		for (String pid : room.getParticipantIds()) {
+		// copy the ids as they will be removed from the map
+		Set<String> pids = new HashSet<String>(room.getParticipantIds());
+		for (String pid : pids) {
 			try {
 				room.leave(pid);
 			} catch (RoomException e) {
 				log.warn(
-						"Error evicting participant with id '{}' from room '{}'",
-						pid, roomName, e);
+					"Error evicting participant with id '{}' from room '{}'",
+					pid, roomName, e);
 			}
 		}
+		roomEventHandler.onRoomClosed(roomName, pids);
 		room.close();
 		rooms.remove(roomName);
-		roomEventHandler.onRoomClosed(roomName, room.getParticipantIds());
 		log.info("Room '{}' removed and closed", roomName);
 	}
 
@@ -701,14 +708,14 @@ public class RoomManager {
 
 		if (room == null && getOrCreate) {
 			KurentoClient kurentoClient = kcProvider.getKurentoClient(request
-					.getParticipantId());
+				.getParticipantId());
 			room = new Room(roomName, kurentoClient, roomEventHandler);
 			Room oldRoom = rooms.putIfAbsent(roomName, room);
 			if (oldRoom != null)
 				return oldRoom;
 			else {
 				log.warn("Created room '{}' using the provided KurentoClient",
-						roomName);
+					roomName);
 				roomEventHandler.onRoomCreated(request, roomName);
 			}
 		}

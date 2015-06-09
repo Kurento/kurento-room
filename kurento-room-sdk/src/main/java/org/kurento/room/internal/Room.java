@@ -218,7 +218,7 @@ public class Room {
 				"ROOM {}: Cancel sending media from any users towards user {}",
 				this.name, participant.getName());
 		for (Participant other : participants.values())
-			other.cancelReceivingVideo(participant.getName());
+			other.cancelReceivingMedia(participant.getName());
 	}
 
 	public int getActivePublishers() {

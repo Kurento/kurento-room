@@ -25,6 +25,7 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
         var rpcParams = {
         	token : "abc123"
         };
+        //show loopback stream from server
         var displayPublished = false;
         var mirrorLocal = false;
         
@@ -86,6 +87,17 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                     ServiceParticipant.showError($window, LxNotificationService, error);
                 });
 
+                room.addEventListener("room-closed", function (msg) {
+                	if (msg.room !== $scope.roomName) {
+                		console.error("Closed room name doesn't match this room's name", 
+                				msg.room, $scope.roomName);
+                	} else {
+                		kurento.close(true);
+                		ServiceParticipant.forceClose($window, LxNotificationService, 'Room '
+                			+ msg.room + ' has been forcibly closed from server');
+                	}
+                });
+                
                 room.connect();
             });
 
