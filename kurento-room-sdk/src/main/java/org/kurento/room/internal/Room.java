@@ -111,6 +111,22 @@ public class Room {
 				"ROOM {}: Virtually subscribed other participants {} to new publisher {}",
 				name, participants.values(), participant.getName());
 	}
+	
+	public void cancelPublisher(Participant participant) {
+		deregisterPublisher();
+		
+		// cancel recv video from this publisher
+		for (Participant subscriber : participants.values()) {
+			if (participant.equals(subscriber))
+				continue;
+			subscriber.cancelReceivingMedia(participant.getName());
+		}
+
+		log.debug(
+				"ROOM {}: Unsubscribed other participants {} from the publisher {}",
+				name, participants.values(), participant.getName());
+
+	}
 
 	public void leave(String participantId) throws RoomException {
 

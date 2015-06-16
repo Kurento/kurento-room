@@ -95,8 +95,7 @@ function leaveRoom() {
 			element.parentNode.removeChild(element);
 		}
 	}
-
-	room.leave();
+	kurento.close();
 }
 
 window.onbeforeunload = function() {

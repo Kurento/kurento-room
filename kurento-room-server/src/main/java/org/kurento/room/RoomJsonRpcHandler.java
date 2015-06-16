@@ -78,9 +78,15 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 		case JsonRpcProtocolElements.PUBLISH_VIDEO_METHOD:
 			userControl.publishVideo(transaction, request, participantRequest);
 			break;
+		case JsonRpcProtocolElements.UNPUBLISH_VIDEO_METHOD:
+			userControl.unpublishVideo(transaction, request, participantRequest);
+			break;
 		case JsonRpcProtocolElements.RECEIVE_VIDEO_METHOD:
 			userControl.receiveVideoFrom(transaction, request,
 					participantRequest);
+			break;
+		case JsonRpcProtocolElements.UNSUBSCRIBE_VIDEO_METHOD:
+			userControl.unsubscribeFromVideo(transaction, request, participantRequest);
 			break;
 		case JsonRpcProtocolElements.ON_ICE_CANDIDATE_METHOD:
 			userControl
@@ -117,7 +123,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 				exception);
 	}
 
-	private void updateThreadName(final String name) {
+	private void updateThreadName(String name) {
 		Thread.currentThread().setName("user:" + name);
 	}
 }

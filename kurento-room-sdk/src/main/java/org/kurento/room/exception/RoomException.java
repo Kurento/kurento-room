@@ -20,6 +20,7 @@ public class RoomException extends RuntimeException {
 
 	public static enum Code {
 		GENERIC_ERROR_CODE(999),
+		USER_NOT_STREAMING_ERROR_CODE(108),
 		WEBRTC_ENDPOINT_ERROR_CODE(107),
 		ROOM_NOT_FOUND_ERROR_CODE(106),
 		CANNOT_CREATE_ROOM_ERROR_CODE(105),

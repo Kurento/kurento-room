@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2014 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 package org.kurento.room.internal;
 
@@ -53,7 +52,8 @@ public class Participant {
 	private PublisherEndpoint publisher;
 	private CountDownLatch endPointLatch = new CountDownLatch(1);
 
-	private final ConcurrentMap<String, SubscriberEndpoint> subscribers = new ConcurrentHashMap<String, SubscriberEndpoint>();
+	private final ConcurrentMap<String, SubscriberEndpoint> subscribers =
+			new ConcurrentHashMap<String, SubscriberEndpoint>();
 
 	private volatile boolean streaming = false;
 	private volatile boolean closed;
@@ -101,6 +101,29 @@ public class Participant {
 		return pipeline;
 	}
 
+	public boolean isClosed() {
+		return closed;
+	}
+
+	public boolean isStreaming() {
+		return streaming;
+	}
+
+	public boolean isSubscribed() {
+		for (SubscriberEndpoint se : subscribers.values())
+			if (se.isConnectedToPublisher())
+				return true;
+		return false;
+	}
+
+	public Set<String> getConnectedSubscribedEndpoints() {
+		Set<String> subscribedToSet = new HashSet<String>();
+		for (SubscriberEndpoint se : subscribers.values())
+			if (se.isConnectedToPublisher())
+				subscribedToSet.add(se.getEndpointName());
+		return subscribedToSet;
+	}
+
 	public String publishToRoom(String sdpOffer) {
 		log.info("USER {}: Request to publish video in room {}", this.name,
 				this.room.getName());
@@ -116,10 +139,19 @@ public class Participant {
 		return sdpAnswer;
 	}
 
-	public String receiveVideoFrom(Participant sender, String sdpOffer) {
+	public void unpublishMedia() {
+		log.debug("PARTICIPANT {}: unpublishing media stream from room {}",
+				this.name, this.room.getName());
+		releasePublisherEndpoint();
+		this.publisher = new PublisherEndpoint(this, name, pipeline);
+		log.debug("PARTICIPANT {}: released publisher endpoint and left it "
+				+ "initialized (ready for future streaming)", this.name);
+	}
+
+	public String receiveMediaFrom(Participant sender, String sdpOffer) {
 		final String senderName = sender.getName();
 
-		log.info("USER {}: Request to receive video from {} in room {}",
+		log.info("USER {}: Request to receive media from {} in room {}",
 				this.name, senderName, this.room.getName());
 		log.trace("USER {}: SdpOffer for {} is {}", this.name, senderName,
 				sdpOffer);
@@ -128,7 +160,7 @@ public class Participant {
 			log.warn(
 					"PARTICIPANT {}: Trying to connect to a user without "
 							+ "receiving endpoint (it seems is not yet fully connected)",
-							this.name);
+					this.name);
 			return null;
 		}
 
@@ -142,10 +174,10 @@ public class Participant {
 		log.debug("PARTICIPANT {}: Creating a subscriber endpoint to user {}",
 				this.name, senderName);
 
-		SubscriberEndpoint subscriber = new SubscriberEndpoint(this,
-				senderName, pipeline);
-		SubscriberEndpoint oldSubscriber = this.subscribers.putIfAbsent(
-				senderName, subscriber);
+		SubscriberEndpoint subscriber =
+				new SubscriberEndpoint(this, senderName, pipeline);
+		SubscriberEndpoint oldSubscriber =
+				this.subscribers.putIfAbsent(senderName, subscriber);
 		if (oldSubscriber != null)
 			subscriber = oldSubscriber;
 
@@ -160,8 +192,8 @@ public class Participant {
 		log.debug("PARTICIPANT {}: Created subscriber endpoint for user {}",
 				this.name, senderName);
 		try {
-			String sdpAnswer = subscriber.subscribe(sdpOffer,
-					sender.getPublisher());
+			String sdpAnswer =
+					subscriber.subscribe(sdpOffer, sender.getPublisher());
 			log.trace("USER {}: Subscribing SdpAnswer is {}", this.name,
 					sdpAnswer);
 			log.info("USER {}: Is now receiving video from {} in room {}",
@@ -184,7 +216,7 @@ public class Participant {
 
 	public void cancelReceivingMedia(String senderName) {
 
-		log.debug("PARTICIPANT {}: canceling video recv from {}", this.name,
+		log.debug("PARTICIPANT {}: cancel receiving media from {}", this.name,
 				senderName);
 
 		IceWebRtcEndpoint sendingEndpoint = subscribers.remove(senderName);
@@ -193,10 +225,10 @@ public class Participant {
 			log.warn(
 					"PARTICIPANT {}: Trying to cancel sending video from user {}. "
 							+ "But there is no such sending endpoint",
-							this.name, senderName);
+					this.name, senderName);
 		} else {
 			log.debug(
-					"PARTICIPANT {}: Cancelling sending endpoint linked to user {}",
+					"PARTICIPANT {}: Cancel sending endpoint linked to user {}",
 					this.name, senderName);
 
 			releaseElement(senderName, sendingEndpoint.getEndpoint());
@@ -208,7 +240,7 @@ public class Participant {
 
 		this.closed = true;
 
-		for (final String remoteParticipantName : subscribers.keySet()) {
+		for (String remoteParticipantName : subscribers.keySet()) {
 
 			IceWebRtcEndpoint ep = this.subscribers.get(remoteParticipantName);
 
@@ -222,25 +254,20 @@ public class Participant {
 						this.name, remoteParticipantName);
 		}
 
-		if (publisher != null && publisher.getEndpoint() != null) {
-			for (MediaElement el : publisher.getMediaElements())
-				releaseElement(name, el);
-			releaseElement(name, publisher.getEndpoint());
-			publisher = null;
-		}
+		releasePublisherEndpoint();
 	}
 
 	public SubscriberEndpoint addSubscriber(String newUserName) {
-		SubscriberEndpoint iceSendingEndpoint = new SubscriberEndpoint(this,
-				newUserName, pipeline);
-		SubscriberEndpoint existingIceSendingEndpoint = this.subscribers
-				.putIfAbsent(newUserName, iceSendingEndpoint);
+		SubscriberEndpoint iceSendingEndpoint =
+				new SubscriberEndpoint(this, newUserName, pipeline);
+		SubscriberEndpoint existingIceSendingEndpoint =
+				this.subscribers.putIfAbsent(newUserName, iceSendingEndpoint);
 		if (existingIceSendingEndpoint != null) {
 			iceSendingEndpoint = existingIceSendingEndpoint;
 			log.trace(
 					"PARTICIPANT {}: There is an existing placeholder for WebRtcEndpoint "
 							+ "with ICE candidates queue for user {}",
-							this.name, newUserName);
+					this.name, newUserName);
 		} else
 			log.debug("PARTICIPANT {}: New placeholder for WebRtcEndpoint "
 					+ "with ICE candidates queue for user {}", this.name,
@@ -259,46 +286,34 @@ public class Participant {
 		room.sendIceCandidate(id, endpointName, candidate);
 	}
 
+	private void releasePublisherEndpoint() {
+		if (publisher != null && publisher.getEndpoint() != null) {
+			this.streaming = false;
+			for (MediaElement el : publisher.getMediaElements())
+				releaseElement(name, el);
+			releaseElement(name, publisher.getEndpoint());
+			publisher = null;
+		}
+	}
+
 	private void releaseElement(final String senderName,
 			final MediaElement element) {
+		final String eid = element.getId();
 		element.release(new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {
-				log.debug("PARTICIPANT {}: Released successfully {} for {}",
-						Participant.this.name, element.getClass().getName(),
-						senderName);
+				log.debug(
+						"PARTICIPANT {}: Released successfully media element #{} for {}",
+						Participant.this.name, eid, senderName);
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
-				log.warn("PARTICIPANT {}: Could not release {} for {}",
-						Participant.this.name, element.getClass().getName(),
-						senderName, cause);
+				log.warn(
+						"PARTICIPANT {}: Could not release media element #{} for {}",
+						Participant.this.name, eid, senderName, cause);
 			}
 		});
-	}
-
-	public boolean isClosed() {
-		return closed;
-	}
-
-	public boolean isStreaming() {
-		return streaming;
-	}
-
-	public boolean isSubscribed() {
-		for (SubscriberEndpoint se : subscribers.values())
-			if (se.isConnectedToPublisher())
-				return true;
-		return false;
-	}
-
-	public Set<String> getConnectedSubscribedEndpoints() {
-		Set<String> subscribedToSet = new HashSet<String>();
-		for (SubscriberEndpoint se : subscribers.values())
-			if (se.isConnectedToPublisher())
-				subscribedToSet.add(se.getEndpointName());
-		return subscribedToSet;
 	}
 
 	@Override

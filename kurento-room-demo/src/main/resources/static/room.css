@@ -73,7 +73,7 @@ video {
     top: 0px;
     bottom: 0px;
     left: 0px;
-    z-index: 100;
+    z-index: 99;
     background-color: transparent;
     margin: 0.5em;
     text-shadow: 0px 0px 10px #000000;

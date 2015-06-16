@@ -28,15 +28,16 @@ public class JsonRpcProtocolElements {
 	public static final String JOIN_ROOM_USER_PARAM = "user";
 	public static final String JOIN_ROOM_ROOM_PARAM = "room";
 	public static final String PUBLISH_VIDEO_METHOD = "publishVideo";
+	public static final String UNPUBLISH_VIDEO_METHOD = "unpublishVideo";
 	public static final String PUBLISH_VIDEO_SDPOFFER_PARAM = "sdpOffer";
 	public static final String RECEIVE_VIDEO_METHOD = "receiveVideoFrom";
 	public static final String RECEIVE_VIDEO_SDPOFFER_PARAM = "sdpOffer";
 	public static final String RECEIVE_VIDEO_SENDER_PARAM = "sender";
+	public static final String UNSUBSCRIBE_VIDEO_METHOD = "unsubscribeFromVideo";
 	public static final String ON_ICE_CANDIDATE_METHOD = "onIceCandidate";
 	public static final String ICE_CANDIDATE_EVENT = "iceCandidate";
 	public static final String ON_ICE_EP_NAME_PARAM = "endpointName";
 	public static final String ON_ICE_CANDIDATE_PARAM = "candidate";
 	public static final String ON_ICE_SDP_MID_PARAM = "sdpMid";
 	public static final String ON_ICE_SDP_M_LINE_INDEX_PARAM = "sdpMLineIndex";
-
 }

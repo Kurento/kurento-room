@@ -3,7 +3,7 @@
  * @author Raquel Díaz González
  */
 
-kurento_room.controller('callController', function ($scope, $window, ServiceParticipant, ServiceRoom, Fullscreen) {
+kurento_room.controller('callController', function ($scope, $window, ServiceParticipant, ServiceRoom, Fullscreen, LxNotificationService) {
 
     $scope.roomName = ServiceRoom.getRoomName();
     $scope.userName = ServiceRoom.getUserName();
@@ -66,6 +66,18 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         }
     };
 
+    $scope.disconnectStream = function() {
+    	var localStream = ServiceRoom.getLocalStream();
+    	var participant = ServiceParticipant.getMainParticipant();
+    	if (!localStream || !participant) {
+    		LxNotificationService.alert('Error!', "Not connected yet", 'Ok', function(answer) {
+            });
+    		return false;
+    	}
+    	ServiceParticipant.disconnectParticipant(participant);
+    	ServiceRoom.getKurento().disconnectParticipant(participant.getStream());
+    }
+    
     //chat
     $scope.message;
 

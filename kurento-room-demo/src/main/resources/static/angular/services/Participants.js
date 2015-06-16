@@ -5,6 +5,10 @@ function AppParticipant(stream) {
 
     var that = this;
 
+    this.getStream = function() {
+		return this.stream;
+	}
+
     this.setMain = function () {
 
         var mainVideo = document.getElementById("main-video");
@@ -41,15 +45,17 @@ function AppParticipant(stream) {
 
         var buttonVideo = document.createElement('button');
         buttonVideo.className = 'action btn btn--m btn--orange btn--fab mdi md-desktop-mac';
-        buttonVideo.setAttribute("ng-click", "");
+        //FIXME this won't work, Angular can't get to bind the directive ng-click nor lx-ripple
+        buttonVideo.setAttribute("ng-click", "disconnectStream();$event.stopPropagation();");
+        buttonVideo.setAttribute("lx-ripple", "");
         buttonVideo.style.position = "absolute";
         buttonVideo.style.left = "75%";
         buttonVideo.style.top = "60%";
         buttonVideo.style.zIndex = "100";
-        that.videoElement.appendChild(buttonVideo);
+        that.videoElement.appendChild(buttonVideo);      
 
         document.getElementById("participants").appendChild(that.videoElement);
-
+        
         that.stream.play(elementId);
     }
 
@@ -76,7 +82,10 @@ function Participants() {
         return roomName;
     };
 
-
+    this.getMainParticipant = function() {
+		return mainParticipant;
+	}
+    
     function updateVideoStyle() {
 
         var MAX_WIDTH = 15;
@@ -94,20 +103,17 @@ function Participants() {
                 "width": MAX_WIDTH + "%"
             });
         }
-    }
-    ;
+    };
 
     function updateMainParticipant(participant) {
-        // if (mainParticipant !== undefined) {
-        //     mainParticipant.removeMain();
-        // }
-        mainParticipant.removeMain();
+        if (mainParticipant) {
+        	mainParticipant.removeMain();
+        }
         mainParticipant = participant;
         mainParticipant.setMain();
     }
 
     this.addLocalParticipant = function (stream) {
-
         localParticipant = that.addParticipant(stream);
         mainParticipant = localParticipant;
         mainParticipant.setMain();
@@ -120,7 +126,7 @@ function Participants() {
 
         updateVideoStyle();
 
-        $(participant.videoElement).click(function () {
+        $(participant.videoElement).click(function (e) {
             updateMainParticipant(participant);
         });
 
@@ -129,17 +135,41 @@ function Participants() {
         return participant;
     };
 
-    this.removeParticipant = function (stream) {
+    this.removeParticipantByStream = function (stream) {
+        this.removeParticipant(stream.getGlobalID());
+    };
 
-        var participant = participants[stream.getGlobalID()];
-        delete participants[stream.getGlobalID()];
+    this.disconnectParticipant = function (appParticipant) {
+    	this.removeParticipant(appParticipant.getStream().getGlobalID());
+    };
 
-        if (mainParticipant === participant) {
-            mainParticipant = localParticipant;
-            mainParticipant.setMain();
+    this.removeParticipant = function (streamId) {
+    	var participant = participants[streamId];
+        delete participants[streamId];
+        
+        if (mainParticipant && mainParticipant === participant) {
+        	if (localParticipant && mainParticipant !== localParticipant) {
+        		mainParticipant = localParticipant;
+        	} else {
+        		var keys = Object.keys(participants);
+        		if (keys.length > 0) {
+        			mainParticipant = participants[keys[0]];
+        			console.log("Main video from " + mainParticipant.getStream().getGlobalID());
+        		} else {
+        			mainParticipant = null;
+        		}
+        	}
+        	if (mainParticipant) {
+        		mainParticipant.setMain();
+        		console.log("Main video from " + mainParticipant.getStream().getGlobalID());
+        	} else
+        		console.error("No media streams left to display");
         }
 
         participant.remove();
+
+        if (localParticipant === participant)
+        	localParticipant = null;
 
         updateVideoStyle();
     };

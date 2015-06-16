@@ -76,7 +76,7 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                 });
 
                 room.addEventListener("stream-removed", function (streamEvent) {
-                    ServiceParticipant.removeParticipant(streamEvent.stream);
+                    ServiceParticipant.removeParticipantByStream(streamEvent.stream);
                 });
 
                 room.addEventListener("newMessage", function (msg) {

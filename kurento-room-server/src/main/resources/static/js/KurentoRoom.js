@@ -176,6 +176,12 @@ function Room(kurento, options) {
     			sdpMLineIndex: msg.sdpMLineIndex
     	}
     	var participant = participants[msg.endpointName];
+    	if (!participant) {
+    		console.error("Participant not found for endpoint " + 
+    				msg.endpointName + ". Ice candidate will be ignored.", 
+    				candidate);
+    		return false;
+    	}
     	var streams = participant.getStreams();
         for (var key in streams) {
         	var stream = streams[key];
@@ -219,6 +225,41 @@ function Room(kurento, options) {
         for (var key in participants) {
             participants[key].dispose();
         }
+    }
+    
+    this.disconnect = function (stream) {
+    	var participant = stream.getParticipant();
+    	if (!participant) {
+    		console.error("Stream to disconnect has no participant", stream);
+    		return false;
+    	}
+    	
+    	delete participants[participant.getID()];
+    	participant.dispose();
+    	
+    	if (participant === localParticipant) {
+    		console.log("Unpublishing my media (I'm " + participant.getID() + ")");
+    		delete localParticipant;
+    		kurento.sendRequest('unpublishVideo', function (error, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                	console.info("Media unpublished correctly");
+                }
+            });
+    	} else {
+    		console.log("Unsubscribing from " + stream.getGlobalID());
+    		kurento.sendRequest('unsubscribeFromVideo', {
+    				sender: stream.getGlobalID()
+    			}, 
+    			function (error, response) {
+    				if (error) {
+    					console.error(error);
+    				} else {
+    					console.info("Unsubscribed correctly from " + stream.getGlobalID());
+    				}
+    			});
+    	}
     }
     
     this.getStreams = function () {
@@ -414,6 +455,10 @@ function Stream(kurento, local, room, options) {
         return id;
     }
 
+    this.getParticipant = function() {
+		return participant;
+	}
+    
     this.getGlobalID = function () {
         if (participant) {
             return participant.getID() + "_" + id;
@@ -581,6 +626,23 @@ function Stream(kurento, local, room, options) {
         });
     }
 
+    this.unpublish = function () {
+    	if (wp) {
+        	wp.dispose();
+        } else { 
+        	if (wrStream) {
+	        	wrStream.getAudioTracks().forEach(function (track) {
+	                track.stop && track.stop()
+	            })
+	            wrStream.getVideoTracks().forEach(function (track) {
+	                track.stop && track.stop()
+	            })
+        	}
+        }
+    	
+    	console.log(that.getGlobalID() + ": Stream '" + id + "' unpublished");
+    }
+    
     this.dispose = function () {
 
         function disposeElement(element) {
@@ -652,6 +714,11 @@ function KurentoRoom(wsUri, callback) {
                 break;
             case 'participantPublished':
                 onParticipantPublished(request.params);
+                break;
+            case 'participantUnpublished':
+            	//TODO use a different method, don't delete 
+            	// the participant for future reconnection?
+            	onParticipantLeft(request.params);
                 break;
             case 'participantLeft':
                 onParticipantLeft(request.params);
@@ -733,6 +800,12 @@ function KurentoRoom(wsUri, callback) {
         ws.close();
     };
 
+    this.disconnectParticipant = function(stream) {
+    	if (room !== undefined) {
+    		room.disconnect(stream);
+    	}
+	}
+    
     this.Stream = function (room, options) {
         options.participant = room.getLocalParticipant();
         return new Stream(that, true, room, options);
