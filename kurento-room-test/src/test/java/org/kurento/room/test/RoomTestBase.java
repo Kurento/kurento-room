@@ -2,26 +2,27 @@ package org.kurento.room.test;
 
 /*
  * (C) Copyright 2014 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -30,7 +31,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.SystemUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.kurento.room.KurentoRoomServerApp;
 import org.kurento.test.base.KurentoTest;
@@ -69,10 +72,18 @@ public class RoomTestBase extends KurentoTest {
 		public void run(int numUser, WebDriver browser) throws Exception;
 	}
 
-	protected Logger log = LoggerFactory.getLogger(RoomTestBase.class);
+	protected Logger log = LoggerFactory.getLogger(this.getClass());
 
 	protected static String APP_URL = "http://127.0.0.1:8080/room.html";
 
+	protected static SecureRandom random;
+	
+	private static final String ROOM_NAME = "room";
+	protected String roomName;
+	static {
+		random = new SecureRandom();
+	}
+	
 	private static final int TEST_TIMEOUT = 20; // seconds
 
 	private static final int MAX_WIDTH = 1200;
@@ -85,6 +96,19 @@ public class RoomTestBase extends KurentoTest {
 	private static final int FIND_LATENCY = 100;
 
 	protected List<WebDriver> browsers;
+	final protected Object browsersLock = new Object();
+
+	@Before
+	public void setup() {
+		super.setupKurentoTest();
+		roomName = ROOM_NAME + random.nextInt(9999);
+	}
+	
+	@After
+	public void tearDown() {
+		super.teardownKurentoTest();
+		closeBrowsers();
+	}
 
 	protected WebDriver newWebDriver() {
 
@@ -133,6 +157,7 @@ public class RoomTestBase extends KurentoTest {
 		log.info("User '" + userName + "' joined to room '" + roomName + "'");
 	}
 
+	@SuppressWarnings("unused")
 	private Object execFunc(WebDriver user, String javaScript) {
 		return ((JavascriptExecutor) user).executeScript(javaScript);
 	}
@@ -159,6 +184,32 @@ public class RoomTestBase extends KurentoTest {
 		}
 	}
 
+	protected void unpublish(WebDriver userBrowser) {
+		try {
+			userBrowser.findElement(By.id("buttonDisconnect")).click();
+		} catch (ElementNotVisibleException e) {
+			log.warn("Button 'buttonDisconnect' is not visible. Can't unpublish media.");
+		}
+	}
+
+	protected void unsubscribe(WebDriver userBrowser, String clickableVideoTagId) {
+		try {
+			userBrowser.findElement(By.id(clickableVideoTagId)).click();
+		} catch (ElementNotVisibleException e) {
+			String msg =
+					"Video tag "
+							+ clickableVideoTagId
+							+ " is not visible. Can't select video to unsubscribe from.";
+			log.warn(msg);
+			fail(msg);
+		}
+		try {
+			userBrowser.findElement(By.id("buttonDisconnect")).click();
+		} catch (ElementNotVisibleException e) {
+			log.warn("Button 'buttonDisconnect' is not visible. Can't unsubscribe from media.");
+		}
+	}
+
 	protected WebElement findElement(WebDriver browser, String id) {
 		return findElement(null, browser, id);
 	}
@@ -167,7 +218,6 @@ public class RoomTestBase extends KurentoTest {
 			throws TimeoutException {
 
 		int i = 0;
-		boolean shown = false;
 		int numIters = TEST_TIMEOUT * 1000 / FIND_LATENCY;
 		for (; i < numIters; i++) {
 			try {
@@ -226,8 +276,8 @@ public class RoomTestBase extends KurentoTest {
 		browsers = createBrowsers(numUsers);
 
 		ExecutorService threadPool = Executors.newFixedThreadPool(numUsers);
-		ExecutorCompletionService<Void> exec = new ExecutorCompletionService<>(
-				threadPool);
+		ExecutorCompletionService<Void> exec =
+				new ExecutorCompletionService<>(threadPool);
 		List<Future<Void>> futures = new ArrayList<>();
 
 		for (int i = 0; i < numUsers; i++) {
@@ -247,9 +297,11 @@ public class RoomTestBase extends KurentoTest {
 			for (int i = 0; i < numUsers; i++) {
 				try {
 					Future<Void> f = exec.take();
-					int indexOf = futures.indexOf(f);
-					WebDriver webDriver = browsers.set(indexOf, null);
-					webDriver.close();
+					// doing it on tear down
+					// int indexOf = futures.indexOf(f);
+					// WebDriver webDriver = browsers.set(indexOf, null);
+					// webDriver.close();
+					// webDriver.quit();
 					f.get();
 				} catch (ExecutionException e) {
 					e.printStackTrace();
@@ -258,19 +310,15 @@ public class RoomTestBase extends KurentoTest {
 			}
 		} finally {
 			threadPool.shutdownNow();
-			for (WebDriver browser : browsers) {
-				if (browser != null) {
-					browser.close();
-				}
-			}
+			// closeBrowsers();
 		}
 	}
 
 	protected List<WebDriver> createBrowsers(int numUsers)
 			throws InterruptedException, ExecutionException {
 
-		final List<WebDriver> browsers = Collections
-				.synchronizedList(new ArrayList<WebDriver>());
+		final List<WebDriver> browsers =
+				Collections.synchronizedList(new ArrayList<WebDriver>());
 
 		parallelTask(numUsers, new Function<Integer, Void>() {
 			@Override
@@ -286,12 +334,12 @@ public class RoomTestBase extends KurentoTest {
 		for (WebDriver browser : browsers) {
 
 			browser.manage().window()
-			.setSize(new Dimension(BROWSER_WIDTH, BROWSER_HEIGHT));
+					.setSize(new Dimension(BROWSER_WIDTH, BROWSER_HEIGHT));
 			browser.manage()
-			.window()
-			.setPosition(
-					new Point(col * BROWSER_WIDTH + LEFT_BAR_WIDTH, row
-							* BROWSER_HEIGHT));
+					.window()
+					.setPosition(
+							new Point(col * BROWSER_WIDTH + LEFT_BAR_WIDTH, row
+									* BROWSER_HEIGHT));
 
 			col++;
 
@@ -307,8 +355,8 @@ public class RoomTestBase extends KurentoTest {
 			throws InterruptedException, ExecutionException {
 
 		ExecutorService threadPool = Executors.newFixedThreadPool(num);
-		ExecutorCompletionService<Void> exec = new ExecutorCompletionService<>(
-				threadPool);
+		ExecutorCompletionService<Void> exec =
+				new ExecutorCompletionService<>(threadPool);
 
 		for (int i = 0; i < num; i++) {
 			final int current = i;
@@ -351,10 +399,17 @@ public class RoomTestBase extends KurentoTest {
 		}
 	}
 
-	protected void closeBrowsers(List<WebDriver> browsers) {
-		for (WebDriver browser : browsers) {
-			browser.close();
-		}
+	protected void closeBrowsers() {
+		if (browsers != null && !browsers.isEmpty())
+			for (WebDriver browser : browsers)
+				if (browser != null)
+					try {
+						browser.close();
+						browser.quit();
+					} catch (Exception e) {
+						log.warn("Error closing browser", e);
+						fail("Unable to close browser: " + e.getMessage());
+					}
 	}
 
 	protected void verify(List<WebDriver> browsers, boolean[] activeUsers) {
@@ -365,7 +420,7 @@ public class RoomTestBase extends KurentoTest {
 				sb.append("user" + i + ",");
 			}
 		}
-		log.debug("Checking active users: [" + sb + "]");
+		log.debug("Checking active users: [{}]", sb);
 
 		long startTime = System.nanoTime();
 
@@ -382,8 +437,9 @@ public class RoomTestBase extends KurentoTest {
 						// log.debug("Finding element video-user" + j
 						// + " in browser for user" + i);
 
-						WebElement video = findElement(getUserName(i), browser,
-								videoElementId);
+						WebElement video =
+								findElement(getUserName(i), browser,
+										videoElementId);
 						if (video == null) {
 							fail("Video element for user" + j
 									+ " is not found in browser from user" + i);
@@ -406,12 +462,19 @@ public class RoomTestBase extends KurentoTest {
 
 		double duration = ((double) endTime - startTime) / 1_000_000;
 
-		log.debug("Checked active users: [" + sb + "] in " + duration
-				+ " millis");
+		log.debug("Checked active users: [{}] in {} millis", sb, duration);
 	}
 
 	private String getUserName(int i) {
 		return "user" + i + "_webcam";
+	}
+
+	protected CountDownLatch[] createCdl(int numLatches, int numUsers) {
+		final CountDownLatch[] cdl = new CountDownLatch[numLatches];
+		for (int i = 0; i < numLatches; i++) {
+			cdl[i] = new CountDownLatch(numUsers);
+		}
+		return cdl;
 	}
 
 }

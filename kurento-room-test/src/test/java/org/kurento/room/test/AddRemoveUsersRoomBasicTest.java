@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Room demo integration test (basic version).
@@ -32,13 +30,9 @@ import org.slf4j.LoggerFactory;
  */
 public class AddRemoveUsersRoomBasicTest extends RoomTestBase {
 
-	private Logger log = LoggerFactory
-			.getLogger(AddRemoveUsersRoomBasicTest.class);
-
 	private static final int PLAY_TIME = 5; // seconds
 
-	private static final int NUM_USERS = 2;
-	private static final String ROOM_NAME = "room";
+	private static final int NUM_USERS = 4;
 
 	protected static final int ITERATIONS = 2;
 
@@ -46,10 +40,9 @@ public class AddRemoveUsersRoomBasicTest extends RoomTestBase {
 	public void test() throws Exception {
 
 		final boolean[] activeUsers = new boolean[NUM_USERS];
-		final Object browsersLock = new Object();
 
-		final CountDownLatch[] joinCdl = createCdl();
-		final CountDownLatch [] leaveCdl = createCdl();
+		final CountDownLatch[] joinCdl = createCdl(ITERATIONS, NUM_USERS);
+		final CountDownLatch [] leaveCdl = createCdl(ITERATIONS, NUM_USERS);
 		
 		// parallelUsers(NUM_USERS, (numUser, browser) -> {
 
@@ -63,9 +56,9 @@ public class AddRemoveUsersRoomBasicTest extends RoomTestBase {
 				for (int i = 0; i < ITERATIONS; i++) {
 
 					synchronized (browsersLock) {
-						joinToRoom(browser, userName, ROOM_NAME);
+						joinToRoom(browser, userName, roomName);
 						log.info("User '{}' joined to room '{}'", userName,
-								ROOM_NAME);
+								roomName);
 						activeUsers[numUser] = true;
 						verify(browsers, activeUsers);
 						
@@ -77,10 +70,10 @@ public class AddRemoveUsersRoomBasicTest extends RoomTestBase {
 
 					synchronized (browsersLock) {
 						log.info("User '{}' exiting from room '{}'", userName,
-								ROOM_NAME);
+								roomName);
 						exitFromRoom(browser);
 						log.info("User '{}' exited from room '{}'", userName,
-								ROOM_NAME);
+								roomName);
 						activeUsers[numUser] = false;
 						verify(browsers, activeUsers);
 						
@@ -89,20 +82,9 @@ public class AddRemoveUsersRoomBasicTest extends RoomTestBase {
 					leaveCdl[i].await(PLAY_TIME * 5000L, TimeUnit.MILLISECONDS);
 				}
 
-				// Scanner s = new Scanner(System.in).useDelimiter("\n");
-				// s.next();
-
 				log.info("User '{}' close browser", userName);
 			}
 		});
-	}
-
-	private CountDownLatch[] createCdl() {
-		final CountDownLatch [] joinCdl = new CountDownLatch[ITERATIONS];
-		for (int i = 0; i < ITERATIONS; i++) {
-			joinCdl[i] = new CountDownLatch(NUM_USERS);
-		}
-		return joinCdl;
 	}
 
 }

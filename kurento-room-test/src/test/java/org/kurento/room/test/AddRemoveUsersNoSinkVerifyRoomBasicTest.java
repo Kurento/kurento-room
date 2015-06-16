@@ -19,8 +19,6 @@ import java.util.concurrent.ExecutionException;
 
 import org.junit.Test;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Room demo integration test (basic version).
@@ -30,19 +28,15 @@ import org.slf4j.LoggerFactory;
  */
 public class AddRemoveUsersNoSinkVerifyRoomBasicTest extends RoomTestBase {
 
-	private Logger log = LoggerFactory
-			.getLogger(AddRemoveUsersNoSinkVerifyRoomBasicTest.class);
-
 	private static final int PLAY_TIME = 5; // seconds
 
 	private static final int NUM_USERS = 4;
-	private static final String ROOM_NAME = "room";
 
 	protected static final int ITERATIONS = 2;
 
 	@Test
 	public void test() throws Exception {
-
+		
 		parallelUsers(NUM_USERS, new UserLifecycle() {
 			@Override
 			public void run(int numUser, final WebDriver browser)
@@ -54,18 +48,22 @@ public class AddRemoveUsersNoSinkVerifyRoomBasicTest extends RoomTestBase {
 
 					sleep(numUser * 1000);
 
-					joinToRoom(browser, userName, ROOM_NAME);
+					synchronized (browsersLock) {
+						joinToRoom(browser, userName, roomName);
+					}
 					log.info("User '{}' joined to room '{}'", userName,
-							ROOM_NAME);
-
+							roomName);
+					
 					sleep(PLAY_TIME * 1000);
 
 					log.info("User '{}' exiting from room '{}'", userName,
-							ROOM_NAME);
-					exitFromRoom(browser);
+							roomName);
+					
+					synchronized (browsersLock) {
+						exitFromRoom(browser);
+					}
 					log.info("User '{}' exited from room '{}'", userName,
-							ROOM_NAME);
-
+							roomName);
 				}
 			}
 		});

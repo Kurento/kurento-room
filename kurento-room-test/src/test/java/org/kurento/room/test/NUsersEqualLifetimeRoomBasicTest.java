@@ -15,12 +15,12 @@ package org.kurento.room.test;
  *
  */
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 
@@ -32,14 +32,14 @@ import com.google.common.base.Function;
  */
 public class NUsersEqualLifetimeRoomBasicTest extends RoomTestBase {
 
-	private Logger log = LoggerFactory
-			.getLogger(NUsersEqualLifetimeRoomBasicTest.class);
-
 	private static final int PLAY_TIME = 5; // seconds
 
 	private static final int NUM_USERS = 4;
-	private static final String ROOM_NAME = "room";
 
+	private final CountDownLatch joinCdl = new CountDownLatch(NUM_USERS);
+	private final CountDownLatch publishCdl = new CountDownLatch(NUM_USERS * NUM_USERS);
+	private final CountDownLatch leaveCdl = new CountDownLatch(NUM_USERS);
+	
 	@Test
 	public void test() throws Exception {
 
@@ -50,17 +50,24 @@ public class NUsersEqualLifetimeRoomBasicTest extends RoomTestBase {
 
 				final String userName = "user" + numUser;
 
-				joinToRoom(browser, userName, ROOM_NAME);
-				log.info("User '{}' joined to room '{}'", userName, ROOM_NAME);
-
+				synchronized (browsersLock) {
+					joinToRoom(browser, userName, roomName);
+					joinCdl.countDown();
+				}
+				log.info("User '{}' joined to room '{}'", userName, roomName);
+				joinCdl.await(PLAY_TIME * 5000L, TimeUnit.MILLISECONDS);
+				
 				final long start = System.currentTimeMillis();
 
 				parallelTask(NUM_USERS, new Function<Integer, Void>() {
 					@Override
 					public Void apply(Integer num) {
 						String videoUserName = "user" + num;
-						waitForStream(browser, "native-video-user" + num
+						synchronized (browsersLock) {
+							waitForStream(browser, "native-video-user" + num
 								+ "_webcam");
+							publishCdl.countDown();
+						}
 						long duration = System.currentTimeMillis() - start;
 						log.info(
 								"Video received in browser of user {} for user '{}' in {} millis",
@@ -68,14 +75,16 @@ public class NUsersEqualLifetimeRoomBasicTest extends RoomTestBase {
 						return null;
 					}
 				});
-
-				Thread.sleep(PLAY_TIME * 1000);
-
+				publishCdl.await(PLAY_TIME * 5000L, TimeUnit.MILLISECONDS);
+				
 				log.info("User '{}' exiting from room '{}'", userName,
-						ROOM_NAME);
-				exitFromRoom(browser);
-				log.info("User '{}' exited from room '{}'", userName, ROOM_NAME);
-
+						roomName);
+				synchronized (browsersLock) {
+					exitFromRoom(browser);
+					leaveCdl.countDown();
+				}
+				log.info("User '{}' exited from room '{}'", userName, roomName);
+				leaveCdl.await(PLAY_TIME * 5000L, TimeUnit.MILLISECONDS);
 			}
 		});
 	}

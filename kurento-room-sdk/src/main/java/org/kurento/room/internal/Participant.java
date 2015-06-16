@@ -157,16 +157,14 @@ public class Participant {
 				sdpOffer);
 
 		if (sender.getPublisher() == null) {
-			log.warn(
-					"PARTICIPANT {}: Trying to connect to a user without "
-							+ "receiving endpoint (it seems is not yet fully connected)",
-					this.name);
+			log.warn("PARTICIPANT {}: Trying to connect to a user without "
+					+ "a publishing endpoint", this.name);
 			return null;
 		}
 
 		if (senderName.equals(this.name)) {
 			// FIXME: Use another message type for receiving sdp offer
-			log.debug("PARTICIPANT {}: configuring loopback", this.name);
+			log.info("PARTICIPANT {}: configuring loopback", this.name);
 			// TODO throw exception
 			// OR return null; ???
 		}
@@ -203,11 +201,11 @@ public class Participant {
 			// TODO Check object status when KurentoClient sets this info in the
 			// object
 			if (e.getCode() == 40101)
-				log.warn("Receiving endpoint is released when trying "
-						+ "to connect a sending endpoint to it", e);
+				log.warn("Publisher endpoint was already released when trying "
+						+ "to connect a subscriber endpoint to it", e);
 			else
-				log.error("Exception connecting receiving endpoint "
-						+ "to sending endpoint", e);
+				log.error("Exception connecting subscriber endpoint "
+						+ "to publisher endpoint", e);
 			this.subscribers.remove(senderName);
 			this.releaseElement(senderName, subscriber.getEndpoint());
 		}
@@ -215,45 +213,39 @@ public class Participant {
 	}
 
 	public void cancelReceivingMedia(String senderName) {
-
 		log.debug("PARTICIPANT {}: cancel receiving media from {}", this.name,
 				senderName);
-
-		IceWebRtcEndpoint sendingEndpoint = subscribers.remove(senderName);
-
-		if (sendingEndpoint == null || sendingEndpoint.getEndpoint() == null) {
+		IceWebRtcEndpoint subscriberEndpoint = subscribers.remove(senderName);
+		if (subscriberEndpoint == null
+				|| subscriberEndpoint.getEndpoint() == null) {
 			log.warn(
-					"PARTICIPANT {}: Trying to cancel sending video from user {}. "
-							+ "But there is no such sending endpoint",
+					"PARTICIPANT {}: Trying to cancel receiving video from user {}. "
+							+ "But there is no such subscriber endpoint.",
 					this.name, senderName);
 		} else {
 			log.debug(
-					"PARTICIPANT {}: Cancel sending endpoint linked to user {}",
+					"PARTICIPANT {}: Cancel subscriber endpoint linked to user {}",
 					this.name, senderName);
 
-			releaseElement(senderName, sendingEndpoint.getEndpoint());
+			releaseElement(senderName, subscriberEndpoint.getEndpoint());
 		}
 	}
 
 	public void close() {
 		log.debug("PARTICIPANT {}: Closing user", this.name);
-
 		this.closed = true;
-
 		for (String remoteParticipantName : subscribers.keySet()) {
-
 			IceWebRtcEndpoint ep = this.subscribers.get(remoteParticipantName);
-
 			if (ep.getEndpoint() != null) {
 				releaseElement(remoteParticipantName, ep.getEndpoint());
-				log.debug("PARTICIPANT {}: Released sending EP for {}",
+				log.debug("PARTICIPANT {}: Released subscriber endpoint to {}",
 						this.name, remoteParticipantName);
 			} else
-				log.warn("PARTICIPANT {}: Trying to close sending EP for {}. "
-						+ "But the endpoint was never instantiated.",
+				log.warn(
+						"PARTICIPANT {}: Trying to close subscriber endpoint to {}. "
+								+ "But the endpoint was never instantiated.",
 						this.name, remoteParticipantName);
 		}
-
 		releasePublisherEndpoint();
 	}
 

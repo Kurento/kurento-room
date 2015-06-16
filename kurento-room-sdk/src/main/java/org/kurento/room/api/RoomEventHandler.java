@@ -204,11 +204,12 @@ public interface RoomEventHandler {
 			IceCandidate candidate);
 
 	/**
-	 * Called as a result of {@link RoomManager#closeRoom(String)} - server
-	 * domain method, not a consequence of a room API request. All resources on
-	 * the server, associated with the room, have been released. The existing
-	 * participants in the room should be notified of this event so that the
-	 * client-side application acts accordingly.
+	 * Called as a result of {@link RoomManager#closeRoom(String)} or
+	 * {@link RoomManager#evictParticipant(String)} - server domain methods, not
+	 * as a consequence of a room API request. All resources on the server,
+	 * associated with the room, have been released. The existing participants
+	 * in the room should be notified of this event so that the client-side
+	 * application acts accordingly.
 	 * 
 	 * @param roomName the room that's just been closed
 	 * @param participantIds identifiers of the participants in the room

@@ -231,7 +231,7 @@ public class Room {
 		participants.remove(participant.getId());
 
 		log.debug(
-				"ROOM {}: Cancel sending media from any users towards user {}",
+				"ROOM {}: Cancel receiving media from user '{}' for other users",
 				this.name, participant.getName());
 		for (Participant other : participants.values())
 			other.cancelReceivingMedia(participant.getName());

@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2015 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 package org.kurento.room.rpc;
@@ -39,7 +38,8 @@ public class JsonRpcNotificationService implements UserNotificationService {
 	private static final Logger log = LoggerFactory
 			.getLogger(JsonRpcNotificationService.class);
 
-	private static ConcurrentMap<String, SessionWrapper> sessions = new ConcurrentHashMap<String, SessionWrapper>();
+	private static ConcurrentMap<String, SessionWrapper> sessions =
+			new ConcurrentHashMap<String, SessionWrapper>();
 
 	public SessionWrapper addTransaction(Transaction t,
 			Request<JsonObject> request) {
@@ -68,6 +68,10 @@ public class JsonRpcNotificationService implements UserNotificationService {
 	private Transaction getAndRemoveTransaction(
 			ParticipantRequest participantRequest) {
 		Integer tid = null;
+		if (participantRequest == null) {
+			log.warn("Unable to obtain a transaction for a null ParticipantRequest object");
+			return null;
+		}
 		String tidVal = participantRequest.getRequestId();
 		try {
 			tid = Integer.parseInt(tidVal);
@@ -144,6 +148,11 @@ public class JsonRpcNotificationService implements UserNotificationService {
 
 	@Override
 	public void closeSession(ParticipantRequest participantRequest) {
+		if (participantRequest == null) {
+			log.error("No session found for null ParticipantRequest object, "
+					+ "unable to cleanup");
+			return;
+		}
 		String sessionId = participantRequest.getParticipantId();
 		SessionWrapper sw = sessions.get(sessionId);
 		if (sw == null || sw.getSession() == null) {
@@ -153,9 +162,16 @@ public class JsonRpcNotificationService implements UserNotificationService {
 		}
 		Session s = sw.getSession();
 		try {
+			ParticipantSession ps = null;
+			if (s.getAttributes().containsKey(ParticipantSession.SESSION_KEY))
+				ps =
+						(ParticipantSession) s.getAttributes().get(
+								ParticipantSession.SESSION_KEY);
 			s.close();
+			log.info("Closed session for req {} (userInfo:{})",
+					participantRequest, ps);
 		} catch (IOException e) {
-			log.error("Error closing session", e);
+			log.error("Error closing session for req {}", participantRequest, e);
 		}
 		sessions.remove(sessionId);
 	}

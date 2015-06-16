@@ -50,4 +50,17 @@ public class ParticipantSession {
 	public void setRoomName(String roomName) {
 		this.roomName = roomName;
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("[");
+		if (participantName != null)
+			builder.append("participantName=").append(participantName)
+					.append(", ");
+		if (roomName != null)
+			builder.append("roomName=").append(roomName);
+		builder.append("]");
+		return builder.toString();
+	}
 }

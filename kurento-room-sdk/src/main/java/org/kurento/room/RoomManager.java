@@ -102,7 +102,7 @@ public class RoomManager {
 	 */
 	public void joinRoom(String userName, String roomName,
 			ParticipantRequest request) {
-		log.info("Request [JOIN_ROOM] user={}, room={} ({})", userName,
+		log.debug("Request [JOIN_ROOM] user={}, room={} ({})", userName,
 				roomName, request);
 		try {
 			Room room = getRoom(roomName, request, true);
@@ -137,7 +137,7 @@ public class RoomManager {
 	 * @param request instance of {@link ParticipantRequest} POJO
 	 */
 	public void leaveRoom(ParticipantRequest request) {
-		log.info("Request [LEAVE_ROOM] ({})", request);
+		log.debug("Request [LEAVE_ROOM] ({})", request);
 		try {
 			Participant participant =
 					getParticipant(request.getParticipantId());
@@ -153,7 +153,7 @@ public class RoomManager {
 				if (remainingParticipantIds.isEmpty()) {
 					room.close();
 					rooms.remove(room.getName());
-					log.info("Room '{}' removed and closed", roomName);
+					log.warn("Room '{}' removed and closed", roomName);
 				}
 				roomEventHandler.onParticipantLeft(request, roomName,
 						participant.getName(), remainingParticipantIds, null);
@@ -189,7 +189,7 @@ public class RoomManager {
 	 */
 	public void publishMedia(String sdpOffer, ParticipantRequest request,
 			MediaElement... mediaElements) {
-		log.info("Request [PUBLISH_MEDIA] sdpOffer={} mediaElements={} ({})",
+		log.debug("Request [PUBLISH_MEDIA] sdpOffer={} mediaElements={} ({})",
 				sdpOffer, mediaElements, request);
 
 		try {
@@ -235,7 +235,7 @@ public class RoomManager {
 	 * @param request instance of {@link ParticipantRequest} POJO
 	 */
 	public void unpublishMedia(ParticipantRequest request) {
-		log.info("Request [UNPUBLISH_MEDIA] ({})", request);
+		log.debug("Request [UNPUBLISH_MEDIA] ({})", request);
 
 		try {
 			Participant participant = getParticipant(request);
@@ -274,8 +274,7 @@ public class RoomManager {
 	 */
 	public void subscribe(String remoteName, String sdpOffer,
 			ParticipantRequest request) {
-		log.info(
-				"Request [SUBSCRIBE] remoteParticipant={} sdpOffer={} ({})",
+		log.debug("Request [SUBSCRIBE] remoteParticipant={} sdpOffer={} ({})",
 				remoteName, sdpOffer, request);
 
 		try {
@@ -323,7 +322,7 @@ public class RoomManager {
 	 * @param request instance of {@link ParticipantRequest} POJO
 	 */
 	public void unsubscribe(String remoteName, ParticipantRequest request) {
-		log.info("Request [UNSUBSCRIBE] remoteParticipant={} ({})", remoteName,
+		log.debug("Request [UNSUBSCRIBE] remoteParticipant={} ({})", remoteName,
 				request);
 
 		try {
@@ -368,7 +367,8 @@ public class RoomManager {
 	 */
 	public void sendMessage(String message, String userName, String roomName,
 			ParticipantRequest request) {
-		log.info("Request [SEND_MESSAGE] message={} ({})", message, request);
+		log.debug("Request [SEND_MESSAGE] message={} ({})", message, request);
+
 		try {
 			Participant participant = getParticipant(request);
 			if (participant == null)
@@ -414,6 +414,7 @@ public class RoomManager {
 		log.info("Request [ICE_CANDIDATE] endpoint={} candidate={} "
 				+ "sdpMLineIdx={} sdpMid={} ({})", endpointName, candidate,
 				sdpMLineIndex, sdpMid, request);
+
 		try {
 			Participant participant = getParticipant(request);
 			if (participant == null)
@@ -448,6 +449,48 @@ public class RoomManager {
 			} catch (Exception e) {
 				log.warn("Error closing room '{}'", roomName, e);
 			}
+	}
+
+	/**
+	 * Method that tries to remove a participant from her room. <br/>
+	 * <strong>Side effects:</strong> The room event handler should notify the
+	 * remaining participants. If none are left and the room gets closed, the
+	 * {@link RoomEventHandler#onRoomClosed(String, Set)} method will be called.
+	 * 
+	 * @param participantId identifier of the participant
+	 * @throws AdminException in case that no participant exists with the given
+	 *         id or it was impossible to perform the operation
+	 */
+	public void evictParticipant(String participantId) throws AdminException {
+		try {
+			Participant participant = getParticipant(participantId);
+			if (participant == null)
+				throw new AdminException("No participant with id '"
+						+ participantId + "' was found");
+			Room room = participant.getRoom();
+			String roomName = room.getName();
+			if (!room.isClosed()) {
+				room.leave(participantId);
+				Set<String> remainingParticipantIds = room.getParticipantIds();
+				if (remainingParticipantIds.isEmpty()) {
+					room.close();
+					rooms.remove(room.getName());
+					log.warn("Room '{}' removed and closed", roomName);
+					roomEventHandler.onRoomClosed(roomName,
+							remainingParticipantIds);
+				} else
+					roomEventHandler.onParticipantLeft(null, roomName,
+							participant.getName(), remainingParticipantIds,
+							null);
+			} else
+				log.warn(
+						"Trying to evict participant with id '{}' from room '{}' but it is closing",
+						participantId, room.getName());
+		} catch (RoomException e) {
+			log.warn("Error evicting participant with id {}", participantId, e);
+			throw new AdminException("Unable to evict participant with id "
+					+ participantId + ": " + e.getMessage());
+		}
 	}
 
 	/**
@@ -669,7 +712,7 @@ public class RoomManager {
 		roomEventHandler.onRoomClosed(roomName, pids);
 		room.close();
 		rooms.remove(roomName);
-		log.info("Room '{}' removed and closed", roomName);
+		log.warn("Room '{}' removed and closed", roomName);
 	}
 
 	/**

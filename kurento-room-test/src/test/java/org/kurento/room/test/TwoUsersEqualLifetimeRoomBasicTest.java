@@ -15,8 +15,8 @@ package org.kurento.room.test;
  *
  */
 
-import org.junit.After;
-import org.junit.Before;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.Test;
 import org.openqa.selenium.WebDriver;
 
@@ -32,22 +32,19 @@ public class TwoUsersEqualLifetimeRoomBasicTest extends RoomTestBase {
 
 	private static final String USER1_NAME = "user1";
 	private static final String USER2_NAME = "user2";
-	private static final String ROOM_NAME = "room";
 
 	private WebDriver user1Browser;
 	private WebDriver user2Browser;
 
-	@Before
-	public void setup() {
-		user1Browser = newWebDriver();
-		user2Browser = newWebDriver();
-	}
-
 	@Test
-	public void twoUsersRoomTest() throws InterruptedException {
-
-		joinToRoom(user1Browser, USER1_NAME, ROOM_NAME);
-		joinToRoom(user2Browser, USER2_NAME, ROOM_NAME);
+	public void twoUsersRoomTest() throws InterruptedException, ExecutionException {
+		
+		browsers = createBrowsers(2);
+		user1Browser = browsers.get(0);
+		user2Browser = browsers.get(1);
+		
+		joinToRoom(user1Browser, USER1_NAME, roomName);
+		joinToRoom(user2Browser, USER2_NAME, roomName);
 
 		waitForStream(user1Browser, "native-video-" + USER1_NAME + "_webcam");
 		waitForStream(user2Browser, "native-video-" + USER2_NAME + "_webcam");
@@ -58,11 +55,5 @@ public class TwoUsersEqualLifetimeRoomBasicTest extends RoomTestBase {
 		// Stop application by caller
 		exitFromRoom(user1Browser);
 		exitFromRoom(user2Browser);
-	}
-
-	@After
-	public void end() {
-		user1Browser.close();
-		user2Browser.close();
 	}
 }
