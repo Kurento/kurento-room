@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2014 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 package org.kurento.room.internal;
 
@@ -22,6 +21,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.kurento.client.Continuation;
+import org.kurento.client.ErrorEvent;
+import org.kurento.client.EventListener;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
@@ -41,7 +42,8 @@ import org.slf4j.LoggerFactory;
 public class Room {
 	private final Logger log = LoggerFactory.getLogger(Room.class);
 
-	private final ConcurrentMap<String, Participant> participants = new ConcurrentHashMap<String, Participant>();
+	private final ConcurrentMap<String, Participant> participants =
+			new ConcurrentHashMap<String, Participant>();
 	private final String name;
 
 	private MediaPipeline pipeline;
@@ -88,12 +90,24 @@ public class Room {
 		if (pipeline == null) {
 			log.info("ROOM {}: Creating MediaPipeline", name);
 			pipeline = kurentoClient.createMediaPipeline();
+			pipeline.addErrorListener(new EventListener<ErrorEvent>() {
+				@Override
+				public void onEvent(ErrorEvent event) {
+					String desc =
+							event.getType() + ": " + event.getDescription()
+									+ "(errCode=" + event.getErrorCode() + ")";
+					log.warn("ROOM {}: Pipeline error encountered: {}", name,
+							desc);
+					roomEventHandler.onPipelineError(name, getParticipantIds(),
+							desc);
+				}
+			});
 			pipelineLatch.countDown();
 		}
 
 		participants.put(participantId, new Participant(participantId,
 				userName, this, this.pipeline));
-
+		
 		log.info("ROOM {}: Added participant {}", name, userName);
 	}
 
@@ -111,10 +125,10 @@ public class Room {
 				"ROOM {}: Virtually subscribed other participants {} to new publisher {}",
 				name, participants.values(), participant.getName());
 	}
-	
+
 	public void cancelPublisher(Participant participant) {
 		deregisterPublisher();
-		
+
 		// cancel recv video from this publisher
 		for (Participant subscriber : participants.values()) {
 			if (participant.equals(subscriber))
@@ -212,6 +226,11 @@ public class Room {
 			IceCandidate candidate) {
 		this.roomEventHandler.onSendIceCandidate(participantId, endpointName,
 				candidate);
+	}
+
+	public void sendMediaError(String participantId, String description) {
+		this.roomEventHandler.onParticipantMediaError(participantId,
+				description);
 	}
 
 	public boolean isClosed() {

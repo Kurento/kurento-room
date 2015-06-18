@@ -87,6 +87,15 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                     ServiceParticipant.showError($window, LxNotificationService, error);
                 });
 
+                room.addEventListener("error-media", function (msg) {
+                    ServiceParticipant.alertMediaError($window, LxNotificationService, msg.error, function (answer) {
+                    	console.warn("Leave room because of error: " + answer);
+                    	if (answer) {
+                    		kurento.close(true);
+                    	}
+                    });
+                });
+                
                 room.addEventListener("room-closed", function (msg) {
                 	if (msg.room !== $scope.roomName) {
                 		console.error("Closed room name doesn't match this room's name", 

@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2013 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 package org.kurento.room.endpoint;
@@ -20,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import org.kurento.client.ListenerSubscription;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.PassThrough;
@@ -33,13 +33,19 @@ import org.kurento.room.internal.Participant;
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShapingEndpoint {
+public class PublisherEndpoint extends IceWebRtcEndpoint implements
+		MediaShapingEndpoint {
 
 	private PassThrough passThru = null;
+	private ListenerSubscription passThruSubscription = null;
 
-	private Map<String, MediaElement> elements = new HashMap<String, MediaElement>();
+	private Map<String, MediaElement> elements =
+			new HashMap<String, MediaElement>();
 	private LinkedList<String> elementIds = new LinkedList<String>();
 	private boolean connected = false;
+
+	private Map<String, ListenerSubscription> elementsErrorSubscriptions =
+			new HashMap<String, ListenerSubscription>();
 
 	public PublisherEndpoint(Participant owner, String endpointName,
 			MediaPipeline pipeline) {
@@ -50,6 +56,16 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShaping
 	protected void internalEndpointInitialization() {
 		super.internalEndpointInitialization();
 		passThru = new PassThrough.Builder(getPipeline()).build();
+		passThruSubscription = registerElemErrListener(passThru);
+	}
+
+	@Override
+	public synchronized void unregisterErrorListeners() {
+		super.unregisterErrorListeners();
+		unregisterElementErrListener(passThru, passThruSubscription);
+		for (String elemId : elementIds)
+			unregisterElementErrListener(elements.get(elemId),
+					elementsErrorSubscriptions.remove(elemId));
 	}
 
 	/**
@@ -94,6 +110,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShaping
 		}
 		elementIds.addFirst(id);
 		elements.put(id, shaper);
+		elementsErrorSubscriptions.put(id, registerElemErrListener(shaper));
 		return id;
 	}
 
@@ -103,7 +120,10 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements MediaShaping
 		if (!elements.containsKey(elementId))
 			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
 					"This endpoint has no media element with id " + elementId);
+
 		MediaElement element = elements.get(elementId);
+		unregisterElementErrListener(element,
+				elementsErrorSubscriptions.remove(elementId));
 		// TODO do it inside a transaction??
 		element.release();
 		if (!connected)

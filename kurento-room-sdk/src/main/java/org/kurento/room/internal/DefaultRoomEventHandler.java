@@ -48,6 +48,7 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 	public static final String ON_ICE_SDP_M_LINE_INDEX_PARAM = "sdpMLineIndex";
 
 	private static final String ROOM_CLOSED_METHOD = "roomClosed";
+	private static final String MEDIA_ERROR_METHOD = "mediaError";
 	
 	private UserNotificationService notifService;
 
@@ -227,6 +228,22 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 		params.addProperty(ON_ICE_CANDIDATE_PARAM, candidate.getCandidate());
 		notifService.sendNotification(participantId,
 				PARTICIPANT_ICE_CANDIDATE_METHOD, params);
+	}
+
+	@Override
+	public void onPipelineError(String roomName, Set<String> participantIds,
+			String description) {
+		JsonObject notifParams = new JsonObject();
+		notifParams.addProperty("error", description);
+		for (String pid : participantIds)
+			notifService.sendNotification(pid, MEDIA_ERROR_METHOD, notifParams);
+	}
+
+	@Override
+	public void onParticipantMediaError(String participantId, String description) {
+		JsonObject notifParams = new JsonObject();
+		notifParams.addProperty("error", description);
+		notifService.sendNotification(participantId, MEDIA_ERROR_METHOD, notifParams);
 	}
 
 }

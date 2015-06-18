@@ -20,12 +20,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
 import org.kurento.client.Continuation;
+import org.kurento.client.ErrorEvent;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
-import org.kurento.room.endpoint.IceWebRtcEndpoint;
 import org.kurento.room.endpoint.PublisherEndpoint;
 import org.kurento.room.endpoint.SubscriberEndpoint;
 import org.slf4j.Logger;
@@ -72,7 +72,7 @@ public class Participant {
 	}
 
 	public void createPublishingEndpoint() {
-		this.publisher.createEndpoint();
+		publisher.createEndpoint();
 		endPointLatch.countDown();
 	}
 
@@ -207,7 +207,7 @@ public class Participant {
 				log.error("Exception connecting subscriber endpoint "
 						+ "to publisher endpoint", e);
 			this.subscribers.remove(senderName);
-			this.releaseElement(senderName, subscriber.getEndpoint());
+			releaseSubscriberEndpoint(senderName, subscriber);
 		}
 		return null;
 	}
@@ -215,7 +215,7 @@ public class Participant {
 	public void cancelReceivingMedia(String senderName) {
 		log.debug("PARTICIPANT {}: cancel receiving media from {}", this.name,
 				senderName);
-		IceWebRtcEndpoint subscriberEndpoint = subscribers.remove(senderName);
+		SubscriberEndpoint subscriberEndpoint = subscribers.remove(senderName);
 		if (subscriberEndpoint == null
 				|| subscriberEndpoint.getEndpoint() == null) {
 			log.warn(
@@ -227,7 +227,7 @@ public class Participant {
 					"PARTICIPANT {}: Cancel subscriber endpoint linked to user {}",
 					this.name, senderName);
 
-			releaseElement(senderName, subscriberEndpoint.getEndpoint());
+			releaseSubscriberEndpoint(senderName, subscriberEndpoint);
 		}
 	}
 
@@ -235,9 +235,10 @@ public class Participant {
 		log.debug("PARTICIPANT {}: Closing user", this.name);
 		this.closed = true;
 		for (String remoteParticipantName : subscribers.keySet()) {
-			IceWebRtcEndpoint ep = this.subscribers.get(remoteParticipantName);
-			if (ep.getEndpoint() != null) {
-				releaseElement(remoteParticipantName, ep.getEndpoint());
+			SubscriberEndpoint subscriber =
+					this.subscribers.get(remoteParticipantName);
+			if (subscriber.getEndpoint() != null) {
+				releaseSubscriberEndpoint(remoteParticipantName, subscriber);
 				log.debug("PARTICIPANT {}: Released subscriber endpoint to {}",
 						this.name, remoteParticipantName);
 			} else
@@ -278,34 +279,63 @@ public class Participant {
 		room.sendIceCandidate(id, endpointName, candidate);
 	}
 
+	public void sendMediaError(ErrorEvent event) {
+		String desc =
+				event.getType() + ": " + event.getDescription() + "(errCode="
+						+ event.getErrorCode() + ")";
+		log.warn("PARTICIPANT {}: Media error encountered: {}", name, desc);
+		room.sendMediaError(id, desc);
+	}
+
 	private void releasePublisherEndpoint() {
 		if (publisher != null && publisher.getEndpoint() != null) {
 			this.streaming = false;
+			publisher.unregisterErrorListeners();
 			for (MediaElement el : publisher.getMediaElements())
 				releaseElement(name, el);
 			releaseElement(name, publisher.getEndpoint());
 			publisher = null;
-		}
+		} else
+			log.warn(
+					"PARTICIPANT {}: Trying to release publisher endpoint but is null",
+					name);
+	}
+
+	private void releaseSubscriberEndpoint(String senderName,
+			SubscriberEndpoint subscriber) {
+		if (subscriber != null) {
+			subscriber.unregisterErrorListeners();
+			releaseElement(senderName, subscriber.getEndpoint());
+		} else
+			log.warn(
+					"PARTICIPANT {}: Trying to release subscriber endpoint for '{}' but is null",
+					name, senderName);
 	}
 
 	private void releaseElement(final String senderName,
 			final MediaElement element) {
 		final String eid = element.getId();
-		element.release(new Continuation<Void>() {
-			@Override
-			public void onSuccess(Void result) throws Exception {
-				log.debug(
-						"PARTICIPANT {}: Released successfully media element #{} for {}",
-						Participant.this.name, eid, senderName);
-			}
+		try {
+			element.release(new Continuation<Void>() {
+				@Override
+				public void onSuccess(Void result) throws Exception {
+					log.debug(
+							"PARTICIPANT {}: Released successfully media element #{} for {}",
+							Participant.this.name, eid, senderName);
+				}
 
-			@Override
-			public void onError(Throwable cause) throws Exception {
-				log.warn(
-						"PARTICIPANT {}: Could not release media element #{} for {}",
-						Participant.this.name, eid, senderName, cause);
-			}
-		});
+				@Override
+				public void onError(Throwable cause) throws Exception {
+					log.warn(
+							"PARTICIPANT {}: Could not release media element #{} for {}",
+							Participant.this.name, eid, senderName, cause);
+				}
+			});
+		} catch (Exception e) {
+			log.error(
+					"PARTICIPANT {}: Error calling release on elem #{} for {}",
+					name, eid, senderName, e);
+		}
 	}
 
 	@Override

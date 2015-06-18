@@ -209,6 +209,18 @@ function Room(kurento, options) {
         }
     }
     
+    this.onMediaError = function(params) {
+    	console.error("Media error: " + JSON.stringify(params));
+    	var error = params.error;
+    	if (error) {
+    		ee.emitEvent('error-media', [{
+    			error: error
+    		}]);
+    	} else {
+    		console.error("Received undefined media error. Params:", params);
+    	}
+	}
+    
     this.leave = function (forced) {
     	forced = !!forced;
     	console.log("Leaving room (forced=" + forced + ")");
@@ -732,6 +744,9 @@ function KurentoRoom(wsUri, callback) {
             case 'roomClosed':
             	onRoomClosed(request.params);
             	break;
+            case 'mediaError':
+            	onMediaError(request.params);
+            	break;
             default:
                 console.error('Unrecognized request: ' + JSON.stringify(request));
         }
@@ -771,6 +786,12 @@ function KurentoRoom(wsUri, callback) {
     function onRoomClosed(msg) {
         if (room !== undefined) {
             room.onRoomClosed(msg);
+        }
+    }
+    
+    function onMediaError(params) {
+        if (room !== undefined) {
+            room.onMediaError(params);
         }
     }
     

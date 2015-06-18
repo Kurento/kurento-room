@@ -67,7 +67,7 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
 						.isEmpty();
 			}
 		}
-
+		
 		if (!enableHatFilter || (onlyOnFirst && !firstOrOnlyPublisher))
 			roomManager.publishMedia(sdpOffer, participantRequest);
 		else {

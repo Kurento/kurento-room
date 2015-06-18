@@ -290,4 +290,20 @@ function Participants() {
             $window.location.href = '/';
         });
     };
+    
+    this.alertMediaError = function ($window, LxNotificationService, msg, callback) {
+    	LxNotificationService.confirm('Warning!', 'Server media error: <<' + msg
+    			+ ">>. Please reconnect.", { cancel:'Disagree', ok:'Agree' }, 
+    			function(answer) {
+    	            console.log("User agrees upon media error: " + answer);
+    	            if (answer) {
+    	            	that.removeParticipants();
+    	            	connected = false;
+    	                $window.location.href = '/';
+    	            }
+    	            if (typeof callback === "function") {
+    	            	callback(answer);
+    	            }
+    			});
+	};
 }

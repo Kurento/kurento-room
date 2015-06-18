@@ -67,8 +67,9 @@ public interface RoomEventHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#leaveRoom(String, String, ParticipantRequest)}. The
-	 * user should receive an acknowledgement if the operation completed
+	 * {@link RoomManager#leaveRoom(String, String, ParticipantRequest)} or
+	 * {@link RoomManager#evictParticipant(String)} (admin action). The user
+	 * should receive an acknowledgement if the operation completed
 	 * successfully, and the remaining peers should be notified of this event.
 	 * 
 	 * @param request instance of {@link ParticipantRequest} POJO to identify
@@ -215,4 +216,21 @@ public interface RoomEventHandler {
 	 * @param participantIds identifiers of the participants in the room
 	 */
 	void onRoomClosed(String roomName, Set<String> participantIds);
+
+	/**
+	 * Called as a result of an error intercepted on the media pipeline. The
+	 * affected participants should be notified.
+	 * @param roomName the room where the error occurred
+	 * @param participantIds the participants identifiers
+	 * @param description description of the error
+	 */
+	void onPipelineError(String roomName, Set<String> participantIds, String description);
+
+	/**
+	 * Called as a result of an error intercepted on a media element of a
+	 * participant. The participant should be notified.
+	 * @param participantId identifier of the participant
+	 * @param description description of the error
+	 */
+	void onParticipantMediaError(String participantId, String description);
 }
