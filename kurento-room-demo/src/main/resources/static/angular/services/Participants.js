@@ -66,7 +66,8 @@ function Participants() {
 
     var mainParticipant;
     var localParticipant;
-
+    var mirrorParticipant;
+    
     var participants = {};
     var roomName;
     var that = this;
@@ -119,6 +120,10 @@ function Participants() {
         mainParticipant.setMain();
     };
 
+    this.addLocalMirror = function (stream) {
+		mirrorParticipant = that.addParticipant(stream);
+	};
+    
     this.addParticipant = function (stream) {
 
         var participant = new AppParticipant(stream);
@@ -134,7 +139,7 @@ function Participants() {
 
         return participant;
     };
-
+    
     this.removeParticipantByStream = function (stream) {
         this.removeParticipant(stream.getGlobalID());
     };
@@ -146,15 +151,39 @@ function Participants() {
     this.removeParticipant = function (streamId) {
     	var participant = participants[streamId];
         delete participants[streamId];
+        participant.remove();
         
+        if (mirrorParticipant) {
+        	var otherLocal = null;
+        	if (participant === localParticipant) {
+        		otherLocal = mirrorParticipant;
+        	}
+        	if (participant === mirrorParticipant) {
+        		otherLocal = localParticipant;
+        	}
+        	if (otherLocal) {
+        		console.log("Removed local participant (or mirror) so removing the other local as well");
+        		delete participants[otherLocal.getStream().getGlobalID()];
+        		otherLocal.remove();
+        	}
+        }
+        
+        //setting main
         if (mainParticipant && mainParticipant === participant) {
-        	if (localParticipant && mainParticipant !== localParticipant) {
-        		mainParticipant = localParticipant;
-        	} else {
+        	var mainIsLocal = false;
+        	if (localParticipant) {
+        		if (participant !== localParticipant && participant !== mirrorParticipant) {
+        			mainParticipant = localParticipant;
+        			mainIsLocal = true;
+        		} else {
+        			localParticipant = null;
+                	mirrorParticipant = null;
+        		}
+        	}
+        	if (!mainIsLocal) {
         		var keys = Object.keys(participants);
         		if (keys.length > 0) {
         			mainParticipant = participants[keys[0]];
-        			console.log("Main video from " + mainParticipant.getStream().getGlobalID());
         		} else {
         			mainParticipant = null;
         		}
@@ -165,11 +194,6 @@ function Participants() {
         	} else
         		console.error("No media streams left to display");
         }
-
-        participant.remove();
-
-        if (localParticipant === participant)
-        	localParticipant = null;
 
         updateVideoStyle();
     };

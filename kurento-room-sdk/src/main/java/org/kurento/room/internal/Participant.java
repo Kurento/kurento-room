@@ -28,6 +28,8 @@ import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
 import org.kurento.room.endpoint.PublisherEndpoint;
 import org.kurento.room.endpoint.SubscriberEndpoint;
+import org.kurento.room.exception.RoomException;
+import org.kurento.room.exception.RoomException.Code;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,17 +158,17 @@ public class Participant {
 		log.trace("USER {}: SdpOffer for {} is {}", this.name, senderName,
 				sdpOffer);
 
+		if (senderName.equals(this.name)) {
+			log.warn("PARTICIPANT {}: trying to configure loopback by subscribing",
+					this.name);
+			throw new RoomException(Code.USER_NOT_STREAMING_ERROR_CODE,
+					"Can loopback only when publishing media");
+		}
+
 		if (sender.getPublisher() == null) {
 			log.warn("PARTICIPANT {}: Trying to connect to a user without "
 					+ "a publishing endpoint", this.name);
 			return null;
-		}
-
-		if (senderName.equals(this.name)) {
-			// FIXME: Use another message type for receiving sdp offer
-			log.info("PARTICIPANT {}: configuring loopback", this.name);
-			// TODO throw exception
-			// OR return null; ???
 		}
 
 		log.debug("PARTICIPANT {}: Creating a subscriber endpoint to user {}",

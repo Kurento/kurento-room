@@ -105,7 +105,7 @@ public class JsonRpcNotificationService implements UserNotificationService {
 		}
 		try {
 			t.sendResponse(result);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			log.error("Exception responding to user", e);
 		}
 	}
@@ -122,7 +122,7 @@ public class JsonRpcNotificationService implements UserNotificationService {
 		try {
 			String dataVal = (data != null ? data.toString() : null);
 			t.sendError(error.getCodeValue(), error.getMessage(), dataVal);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			log.error("Exception sending error response to user", e);
 		}
 	}
@@ -141,7 +141,7 @@ public class JsonRpcNotificationService implements UserNotificationService {
 
 		try {
 			s.sendNotification(method, params);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			log.error("Exception sending notification to user", e);
 		}
 	}

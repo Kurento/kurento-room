@@ -169,7 +169,7 @@ function Room(kurento, options) {
         }
     }
     
-    this.onIceCandidate = function (msg) {
+    this.recvIceCandidate = function (msg) {
     	var candidate = {
     			candidate: msg.candidate,
     			sdpMid: msg.sdpMid,
@@ -183,7 +183,7 @@ function Room(kurento, options) {
     		return false;
     	}
     	var streams = participant.getStreams();
-        for (var key in streams) {
+    	for (var key in streams) {
         	var stream = streams[key];
         	if (key == "webcam") {
         		stream.getWebRtcPeer().addIceCandidate(candidate, function (error) {
@@ -328,7 +328,7 @@ function Participant(kurento, local, room, options) {
         return id;
     }
     
-	this.onIceCandidate = function (candidate) {
+	this.sendIceCandidate = function (candidate) {
 		console.debug((local ? "Local" : "Remote"), "candidate for", 
 				that.getID(), JSON.stringify(candidate));
 		kurento.sendRequest("onIceCandidate", {
@@ -338,7 +338,7 @@ function Participant(kurento, local, room, options) {
 	      	sdpMLineIndex: candidate.sdpMLineIndex
 	    }, function (error, response) {
 	    	if (error) {
-	    		console.error(JSON.stringify(error));
+	    		console.error("Error sending ICE candidate: " + JSON.stringify(error));
 	    	}
 	    });
 	}
@@ -509,7 +509,7 @@ function Stream(kurento, local, room, options) {
             sdpOffer: sdpOfferParam
         }, function (error, response) {
             if (error) {
-                console.error(JSON.stringify(error));
+                console.error("Error on publishVideo: " + JSON.stringify(error));
             } else {
             	that.room.emitEvent('stream-published', [{
                     stream: that
@@ -523,13 +523,14 @@ function Stream(kurento, local, room, options) {
     	if (error) {
     		return console.error ("SDP offer error");
     	}
-    	console.log('Invoking SDP offer callback function - sender: ' + that.getGlobalID());
+    	console.log("Invoking SDP offer callback function - " +
+    			"subscribing to: " + that.getGlobalID());
         kurento.sendRequest("receiveVideoFrom", {
             sender: that.getGlobalID(),
             sdpOffer: sdpOfferParam
         }, function (error, response) {
             if (error) {
-                console.error(JSON.stringify(error));
+                console.error("Error on recvVideoFrom: " + JSON.stringify(error));
             } else {
                 that.processSdpAnswer(response.sdpAnswer);
             }
@@ -551,7 +552,7 @@ function Stream(kurento, local, room, options) {
         	 var options = {
         			videoStream: wrStream,
              		mediaConstraints: constraints,
-             		onicecandidate: participant.onIceCandidate.bind(participant)
+             		onicecandidate: participant.sendIceCandidate.bind(participant)
              }
         	if (that.displayMyRemote()) {
         		wp = new kurentoUtils.WebRtcPeer.WebRtcPeerSendrecv(options, function (error) {
@@ -570,7 +571,7 @@ function Stream(kurento, local, room, options) {
         	}        	
         } else {
         	 var options = {
-        			 onicecandidate: participant.onIceCandidate.bind(participant)
+        			 onicecandidate: participant.sendIceCandidate.bind(participant)
              }
         	wp = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(options, function (error) {
             	if(error) {
@@ -604,21 +605,18 @@ function Stream(kurento, local, room, options) {
     }
 
     this.processSdpAnswer = function (sdpAnswer) {
-
         var answer = new RTCSessionDescription({
             type: 'answer',
             sdp: sdpAnswer,
         });
-
-        console.info(that.getGlobalID() + ': SDP answer received, setting remote description');
-
+        console.info(that.getGlobalID() + ': SDP answer received, setting the peer connection');
         var pc = wp.peerConnection;
         pc.setRemoteDescription(answer, function () {
+            // Avoids to subscribe to your own stream remotely 
+        	// except when showMyRemote is true
             if (!local || that.displayMyRemote()) {
-                // FIXME: This avoid to subscribe to your own stream remotely.
-                // Fix this
                 wrStream = pc.getRemoteStreams()[0];
-
+                console.log("Peer remote stream", wrStream);
                 for (i = 0; i < videoElements.length; i++) {
                     videoElements[i].src = URL.createObjectURL(wrStream);
                     videoElements[i].onplay = function() {
@@ -628,13 +626,13 @@ function Stream(kurento, local, room, options) {
                         hideSpinner(videoId[2]);
                     };
                 }
-
                 that.room.emitEvent('stream-subscribed', [{
                         stream: that
                     }]);
             }
         }, function (error) {
-            console.error(JSON.stringify(error))
+            console.error(that.getGlobalID() + ": Error setting SDP to the peer connection: "
+            		+ JSON.stringify(error));
         });
     }
 
@@ -739,7 +737,7 @@ function KurentoRoom(wsUri, callback) {
                 onNewMessage(request.params);
                 break;
             case 'iceCandidate':
-                onIceCandidate(request.params);
+                iceCandidateEvent(request.params);
                 break;
             case 'roomClosed':
             	onRoomClosed(request.params);
@@ -777,9 +775,9 @@ function KurentoRoom(wsUri, callback) {
         }
     }
     
-    function onIceCandidate(msg) {
+    function iceCandidateEvent(msg) {
         if (room !== undefined) {
-            room.onIceCandidate(msg);
+            room.recvIceCandidate(msg);
         }
     }
  

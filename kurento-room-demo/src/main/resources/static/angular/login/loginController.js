@@ -67,7 +67,7 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                              id: "localStream"
                          });
                 		 localVideo.mirrorLocalStream(localStream.getWrStream());
-                		 ServiceParticipant.addParticipant(localVideo);
+                		 ServiceParticipant.addLocalMirror(localVideo);
                 	 }
                 });
                 
