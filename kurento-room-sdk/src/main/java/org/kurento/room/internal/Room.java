@@ -82,9 +82,13 @@ public class Room {
 
 		checkClosed();
 
-		if (participants.containsKey(participantId)) {
-			throw new RoomException(Code.EXISTING_USER_IN_ROOM_ERROR_CODE,
-					"User " + userName + " exists in room " + name);
+		if (userName == null || userName.isEmpty())
+			throw new RoomException(Code.GENERIC_ERROR_CODE,
+					"Empty user name is not allowed");
+		for (Participant p : participants.values()) {
+			if (p.getName().equals(userName))
+				throw new RoomException(Code.EXISTING_USER_IN_ROOM_ERROR_CODE,
+						"User '" + userName + "' already exists in room '" + name + "'");
 		}
 
 		if (pipeline == null) {

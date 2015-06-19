@@ -48,13 +48,11 @@ public class JsonRpcUserControl {
 			ParticipantRequest participantRequest) throws IOException,
 			InterruptedException, ExecutionException {
 		String roomName =
-				request.getParams()
-						.get(JsonRpcProtocolElements.JOIN_ROOM_ROOM_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.JOIN_ROOM_ROOM_PARAM);
 		String userName =
-				request.getParams()
-						.get(JsonRpcProtocolElements.JOIN_ROOM_USER_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.JOIN_ROOM_USER_PARAM);
 
 		ParticipantSession participantSession =
 				getParticipantSession(transaction);
@@ -67,9 +65,8 @@ public class JsonRpcUserControl {
 	public void publishVideo(Transaction transaction,
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
 		String sdpOffer =
-				request.getParams()
-						.get(JsonRpcProtocolElements.PUBLISH_VIDEO_SDPOFFER_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.PUBLISH_VIDEO_SDPOFFER_PARAM);
 
 		roomManager.publishMedia(sdpOffer, participantRequest);
 	}
@@ -84,16 +81,13 @@ public class JsonRpcUserControl {
 			ParticipantRequest participantRequest) {
 
 		String senderName =
-				request.getParams()
-						.get(JsonRpcProtocolElements.RECEIVE_VIDEO_SENDER_PARAM)
-						.getAsString();
-
+				getStringParam(request,
+						JsonRpcProtocolElements.RECEIVE_VIDEO_SENDER_PARAM);
 		senderName = senderName.substring(0, senderName.indexOf("_"));
 
 		String sdpOffer =
-				request.getParams()
-						.get(JsonRpcProtocolElements.RECEIVE_VIDEO_SDPOFFER_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.RECEIVE_VIDEO_SDPOFFER_PARAM);
 
 		roomManager.subscribe(senderName, sdpOffer, participantRequest);
 	}
@@ -102,10 +96,8 @@ public class JsonRpcUserControl {
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
 
 		String senderName =
-				request.getParams()
-						.get(JsonRpcProtocolElements.RECEIVE_VIDEO_SENDER_PARAM)
-						.getAsString();
-
+				getStringParam(request,
+						JsonRpcProtocolElements.RECEIVE_VIDEO_SENDER_PARAM);
 		senderName = senderName.substring(0, senderName.indexOf("_"));
 
 		roomManager.unsubscribe(senderName, participantRequest);
@@ -161,21 +153,17 @@ public class JsonRpcUserControl {
 	public void onIceCandidate(Transaction transaction,
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
 		String endpointName =
-				request.getParams()
-						.get(JsonRpcProtocolElements.ON_ICE_EP_NAME_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.ON_ICE_EP_NAME_PARAM);
 		String candidate =
-				request.getParams()
-						.get(JsonRpcProtocolElements.ON_ICE_CANDIDATE_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.ON_ICE_CANDIDATE_PARAM);
 		String sdpMid =
-				request.getParams()
-						.get(JsonRpcProtocolElements.ON_ICE_SDP_MID_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.ON_ICE_SDP_MID_PARAM);
 		int sdpMLineIndex =
-				request.getParams()
-						.get(JsonRpcProtocolElements.ON_ICE_SDP_M_LINE_INDEX_PARAM)
-						.getAsInt();
+				getIntParam(request,
+						JsonRpcProtocolElements.ON_ICE_SDP_M_LINE_INDEX_PARAM);
 
 		roomManager.onIceCandidate(endpointName, candidate, sdpMLineIndex,
 				sdpMid, participantRequest);
@@ -184,17 +172,14 @@ public class JsonRpcUserControl {
 	public void sendMessage(Transaction transaction,
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
 		String userName =
-				request.getParams()
-						.get(JsonRpcProtocolElements.SENDMESSAGE_USER_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.SENDMESSAGE_USER_PARAM);
 		String roomName =
-				request.getParams()
-						.get(JsonRpcProtocolElements.SENDMESSAGE_ROOM_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.SENDMESSAGE_ROOM_PARAM);
 		String message =
-				request.getParams()
-						.get(JsonRpcProtocolElements.SENDMESSAGE_MESSAGE_PARAM)
-						.getAsString();
+				getStringParam(request,
+						JsonRpcProtocolElements.SENDMESSAGE_MESSAGE_PARAM);
 
 		log.debug("Message from {} in room {}: '{}'", userName, roomName,
 				message);
@@ -214,5 +199,19 @@ public class JsonRpcUserControl {
 					participantSession);
 		}
 		return participantSession;
+	}
+
+	private String getStringParam(Request<JsonObject> request, String key) {
+		if (request.getParams() == null || request.getParams().get(key) == null)
+			throw new RuntimeException("Request element '" + key
+					+ "' is missing");
+		return request.getParams().get(key).getAsString();
+	}
+
+	private int getIntParam(Request<JsonObject> request, String key) {
+		if (request.getParams() == null || request.getParams().get(key) == null)
+			throw new RuntimeException("Request element '" + key
+					+ "' is missing");
+		return request.getParams().get(key).getAsInt();
 	}
 }

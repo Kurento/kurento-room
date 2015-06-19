@@ -15,7 +15,14 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
             });
 
     $scope.register = function (room) {
-
+    	
+    	if (!room)
+    		ServiceParticipant.showError($window, LxNotificationService, {
+    			error: {
+    				message:"Username and room fields are both required"
+    			}
+    		});
+    	
         $scope.userName = room.userName;
         $scope.roomName = room.roomName;
 

@@ -322,8 +322,8 @@ public class RoomManager {
 	 * @param request instance of {@link ParticipantRequest} POJO
 	 */
 	public void unsubscribe(String remoteName, ParticipantRequest request) {
-		log.debug("Request [UNSUBSCRIBE] remoteParticipant={} ({})", remoteName,
-				request);
+		log.debug("Request [UNSUBSCRIBE] remoteParticipant={} ({})",
+				remoteName, request);
 
 		try {
 			Participant participant = getParticipant(request);
@@ -780,9 +780,13 @@ public class RoomManager {
 	 * @return the room if it was already created, a new one if it is the first
 	 *         time this room is accessed and {@code getOrCreate} is
 	 *         <em>true</em>, null otherwise
+	 * @throws RoomException on error creating the room
 	 */
 	private Room getRoom(String roomName, ParticipantRequest request,
 			boolean getOrCreate) {
+		if (roomName == null || roomName.trim().isEmpty())
+			throw new RoomException(Code.CANNOT_CREATE_ROOM_ERROR_CODE,
+					"Empty room name is not allowed");
 
 		Room room = rooms.get(roomName);
 
