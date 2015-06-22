@@ -25,11 +25,11 @@ import org.openqa.selenium.WebDriver;
 
 import com.google.common.base.Function;
 
-public class UnpublishMediaRoomDemoTest extends RoomTestBase {
+public class AvailabilityRoomDemoTest extends RoomTestBase {
 
 	private static final int PLAY_TIME = 5; // seconds
 
-	private static final int NUM_USERS = 3;
+	private static final int NUM_USERS = 1;
 
 	@BeforeClass
 	public static void setupBeforeClass() {
@@ -44,13 +44,7 @@ public class UnpublishMediaRoomDemoTest extends RoomTestBase {
 
 		final CountDownLatch joinCdl = new CountDownLatch(NUM_USERS);
 		final CountDownLatch publishCdl = new CountDownLatch(NUM_USERS * NUM_USERS);
-		final CountDownLatch unpublishCdl = new CountDownLatch(1);
-		final CountDownLatch verifyCdl = new CountDownLatch(NUM_USERS);
 		final CountDownLatch leaveCdl = new CountDownLatch(NUM_USERS);
-
-		// parallelUsers(NUM_USERS, (numUser, browser) -> {
-
-		final int unpublisher = random.nextInt(NUM_USERS);
 
 		parallelUsers(NUM_USERS, new UserLifecycle() {
 			@Override
@@ -88,31 +82,6 @@ public class UnpublishMediaRoomDemoTest extends RoomTestBase {
 				});
 
 				publishCdl.await(PLAY_TIME * 5000L, TimeUnit.MILLISECONDS);
-
-				if (numUser == unpublisher) {
-					log.info("User '{}' unpublishing media in room '{}'",
-							userName, roomName);
-
-					unpublish(browser);
-
-					log.info("User '{}' unpublished media in room '{}'",
-							userName, roomName);
-					
-					activeUsers[numUser] = false;
-
-					unpublishCdl.countDown();
-				}
-
-				unpublishCdl.await(PLAY_TIME * 5000L, TimeUnit.MILLISECONDS);
-
-				synchronized (browsersLock) {
-					verify(browsers, activeUsers);
-					log.info("{} - Verified that 'user{}' unpublished media in room '{}'",
-							userName, unpublisher, roomName);
-					verifyCdl.countDown();
-				}
-
-				verifyCdl.await(PLAY_TIME * 5000L, TimeUnit.MILLISECONDS);
 
 				synchronized (browsersLock) {
 					log.info("User '{}' exiting from room '{}'", userName,

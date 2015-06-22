@@ -13,21 +13,19 @@
  *
  */
 
-package org.kurento.room.test.demo;
+package org.kurento.room;
 
-import org.junit.BeforeClass;
-import org.kurento.room.test.SeqAddRemoveUserRoomBasicTest;
+import org.kurento.client.KurentoClient;
+import org.kurento.room.api.KurentoClientProvider;
+import org.kurento.room.exception.RoomException;
 
-/**
- * Room demo integration test (demo version).
- * 
- * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
- */
-public class SeqAddRemoveUserRoomDemoTest extends SeqAddRemoveUserRoomBasicTest {
+public class TestKcProvider implements KurentoClientProvider {
 
-	@BeforeClass
-	public static void setupBeforeClass() {
-		APP_URL = serverUriBase;
+	@Override
+	public KurentoClient getKurentoClient(String participantId)
+			throws RoomException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

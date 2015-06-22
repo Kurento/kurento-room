@@ -15,8 +15,8 @@ package org.kurento.room.test;
  */
 
 import static org.junit.Assert.fail;
+import io.github.bonigarcia.wdm.ChromeDriverManager;
 
-import java.io.File;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,11 +30,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
+import org.kurento.commons.ConfigFileManager;
+import org.kurento.commons.PropertiesManager;
 import org.kurento.room.KurentoRoomServerApp;
 import org.kurento.test.base.KurentoTest;
 import org.openqa.selenium.By;
@@ -73,17 +75,25 @@ public class RoomTestBase extends KurentoTest {
 	}
 
 	protected Logger log = LoggerFactory.getLogger(this.getClass());
+	
+	static {
+		ConfigFileManager.loadConfigFile();
+	}
 
-	protected static String APP_URL = "http://127.0.0.1:8080/room.html";
+	private static String serverPort = PropertiesManager.getProperty("server.port", "8080");
+	private static String serverAddress = PropertiesManager.getProperty("server.address", "127.0.0.1");
+	protected static String serverUriBase = "http://" + serverAddress + ":" + serverPort;
+	
+	protected static String APP_URL = "http://" + serverAddress + ":" + serverPort + "/room.html";
 
 	protected static SecureRandom random;
-	
+
 	private static final String ROOM_NAME = "room";
 	protected String roomName;
 	static {
 		random = new SecureRandom();
 	}
-	
+
 	private static final int TEST_TIMEOUT = 20; // seconds
 
 	private static final int MAX_WIDTH = 1200;
@@ -98,12 +108,18 @@ public class RoomTestBase extends KurentoTest {
 	protected List<WebDriver> browsers;
 	final protected Object browsersLock = new Object();
 
+	@BeforeClass
+	public static void setupClass() {
+		// Chrome binary
+		ChromeDriverManager.setup();
+	}
+
 	@Before
 	public void setup() {
 		super.setupKurentoTest();
 		roomName = ROOM_NAME + random.nextInt(9999);
 	}
-	
+
 	@After
 	public void tearDown() {
 		super.teardownKurentoTest();
@@ -121,16 +137,6 @@ public class RoomTestBase extends KurentoTest {
 		// This flag makes using a synthetic video (green with spinner) in
 		// WebRTC instead of real media from camera/microphone
 		options.addArguments("--use-fake-device-for-media-stream");
-
-		// Path to chrome driver binary
-		String chromedriver = null;
-		if (SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
-			chromedriver = "chromedriver";
-		} else if (SystemUtils.IS_OS_WINDOWS) {
-			chromedriver = "chromedriver.exe";
-		}
-		System.setProperty("webdriver.chrome.driver", new File(
-				"target/webdriver/" + chromedriver).getAbsolutePath());
 
 		ChromeDriver chromeDriver = new ChromeDriver(options);
 

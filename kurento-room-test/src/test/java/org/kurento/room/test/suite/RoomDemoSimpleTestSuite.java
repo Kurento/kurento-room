@@ -13,21 +13,14 @@
  *
  */
 
-package org.kurento.room.test.demo;
+package org.kurento.room.test.suite;
 
-import org.junit.BeforeClass;
-import org.kurento.room.test.SeqAddRemoveUserRoomBasicTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
+import org.kurento.room.test.demo.AvailabilityRoomDemoTest;
 
-/**
- * Room demo integration test (demo version).
- * 
- * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
- */
-public class SeqAddRemoveUserRoomDemoTest extends SeqAddRemoveUserRoomBasicTest {
-
-	@BeforeClass
-	public static void setupBeforeClass() {
-		APP_URL = serverUriBase;
-	}
-
+@SuiteClasses({AvailabilityRoomDemoTest.class})
+@RunWith(Suite.class)
+public class RoomDemoSimpleTestSuite {
 }

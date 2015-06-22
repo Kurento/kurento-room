@@ -33,7 +33,7 @@ public class UnsubscribeFromMediaRoomDemoTest extends RoomTestBase {
 
 	@BeforeClass
 	public static void setupBeforeClass() {
-		APP_URL = "http://127.0.0.1:8080";
+		APP_URL = serverUriBase;
 	}
 
 	@Test
