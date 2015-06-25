@@ -207,18 +207,18 @@ public class RoomManager {
 				participant.getPublisher().apply(elem);
 
 			String sdpAnswer = participant.publishToRoom(sdpOffer);
-			room.newPublisher(participant);
-
 			if (sdpAnswer != null)
-				roomEventHandler.onPublishVideo(request, name, sdpAnswer,
+				roomEventHandler.onPublishMedia(request, name, sdpAnswer,
 						room.getParticipantIds(), null);
 			else
 				throw new RoomException(Code.SDP_ERROR_CODE,
 						"Error generating SDP answer for publishing user "
 								+ name);
+			
+			room.newPublisher(participant);
 		} catch (RoomException e) {
 			log.warn("Error publishing media", e);
-			roomEventHandler.onPublishVideo(request, null, null, null, e);
+			roomEventHandler.onPublishMedia(request, null, null, null, e);
 		}
 	}
 

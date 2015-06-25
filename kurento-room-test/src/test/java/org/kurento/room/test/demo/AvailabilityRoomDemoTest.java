@@ -33,7 +33,7 @@ public class AvailabilityRoomDemoTest extends RoomTestBase {
 
 	@BeforeClass
 	public static void setupBeforeClass() {
-		APP_URL = serverUriBase;
+		appUrl = DEMO_ROOM_APP_URL;
 	}
 
 	@Test

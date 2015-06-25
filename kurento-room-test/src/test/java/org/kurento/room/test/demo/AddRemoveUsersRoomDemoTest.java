@@ -27,7 +27,7 @@ public class AddRemoveUsersRoomDemoTest extends AddRemoveUsersRoomBasicTest {
 
 	@BeforeClass
 	public static void setupBeforeClass() {
-		APP_URL = serverUriBase;
+		appUrl = DEMO_ROOM_APP_URL;
 	}
 
 }

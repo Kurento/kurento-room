@@ -39,14 +39,6 @@
 		<tag>develop</tag>
 	</scm>
 
-	<properties>
-		<!-- Webdrivers versions -->
-		<linux32-webdriver.version>2.9</linux32-webdriver.version>
-		<linux64-webdriver.version>2.9</linux64-webdriver.version>
-		<mac32-webdriver.version>2.9</mac32-webdriver.version>
-		<win32-webdriver.version>2.9</win32-webdriver.version>
-	</properties>
-
 	<developers>
 		<developer>
 			<id>kurento.org</id>
@@ -85,12 +77,6 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.github.bonigarcia</groupId>
-			<artifactId>webdrivermanager</artifactId>
-			<version>1.0.1</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

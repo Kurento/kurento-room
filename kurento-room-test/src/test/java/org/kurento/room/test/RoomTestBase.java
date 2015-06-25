@@ -84,7 +84,10 @@ public class RoomTestBase extends KurentoTest {
 	private static String serverAddress = PropertiesManager.getProperty("server.address", "127.0.0.1");
 	protected static String serverUriBase = "http://" + serverAddress + ":" + serverPort;
 	
-	protected static String APP_URL = "http://" + serverAddress + ":" + serverPort + "/room.html";
+	protected static final String BASIC_ROOM_APP_URL = serverUriBase + "/room.html";
+	protected static final String DEMO_ROOM_APP_URL = serverUriBase;
+	
+	protected static String appUrl;
 
 	protected static SecureRandom random;
 
@@ -110,8 +113,9 @@ public class RoomTestBase extends KurentoTest {
 
 	@BeforeClass
 	public static void setupClass() {
+		appUrl = BASIC_ROOM_APP_URL;
 		// Chrome binary
-		ChromeDriverManager.setup();
+		new ChromeDriverManager().setup();
 	}
 
 	@Before
@@ -154,7 +158,7 @@ public class RoomTestBase extends KurentoTest {
 	protected void joinToRoom(WebDriver userBrowser, String userName,
 			String roomName) {
 
-		userBrowser.get(APP_URL);
+		userBrowser.get(appUrl);
 
 		userBrowser.findElement(By.id("name")).sendKeys(userName);
 		userBrowser.findElement(By.id("roomName")).sendKeys(roomName);

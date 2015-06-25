@@ -35,20 +35,19 @@ import com.google.gson.JsonObject;
  */
 public class DefaultRoomEventHandler implements RoomEventHandler {
 
-	private static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
-	private static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
-	private static final String PARTICIPANT_PUBLISHED_METHOD = "participantPublished";
-	private static final String PARTICIPANT_UNPUBLISHED_METHOD = "participantUnpublished";
-	private static final String PARTICIPANT_SEND_MESSAGE_METHOD = "sendMessage";
-
-	public static final String PARTICIPANT_ICE_CANDIDATE_METHOD = "iceCandidate";
+	public static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
+	public static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
+	public static final String PARTICIPANT_PUBLISHED_METHOD = "participantPublished";
+	public static final String PARTICIPANT_UNPUBLISHED_METHOD = "participantUnpublished";
+	public static final String PARTICIPANT_SEND_MESSAGE_METHOD = "sendMessage";
+	public static final String ROOM_CLOSED_METHOD = "roomClosed";
+	public static final String MEDIA_ERROR_METHOD = "mediaError";
+	
+	public static final String ICE_CANDIDATE_METHOD = "iceCandidate";
 	public static final String ON_ICE_EP_NAME_PARAM = "endpointName";
 	public static final String ON_ICE_CANDIDATE_PARAM = "candidate";
 	public static final String ON_ICE_SDP_MID_PARAM = "sdpMid";
 	public static final String ON_ICE_SDP_M_LINE_INDEX_PARAM = "sdpMLineIndex";
-
-	private static final String ROOM_CLOSED_METHOD = "roomClosed";
-	private static final String MEDIA_ERROR_METHOD = "mediaError";
 	
 	private UserNotificationService notifService;
 
@@ -117,7 +116,7 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 	}
 
 	@Override
-	public void onPublishVideo(ParticipantRequest request,
+	public void onPublishMedia(ParticipantRequest request,
 			String publisherName, String sdpAnswer, Set<String> participantIds,
 			RoomException error) {
 		if (error != null) {
@@ -227,7 +226,7 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 		params.addProperty(ON_ICE_SDP_MID_PARAM, candidate.getSdpMid());
 		params.addProperty(ON_ICE_CANDIDATE_PARAM, candidate.getCandidate());
 		notifService.sendNotification(participantId,
-				PARTICIPANT_ICE_CANDIDATE_METHOD, params);
+				ICE_CANDIDATE_METHOD, params);
 	}
 
 	@Override

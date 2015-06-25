@@ -103,7 +103,7 @@ public interface RoomEventHandler {
 	 *        error message. If not null, then the operation was unsuccessful
 	 *        and the user should be responded accordingly.
 	 */
-	void onPublishVideo(ParticipantRequest request, String publisherName,
+	void onPublishMedia(ParticipantRequest request, String publisherName,
 			String sdpAnswer, Set<String> participantIds, RoomException error);
 
 	/**

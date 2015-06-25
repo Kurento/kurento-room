@@ -27,7 +27,7 @@ public class SeqAddRemoveUserRoomDemoTest extends SeqAddRemoveUserRoomBasicTest 
 
 	@BeforeClass
 	public static void setupBeforeClass() {
-		APP_URL = serverUriBase;
+		appUrl = DEMO_ROOM_APP_URL;
 	}
 
 }
