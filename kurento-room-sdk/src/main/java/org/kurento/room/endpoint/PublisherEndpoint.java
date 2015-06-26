@@ -78,9 +78,21 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		return elements.values();
 	}
 
-	public synchronized String publish(String sdpOffer) {
+	/**
+	 * Initializes this {@link WebRtcEndpoint} for publishing media. Registers
+	 * an event listener for the ICE candidates, instructs the endpoint to start
+	 * gathering the candidates and processes the SDP offer. If required, it
+	 * connects to itself (after applying the intermediate media elements and
+	 * the {@link PassThrough}) to allow loopback of the media stream.
+	 * 
+	 * @param sdpOffer offer from the remote peer
+	 * @param doLoopback loopback flag
+	 * @return the SDP answer
+	 */
+	public synchronized String publish(String sdpOffer, boolean doLoopback) {
 		registerOnIceCandidateEventListener();
-		connect(endpoint); // loopback
+		if (doLoopback)
+			connect(endpoint);
 		String sdpAnswer = processOffer(sdpOffer);
 		gatherCandidates();
 		return sdpAnswer;
@@ -124,7 +136,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		MediaElement element = elements.get(elementId);
 		unregisterElementErrListener(element,
 				elementsErrorSubscriptions.remove(elementId));
-		// TODO do it inside a transaction??
+		
 		element.release();
 		if (!connected)
 			return;

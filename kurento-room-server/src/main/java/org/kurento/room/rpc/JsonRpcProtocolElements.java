@@ -30,6 +30,7 @@ public class JsonRpcProtocolElements {
 	public static final String PUBLISH_VIDEO_METHOD = "publishVideo";
 	public static final String UNPUBLISH_VIDEO_METHOD = "unpublishVideo";
 	public static final String PUBLISH_VIDEO_SDPOFFER_PARAM = "sdpOffer";
+	public static final String PUBLISH_VIDEO_DOLOOPBACK_PARAM = "doLoopback";
 	public static final String RECEIVE_VIDEO_METHOD = "receiveVideoFrom";
 	public static final String RECEIVE_VIDEO_SDPOFFER_PARAM = "sdpOffer";
 	public static final String RECEIVE_VIDEO_SENDER_PARAM = "sender";

@@ -67,8 +67,11 @@ public class JsonRpcUserControl {
 		String sdpOffer =
 				getStringParam(request,
 						JsonRpcProtocolElements.PUBLISH_VIDEO_SDPOFFER_PARAM);
-
-		roomManager.publishMedia(sdpOffer, participantRequest);
+		boolean doLoopback =
+				getBooleanParam(request,
+						JsonRpcProtocolElements.PUBLISH_VIDEO_DOLOOPBACK_PARAM);
+		
+		roomManager.publishMedia(participantRequest, sdpOffer, doLoopback);
 	}
 
 	public void unpublishVideo(Transaction transaction,
@@ -201,17 +204,24 @@ public class JsonRpcUserControl {
 		return participantSession;
 	}
 
-	private String getStringParam(Request<JsonObject> request, String key) {
+	protected String getStringParam(Request<JsonObject> request, String key) {
 		if (request.getParams() == null || request.getParams().get(key) == null)
 			throw new RuntimeException("Request element '" + key
 					+ "' is missing");
 		return request.getParams().get(key).getAsString();
 	}
 
-	private int getIntParam(Request<JsonObject> request, String key) {
+	protected int getIntParam(Request<JsonObject> request, String key) {
 		if (request.getParams() == null || request.getParams().get(key) == null)
 			throw new RuntimeException("Request element '" + key
 					+ "' is missing");
 		return request.getParams().get(key).getAsInt();
+	}
+	
+	protected boolean getBooleanParam(Request<JsonObject> request, String key) {
+		if (request.getParams() == null || request.getParams().get(key) == null)
+			throw new RuntimeException("Request element '" + key
+					+ "' is missing");
+		return request.getParams().get(key).getAsBoolean();
 	}
 }

@@ -34,6 +34,9 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
         };
         //show loopback stream from server
         var displayPublished = false;
+        //if false, only when I'm 1st publisher
+        var displayPublishedAlways = true;
+        //also show local stream when display my remote
         var mirrorLocal = false;
         
         var kurento = KurentoRoom(wsUri, function (error, kurento) {
@@ -57,8 +60,9 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
             localStream.addEventListener("access-accepted", function () {
                 room.addEventListener("room-connected", function (roomEvent) {
                 	var streams = roomEvent.streams;
-                    if (displayPublished && streams.length == 0) //I'm 1st publisher so show my stream from remote
-                    	localStream.subscribeToMyRemote();
+                	if (displayPublished && (displayPublishedAlways || streams.length == 0)) {
+                		localStream.subscribeToMyRemote();
+                	}
                 	localStream.publish();
                     ServiceRoom.setLocalStream(localStream.getWebRtcPeer());
                     for (var i = 0; i < streams.length; i++) {

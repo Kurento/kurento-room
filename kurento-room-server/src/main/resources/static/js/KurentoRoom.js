@@ -505,17 +505,18 @@ function Stream(kurento, local, room, options) {
     		return console.error ("SDP offer error");
     	}	
     	console.log('Invoking SDP offer callback function - publisher: ' + that.getGlobalID());
-        kurento.sendRequest("publishVideo", {
-            sdpOffer: sdpOfferParam
+        kurento.sendRequest("publishVideo", { 
+        	sdpOffer: sdpOfferParam, 
+        	doLoopback: that.displayMyRemote() || false 
         }, function (error, response) {
-            if (error) {
-                console.error("Error on publishVideo: " + JSON.stringify(error));
-            } else {
-            	that.room.emitEvent('stream-published', [{
-                    stream: that
-                }])
-                that.processSdpAnswer(response.sdpAnswer);
-            }
+        		if (error) {
+	                console.error("Error on publishVideo: " + JSON.stringify(error));
+	            } else {
+	            	that.room.emitEvent('stream-published', [{
+	                    stream: that
+	                }])
+	                that.processSdpAnswer(response.sdpAnswer);
+	            }
         });
     }
     

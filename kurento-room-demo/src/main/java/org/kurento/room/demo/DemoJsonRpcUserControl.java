@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2015 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 package org.kurento.room.demo;
@@ -54,31 +53,36 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
 	@Override
 	public void publishVideo(Transaction transaction,
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
-		final String sdpOffer = request.getParams()
-				.get(JsonRpcProtocolElements.PUBLISH_VIDEO_SDPOFFER_PARAM)
-				.getAsString();
+
+		String sdpOffer =
+				getStringParam(request,
+						JsonRpcProtocolElements.PUBLISH_VIDEO_SDPOFFER_PARAM);
+		boolean doLoopback =
+				getBooleanParam(request,
+						JsonRpcProtocolElements.PUBLISH_VIDEO_DOLOOPBACK_PARAM);
 
 		boolean firstOrOnlyPublisher = false;
 		if (enableHatFilter) {
 			if (onlyOnFirst) {
-				String roomName = getParticipantSession(transaction)
-						.getRoomName();
-				firstOrOnlyPublisher = roomManager.getPublishers(roomName)
-						.isEmpty();
+				String roomName =
+						getParticipantSession(transaction).getRoomName();
+				firstOrOnlyPublisher =
+						roomManager.getPublishers(roomName).isEmpty();
 			}
 		}
-		
+
 		if (!enableHatFilter || (onlyOnFirst && !firstOrOnlyPublisher))
-			roomManager.publishMedia(sdpOffer, participantRequest);
+			roomManager.publishMedia(participantRequest, sdpOffer, doLoopback);
 		else {
 			log.info("Applying face overlay filter to session {}",
 					participantRequest.getParticipantId());
-			FaceOverlayFilter faceOverlayFilter = new FaceOverlayFilter.Builder(
-					roomManager.getPipeline(participantRequest
-							.getParticipantId())).build();
+			FaceOverlayFilter faceOverlayFilter =
+					new FaceOverlayFilter.Builder(
+							roomManager.getPipeline(participantRequest
+									.getParticipantId())).build();
 			faceOverlayFilter.setOverlayedImage(this.hatUrl, -0.35F, -1.2F,
 					1.6F, 1.6F);
-			roomManager.publishMedia(sdpOffer, participantRequest,
+			roomManager.publishMedia(participantRequest, sdpOffer, doLoopback,
 					faceOverlayFilter);
 		}
 	}

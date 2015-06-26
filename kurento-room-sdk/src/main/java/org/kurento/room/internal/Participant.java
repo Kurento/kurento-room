@@ -126,12 +126,12 @@ public class Participant {
 		return subscribedToSet;
 	}
 
-	public String publishToRoom(String sdpOffer) {
+	public String publishToRoom(String sdpOffer, boolean doLoopback) {
 		log.info("USER {}: Request to publish video in room {}", this.name,
 				this.room.getName());
 		log.trace("USER {}: Publishing SdpOffer is {}", this.name, sdpOffer);
 
-		String sdpAnswer = this.getPublisher().publish(sdpOffer);
+		String sdpAnswer = this.getPublisher().publish(sdpOffer, doLoopback);
 		this.streaming = true;
 
 		log.trace("USER {}: Publishing SdpAnswer is {}", this.name, sdpAnswer);

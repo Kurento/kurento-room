@@ -977,7 +977,7 @@ public class RoomWithDefaultHandlerTest {
 		}).when(notificationService).sendResponse(eq(participantRequest),
 				isA(JsonObject.class));
 
-		manager.publishMedia(SDP_OFFER, participantRequest);
+		manager.publishMedia(participantRequest, SDP_OFFER, false);
 	}
 
 	private void participantUnpublish(
