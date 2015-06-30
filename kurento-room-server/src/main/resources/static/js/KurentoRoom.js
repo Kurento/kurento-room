@@ -485,10 +485,12 @@ function Stream(kurento, local, room, options) {
             audio: true,
             video: {
                 mandatory: {
-                    maxWidth: 640,
-                    maxFrameRate: 15,
-                    minFrameRate: 15
-                }
+                    maxWidth: 640
+                },
+                optional: [
+                           {maxFrameRate: 15}, 
+                           {minFrameRate: 15}
+                           ]
             }
         };
 
@@ -540,19 +542,8 @@ function Stream(kurento, local, room, options) {
     
     function initWebRtcPeer(sdpOfferCallback) {
         if (local) {
-        	var constraints = {
-                    audio: true,
-                    video: {
-                        mandatory: {
-                            maxWidth: 640,
-                            maxFrameRate: 15,
-                            minFrameRate: 15
-                        }
-                    }
-                };
         	 var options = {
         			videoStream: wrStream,
-             		mediaConstraints: constraints,
              		onicecandidate: participant.sendIceCandidate.bind(participant)
              }
         	if (that.displayMyRemote()) {

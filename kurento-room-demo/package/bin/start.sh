@@ -3,11 +3,6 @@
 DIRNAME=$(dirname "$0")
 GREP="grep"
 
-DEMO_PORT=${demo.port}
-
-JAVA_OPTS="-Dserver.port=$DEMO_PORT -Dapp.server.url=http://127.0.0.1:$DEMO_PORT/"
-JAVA_OPTS="$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom"
-
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
 darwin=false;
@@ -82,32 +77,49 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
 fi
 
 # Find out installation type
-DEMO_HOME=$(cd $DIRNAME/..;pwd)
-DEMO_BINARY=$DEMO_HOME/lib/${project.artifactId}.jar
-# DEMO_CONFIG=$DEMO_HOME/config/${project.artifactId}.conf.json
-if [ ! -f $DEMO_BINARY ]; then
-    DEMO_HOME=/var/lib/kurento
-    DEMO_BINARY=$DEMO_HOME/${project.artifactId}.jar
-    #    DEMO_CONFIG="/etc/kurento/${project.artifactId}.conf.json"
-    DEMO_OPTS="-DconfigFilePath=$DEMO_CONFIG"
+KROOMDEMO_HOME=$(cd $DIRNAME/..;pwd)
+KROOMDEMO_BINARY=$KROOMDEMO_HOME/lib/kroomdemo.jar
+if [ ! -f $KROOMDEMO_BINARY ]; then
+    # System installation
+    [ -f /etc/default/kroomdemo ] && . /etc/default/kroomdemo
+    [ -f /etc/sysconfig/kroomdemo ] && . /etc/sysconfig/kroomdemo
+    KROOMDEMO_HOME=/var/lib/kurento
+    KROOMDEMO_BINARY=$KROOMDEMO_HOME/kroomdemo.jar
+    KROOMDEMO_CONFIG="/etc/kurento/kroomdemo.conf.json"
+    KROOMDEMO_LOG_CONFIG=/etc/kurento/kroomdemo-log4j.properties
+    KROOMDEMO_LOG_FILE=/var/log/kurento-media-server/kroomdemo.log
+else
+    # Home based installation
+    KROOMDEMO_CONFIG=$KROOMDEMO_HOME/config/kroomdemo.conf.json
+    KROOMDEMO_LOG_CONFIG=$KROOMDEMO_HOME/config/kroomdemo-log4j.properties
+    KROOMDEMO_LOG_FILE=$KROOMDEMO_HOME/logs/kroomdemo.log
+    mkdir -p $KROOMDEMO_HOME/logs
 fi
 
-[ -f $DEMO_BINARY ] || { echo "Unable to find ${project.artifactId} binary file"; exit 1; }
-#[ -f $DEMO_CONFIG ] || { echo "Unable to find configuration file: $DEMO_CONFIG"; exit 1; }
+# logging.config ==> Springboot logging config
+# log4j.configuration ==> log4j default config. Do not remove to avoid exception for all login taking place before Springboot has started
+KROOMDEMO_OPTS="$KROOMDEMO_OPTS -DconfigFilePath=$KROOMDEMO_CONFIG"
+KROOMDEMO_OPTS="$KROOMDEMO_OPTS -Dkroomdemo.log.file=$KROOMDEMO_LOG_FILE"
+KROOMDEMO_OPTS="$KROOMDEMO_OPTS -Dlogging.config=$KROOMDEMO_LOG_CONFIG"
+KROOMDEMO_OPTS="$KROOMDEMO_OPTS -Dlog4j.configuration=file:$KROOMDEMO_LOG_CONFIG"
+
+[ -f $KROOMDEMO_CONFIG ] || { echo "Unable to find configuration file: $KROOMDEMO_CONFIG"; exit 1; }
 
 # Display our environment
 echo "========================================================================="
 echo ""
-echo "  ${project.artifactId} Bootstrap Environment"
+echo "  Kurento Room Demo Server Bootstrap Environment"
 echo ""
-echo "  DEMO_BINARY: $DEMO_BINARY"
+echo "  KROOMDEMO_BINARY: $KROOMDEMO_BINARY"
 echo ""
 echo "  JAVA: $JAVA"
 echo ""
 echo "  JAVA_OPTS: $JAVA_OPTS"
 echo ""
+echo "  KROOMDEMO_OPTS: $KROOMDEMO_OPTS"
+echo ""
 echo "========================================================================="
 echo ""
 
-cd $DEMO_HOME
-exec $JAVA $JAVA_OPTS $DEMO_OPTS -jar $DEMO_BINARY
+cd $KROOMDEMO_HOME
+exec $JAVA $JAVA_OPTS $KROOMDEMO_OPTS -jar $KROOMDEMO_BINARY 

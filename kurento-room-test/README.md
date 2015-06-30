@@ -4,7 +4,8 @@ Copyright © 2013 Kurento. Licensed under [LGPL License].
 
 kurento-room-test
 ==========
-Tests for Kurento Room.
+
+Integration tests for Kurento Room. It uses the Selenium framework.
 
 What is Kurento
 ---------------

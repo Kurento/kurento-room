@@ -5,7 +5,8 @@ Copyright © 2013 Kurento. Licensed under [LGPL License].
 kurento-room-manager
 ======================
 
-The kurento-room-sdk offers the Java API for developing room-enabled apps.
+The kurento-room-sdk offers the Java API for developing room-enabled
+applications.
 
 What is Kurento
 ---------------

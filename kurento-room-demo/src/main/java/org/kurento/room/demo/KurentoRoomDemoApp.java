@@ -18,6 +18,7 @@ import static org.kurento.commons.PropertiesManager.getPropertyJson;
 
 import java.util.List;
 
+import org.kurento.commons.ConfigFileManager;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.room.KurentoRoomServerApp;
@@ -38,6 +39,12 @@ public class KurentoRoomDemoApp {
 	private static final Logger log = LoggerFactory
 			.getLogger(KurentoRoomDemoApp.class);
 
+	private final static String KROOMDEMO_CFG_FILENAME = "kroomdemo.conf.json";
+	
+	static {
+		ConfigFileManager.loadConfigFile(KROOMDEMO_CFG_FILENAME);
+	}
+	
 	private final String DEFAULT_APP_SERVER_URL = PropertiesManager
 			.getProperty("app.uri", "http://localhost:8080");
 
@@ -49,7 +56,7 @@ public class KurentoRoomDemoApp {
 	private final boolean DEMO_HAT_ONLY_ON_FIRST = PropertiesManager.getProperty("demo.hat.onlyOnFirst", false);
 
 	private static ConfigurableApplicationContext context;
-
+	
 	@Bean
 	public KmsManager kmsManager() {
 		JsonArray kmsUris = getPropertyJson(

@@ -1,5 +1,0 @@
-{
-   "kms": {
-      "uris": ["ws://localhost:8888/kurento"]
-   }
-}

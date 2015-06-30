@@ -90,7 +90,9 @@ public class RoomManager {
 	/**
 	 * Represents a client’s request to join a room. If the room does not exist,
 	 * it is created.<br/>
-	 * <strong>Side effects:</strong>
+	 * <strong>Side effects:</strong> The room event handler should send
+	 * notifications to the existing participants in the room to inform about
+	 * the new peer.
 	 * 
 	 * @param userName name or identifier of the user in the room. Will be used
 	 *        to identify her WebRTC media peer (from the client-side).
@@ -190,7 +192,8 @@ public class RoomManager {
 	 */
 	public void publishMedia(ParticipantRequest request, String sdpOffer,
 			boolean doLoopback, MediaElement... mediaElements) {
-		log.debug("Request [PUBLISH_MEDIA] sdpOffer={} dooLoopback={} mediaElements={} ({})",
+		log.debug(
+				"Request [PUBLISH_MEDIA] sdpOffer={} dooLoopback={} mediaElements={} ({})",
 				sdpOffer, doLoopback, mediaElements, request);
 
 		try {

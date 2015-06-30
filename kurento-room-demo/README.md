@@ -4,7 +4,87 @@ Copyright © 2014 Kurento. Licensed under [LGPL License].
 
 kurento-room-demo
 =================
-Kurento Room Demo: Groups communications with WebRTC using Kurento Room.
+
+Kurento Room Demo implements the group communications with WebRTC service 
+using services from Kurento Room Server.
+
+The client-side implementation of this demo application is an AngularJS module
+that uses the KurentoRoom.js library from the room server package. 
+It also integrates the room server's Spring application for the server-side 
+of the Room API. This API is made up of the Room SDK and the signaling 
+component. For client-server communications the API uses JSON-RPC messages 
+over WebSockets.
+
+Installation details
+---------------
+
+#### Execute Kurento Room Demo 6.0.x
+
+* Build
+```sh
+cd kurento-room-demo
+mvn clean install -U
+```
+
+* Unzip distribution files
+```sh
+cd target
+unzip kurento-room-demo-6.0.0-SNAPSHOT.zip
+```
+
+* Execute start script
+```sh
+cd kurento-room-demo-6.0.0-SNAPSHOT
+./bin/start.sh
+```
+
+* Configure logging
+```sh
+vim kurento-room-demo-6.0.0-SNAPSHOT/config/kroomdemo-log4j.properties
+```
+> Log file by default will be located in kurento-room-demo-6.0.0-SNAPSHOT/logs/
+
+* Configure server
+```sh
+vim kurento-room-demo-6.0.0-SNAPSHOT/config/kroomdemo.conf.json
+```
+
+#### Start Kurento Room Demo 6.0.x as daemon (kroomdemo) in Ubuntu or CentOS
+
+* Build
+```sh
+cd kurento-room-demo
+mvn clean install -U
+```
+
+* Unzip distribution files
+```sh
+cd target
+unzip kurento-room-demo-6.0.0-SNAPSHOT.zip
+```
+
+* Execute install script
+```sh
+cd kurento-room-demo-6.0.0-SNAPSHOT
+sudo ./bin/install.sh
+```
+> The service (kroomdemo) will be automatically started.
+
+* Control the service (Ubuntu)
+```sh
+sudo service kroomdemo {start|stop|status|restart|reload}
+```
+
+* Configure logging
+```sh
+sudo vim /etc/kurento/kroomdemo-log4j.properties
+```
+> Log file by default will be located in /var/log/kurento/
+
+* Configure server
+```sh
+sudo vim /etc/kurento/kroomdemo.conf.json
+```
 
 What is Kurento
 ---------------

@@ -6,20 +6,21 @@
 	<formats>
 		<format>zip</format>
 	</formats>
-	<includeBaseDirectory>false</includeBaseDirectory>
+	<!-- <includeBaseDirectory>false</includeBaseDirectory> -->
 
 	<files>
 		<file>
 			<source>target/${project.artifactId}-${project.version}.jar</source>
 			<outputDirectory>lib</outputDirectory>
-			<destName>${project.artifactId}.jar</destName>
+			<!-- <destName>${project.artifactId}.jar</destName> -->
+			<destName>kroomdemo.jar</destName>
 		</file>
 	</files>
 
 	<fileSets>
 		<fileSet>
 			<directory>package</directory>
-			<filtered>true</filtered>
+			<!-- <filtered>true</filtered> -->
 			<outputDirectory></outputDirectory>
 		</fileSet>
 	</fileSets>

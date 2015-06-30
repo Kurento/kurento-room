@@ -1,43 +1,53 @@
 #!/bin/sh
 
-# ${project.artifactId} installer for Ubuntu 14.04
+# Kurento Room Demo installer for Ubuntu 14.04
 if [ `id -u` -ne 0 ]; then
     echo ""
-    echo "Only root can start ${project.artifactId}"
+    echo "Only root can start Kurento Room Demo server"
     echo ""
     exit 1
 fi
 
-APP_HOME=$(dirname $(dirname $(readlink -f $0)))
-CONFIG_FILE="$APP_HOME/config/configuration.conf.json"
+KROOMDEMO_HOME=$(dirname $(dirname $(readlink -f $0)))
 
-# Create defaults
-mkdir -p /etc/default
-cat > /etc/default/${project.artifactId} <<-EOF
-# Defaults for ${project.artifactId} initscript
-# sourced by /etc/init.d/${project.artifactId}
-# installed at /etc/default/${project.artifactId} by the maintainer scripts
-
-#
-# This is a POSIX shell fragment
-#
-
-# Commment next line to disable ${project.artifactId} daemon
-START_DAEMON=true
-
-# Whom the daemons should run as
-DAEMON_USER=nobody
-EOF
-
-# Install binaries
-install -o root -g root -m 755 $APP_HOME/bin/start.sh /usr/bin/${project.artifactId}
-install -o root -g root -m 755 $APP_HOME/support-files/kurento-demo.sh /etc/init.d/${project.artifactId}
+# Create directories
+mkdir -p /etc/kurento/
 mkdir -p /var/lib/kurento
-install -o root -g root $APP_HOME/lib/${project.artifactId}.jar /var/lib/kurento/
-[ -f $CONFIG_FILE ] && ( mkdir -p /etc/kurento/ && install -o root -g root $CONFIG_FILE /etc/kurento/${project.artifactId}.conf.json )
+mkdir -p /var/log/kurento-media-server && chown nobody /var/log/kurento-media-server
 
-# enable ${project.artifactId} start at boot time
-# update-rc.d ${project.artifactId} defaults
+# Install binary & config
+install -o root -g root -m 755 $KROOMDEMO_HOME/bin/start.sh /usr/bin/kroomdemo
+install -o root -g root $KROOMDEMO_HOME/lib/kroomdemo.jar /var/lib/kurento/kroomdemo.jar
+install -o root -g root $KROOMDEMO_HOME/config/kroomdemo.conf.json /etc/kurento/kroomdemo.conf.json
+install -o root -g root $KROOMDEMO_HOME/config/kroomdemo-log4j.properties /etc/kurento/kroomdemo-log4j.properties
 
-# start ${project.artifactId}
-/etc/init.d/${project.artifactId} restart
+DIST=$(lsb_release -i | awk '{print $3}')
+[ -z "$DIST" ] && { echo "Unable to get distribution information"; exit 1; } 
+case "$DIST" in
+    Ubuntu)
+        mkdir -p /etc/default
+        echo "# Defaults for KROOMDEMO initscript" > /etc/default/kroomdemo
+        echo "# sourced by /etc/init.d/kroomdemo" >> /etc/default/kroomdemo
+        echo "# installed at /etc/default/kroomdemo by the maintainer scripts" >> /etc/default/kroomdemo
+        echo "" >> /etc/default/kroomdemo
+        echo "#" >> /etc/default/kroomdemo
+        echo "# This is a POSIX shell fragment" >> /etc/default/kroomdemo
+        echo "#" >> /etc/default/kroomdemo  
+        echo "" >> /etc/default/kroomdemo
+        echo "# Commment next line to disable KROOMDEMO daemon" >> /etc/default/kroomdemo
+        echo "START_DAEMON=true" >> /etc/default/kroomdemo
+        echo "" >> /etc/default/kroomdemo
+        echo "# Whom the daemons should run as" >> /etc/default/kroomdemo
+        echo "DAEMON_USER=nobody" >> /etc/default/kroomdemo
+        
+        install -o root -g root -m 755 $KROOMDEMO_HOME/support-files/kroomdemo.sh /etc/init.d/kroomdemo
+        update-rc.d kroomdemo defaults
+        /etc/init.d/kroomdemo restart
+        ;;
+    CentOS)
+        install -o root -g root -m  644 $KROOMDEMO_HOME/support-files/kroomdemo.service /usr/lib/systemd/system/kroomdemo.service
+        systemctl daemon-reload
+        systemctl enable kroomdemo.service
+        systemctl restart kroomdemo
+        ;;
+esac

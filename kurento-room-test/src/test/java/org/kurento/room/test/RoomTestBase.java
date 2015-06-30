@@ -17,6 +17,7 @@ package org.kurento.room.test;
 import static org.junit.Assert.fail;
 import io.github.bonigarcia.wdm.ChromeDriverManager;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,9 +36,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
-import org.kurento.commons.ConfigFileManager;
+import org.kurento.commons.ConfigFileFinder;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.room.KurentoRoomServerApp;
+import org.kurento.room.KurentoRoomTestApp;
 import org.kurento.test.base.KurentoTest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -77,7 +79,13 @@ public class RoomTestBase extends KurentoTest {
 	protected Logger log = LoggerFactory.getLogger(this.getClass());
 	
 	static {
-		ConfigFileManager.loadConfigFile();
+		try {
+			System.setProperty("configFilePath", ConfigFileFinder
+					.getPathInClasspath(KurentoRoomTestApp.CONFIG_TEST_FILENAME).toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	private static String serverPort = PropertiesManager.getProperty("server.port", "8080");

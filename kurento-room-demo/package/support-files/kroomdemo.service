@@ -1,0 +1,10 @@
+[Unit]
+Description=KRoomDemo daemon
+After=network.target
+
+[Service]
+User=nobody
+ExecStart=/usr/bin/kroomdemo
+
+[Install]
+WantedBy=default.target

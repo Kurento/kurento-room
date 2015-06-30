@@ -2,11 +2,17 @@
 
 Copyright © 2013 Kurento. Licensed under [LGPL License].
 
-kurento-tree-server
+kurento-room-server
 ======================
 
-The kurento-tree-server is a service for creation WebRTC broadcasting
-trees (one to many). It exports a JsonRPC API based on WebSockets.
+Kurento Room Server is a Kurento service for implementing group 
+communications applications based on WebRTC.
+Provides a WebSocket API through which clients using the Javascript 
+library KurentoRoom.js (included as well) can interact with the Room API.
+ 
+Kurento Room Demo is provided as an example on how to implement a room
+application using the services from Kurento Room Server. 
+
 
 What is Kurento
 ---------------

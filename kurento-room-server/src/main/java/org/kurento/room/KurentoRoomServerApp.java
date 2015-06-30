@@ -18,7 +18,6 @@ import static org.kurento.commons.PropertiesManager.getPropertyJson;
 
 import java.util.List;
 
-import org.kurento.commons.ConfigFileManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.jsonrpc.internal.server.config.JsonRpcConfiguration;
 import org.kurento.jsonrpc.server.JsonRpcConfigurer;
@@ -49,10 +48,6 @@ import com.google.gson.JsonArray;
 @EnableAutoConfiguration
 @ComponentScan
 public class KurentoRoomServerApp implements JsonRpcConfigurer {
-
-	static {
-		ConfigFileManager.loadConfigFile("roomserver.conf.json");
-	}
 
 	public static final String KMSS_URIS_PROPERTY = "kms.uris";
 	public static final String KMSS_URIS_DEFAULT = "[ \"ws://localhost:8888/kurento\" ]";
