@@ -44,8 +44,6 @@
 	</developers>
 
 	<properties>
-		<demo.port>9084</demo.port>
-
 		<!-- Main class -->
 		<start-class>org.kurento.room.demo.KurentoRoomDemoApp</start-class>
 	</properties>
