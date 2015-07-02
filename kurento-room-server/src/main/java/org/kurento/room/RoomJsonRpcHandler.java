@@ -119,11 +119,12 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 			throws Exception {
 		ParticipantSession ps = null;
 		if (session.getAttributes().containsKey(ParticipantSession.SESSION_KEY))
-			ps = (ParticipantSession) session.getAttributes().get(
+			ps =
+					(ParticipantSession) session.getAttributes().get(
 							ParticipantSession.SESSION_KEY);
 		String sid = session.getSessionId();
-		log.debug("CONN_CLOSED: sessionId={}, participant in session: {}",
-				sid, ps);
+		log.debug("CONN_CLOSED: sessionId={}, participant in session: {}", sid,
+				ps);
 		ParticipantRequest preq = new ParticipantRequest(sid, null);
 		updateThreadName(sid + "|wsclosed");
 		userControl.leaveRoom(null, null, preq);
@@ -133,7 +134,8 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	@Override
 	public void handleTransportError(Session session, Throwable exception)
 			throws Exception {
-		log.warn("Transport error for session id {}", session.getSessionId(),
+		log.warn("Transport error for session id {}",
+				session != null ? session.getSessionId() : "NULL_SESSION",
 				exception);
 	}
 

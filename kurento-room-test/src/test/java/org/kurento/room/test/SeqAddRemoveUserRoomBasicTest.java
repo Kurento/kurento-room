@@ -14,9 +14,8 @@ package org.kurento.room.test;
  * details.
  */
 
-import java.util.concurrent.ExecutionException;
-
-import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * Room demo integration test (basic version).
@@ -24,53 +23,8 @@ import org.junit.Test;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-public class SeqAddRemoveUserRoomBasicTest extends RoomTestBase {
-
-	private static final int WAIT_TIME = 500;
-
-	private static final int PLAY_TIME = 5; // seconds
-
-	private static final int NUM_USERS = 4;
-
-	private static final int NUM_ITERATIONS = 2;
-
-	@Test
-	public void nUsersRoomTest() throws InterruptedException,
-			ExecutionException {
-
-		boolean[] activeUsers = new boolean[NUM_USERS];
-
-		browsers = createBrowsers(NUM_USERS);
-
-		for (int cycle = 0; cycle < NUM_ITERATIONS; cycle++) {
-
-			for (int i = 0; i < NUM_USERS; i++) {
-				String userName = "user" + i;
-				joinToRoom(browsers.get(i), userName, roomName);
-				activeUsers[i] = true;
-				sleep(WAIT_TIME);
-				verify(browsers, activeUsers);
-			}
-
-			for (int i = 0; i < NUM_USERS; i++) {
-				for (int j = 0; j < NUM_USERS; j++) {
-					waitForStream(browsers.get(i), "native-video-user" + j
-							+ "_webcam");
-					log.debug("Received media from user" + j + " in user" + i);
-				}
-			}
-
-			// Guard time to see application in action
-			Thread.sleep(PLAY_TIME * 1000);
-
-			// Stop application by caller
-			for (int i = 0; i < NUM_USERS; i++) {
-				exitFromRoom(browsers.get(i));
-				activeUsers[i] = false;
-				sleep(WAIT_TIME);
-				verify(browsers, activeUsers);
-			}
-		}
-	}
+@RunWith(SpringJUnit4ClassRunner.class)
+@BasicTestConfig
+public class SeqAddRemoveUserRoomBasicTest extends SeqAddRemoveUser {
 
 }

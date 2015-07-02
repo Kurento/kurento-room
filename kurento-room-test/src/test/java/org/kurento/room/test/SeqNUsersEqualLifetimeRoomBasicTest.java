@@ -14,9 +14,8 @@ package org.kurento.room.test;
  * details.
  */
 
-import java.util.concurrent.ExecutionException;
-
-import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * Room demo integration test (basic version).
@@ -24,33 +23,7 @@ import org.junit.Test;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-public class SeqNUsersEqualLifetimeRoomBasicTest extends RoomTestBase {
-
-	private static final int PLAY_TIME = 5; // seconds
-
-	private static final String USER1_NAME = "user1";
-	private static final String USER2_NAME = "user2";
-
-	@Test
-	public void twoUsersRoomTest() throws InterruptedException,
-			ExecutionException {
-
-		browsers = createBrowsers(2);
-
-		joinToRoom(browsers.get(0), USER1_NAME, roomName);
-		joinToRoom(browsers.get(1), USER2_NAME, roomName);
-
-		waitForStream(browsers.get(0), "native-video-" + USER2_NAME + "_webcam");
-		log.debug("Received media from " + USER2_NAME + " in " + USER1_NAME);
-
-		waitForStream(browsers.get(1), "native-video-" + USER1_NAME + "_webcam");
-		log.debug("Received media from " + USER1_NAME + " in " + USER2_NAME);
-
-		// Guard time to see application in action
-		Thread.sleep(PLAY_TIME * 1000);
-
-		// Stop application by caller
-		exitFromRoom(browsers.get(0));
-		exitFromRoom(browsers.get(1));
-	}
+@RunWith(SpringJUnit4ClassRunner.class)
+@BasicTestConfig
+public class SeqNUsersEqualLifetimeRoomBasicTest extends SeqNUsersEqualLifetime {
 }

@@ -26,14 +26,14 @@ import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-@SpringBootApplication
+@Import(KurentoRoomServerApp.class)
 public class KurentoRoomDemoApp {
 
 	private static final Logger log = LoggerFactory
@@ -41,8 +41,14 @@ public class KurentoRoomDemoApp {
 
 	private final static String KROOMDEMO_CFG_FILENAME = "kroomdemo.conf.json";
 
+	private static JsonObject DEFAULT_HAT_COORDS = new JsonObject();
+
 	static {
 		ConfigFileManager.loadConfigFile(KROOMDEMO_CFG_FILENAME);
+		DEFAULT_HAT_COORDS.addProperty("offsetXPercent", -0.35F);
+		DEFAULT_HAT_COORDS.addProperty("offsetYPercent", -1.2F);
+		DEFAULT_HAT_COORDS.addProperty("widthPercent", 1.6F);
+		DEFAULT_HAT_COORDS.addProperty("heightPercent", 1.6F);
 	}
 
 	private static final String IMG_FOLDER = "img/";
@@ -54,10 +60,12 @@ public class KurentoRoomDemoApp {
 			"demo.kmsLimit", 10);
 	private final String DEMO_AUTH_REGEX = PropertiesManager
 			.getProperty("demo.authRegex");
-	private final String DEMO_HAT_URL = PropertiesManager
-			.getProperty("demo.hatUrl");
+	private final String DEMO_HAT_URL = PropertiesManager.getProperty(
+			"demo.hatUrl", "mario-wings.png");
+
 	private final JsonObject DEMO_HAT_COORDS = PropertiesManager
-			.getPropertyJson("demo.hatCoords", "{}", JsonObject.class);
+			.getPropertyJson("demo.hatCoords", DEFAULT_HAT_COORDS.toString(),
+					JsonObject.class);
 
 	private static ConfigurableApplicationContext context;
 
@@ -106,7 +114,8 @@ public class KurentoRoomDemoApp {
 	}
 
 	public static void main(String[] args) throws Exception {
-		start();
+		SpringApplication.run(KurentoRoomDemoApp.class, args);
+//		start();
 	}
 
 	public static void stop() {

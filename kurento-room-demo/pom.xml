@@ -179,6 +179,19 @@
 		</dependency>
 		<dependency>
 			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-test</artifactId>
+			<!-- TODO add to deps management in parent-pom -->
+			<version>${project.version}</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.kurento</groupId>
+					<artifactId>kurento-room-server</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
 			<artifactId>kurento-utils-js</artifactId>
 		</dependency>
 		<dependency>

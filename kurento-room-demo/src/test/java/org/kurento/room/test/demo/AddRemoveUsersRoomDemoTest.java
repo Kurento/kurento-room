@@ -1,7 +1,5 @@
-package org.kurento.room.test;
-
 /*
- * (C) Copyright 2014 Kurento (http://kurento.org/)
+ * (C) Copyright 2015 Kurento (http://kurento.org/)
  * 
  * All rights reserved. This program and the accompanying materials are made
  * available under the terms of the GNU Lesser General Public License (LGPL)
@@ -14,18 +12,25 @@ package org.kurento.room.test;
  * details.
  */
 
+package org.kurento.room.test.demo;
+
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
+import org.kurento.room.test.AddRemoveUsers;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
- * Room demo integration test (basic version).
- *
- * @author Micael Gallego (micael.gallego@gmail.com)
- * @since 5.0.0
+ * Room demo integration test (demo version).
+ * 
+ * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@BasicTestConfig
-public class AddRemoveUsersNoSinkVerifyRoomBasicTest extends
-		AddRemoveUsersNoSinkVerify {
+@DemoTestConfig
+public class AddRemoveUsersRoomDemoTest extends AddRemoveUsers {
+
+	@BeforeClass
+	public static void setupBeforeClass() {
+		appUrl = DEMO_ROOM_APP_URL;
+	}
 
 }

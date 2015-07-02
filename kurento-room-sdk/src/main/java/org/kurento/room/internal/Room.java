@@ -154,7 +154,7 @@ public class Room {
 		if (participant == null)
 			throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE, "User #"
 					+ participantId + " not found in room '" + name + "'");
-		log.debug("PARTICIPANT {}: Leaving room {}", participant.getName(),
+		log.info("PARTICIPANT {}: Leaving room {}", participant.getName(),
 				this.name);
 		if (participant.isStreaming())
 			this.deregisterPublisher();

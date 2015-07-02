@@ -29,11 +29,9 @@ import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import com.google.gson.JsonArray;
@@ -43,10 +41,8 @@ import com.google.gson.JsonArray;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 1.0.0
  */
-@Configuration
 @Import(JsonRpcConfiguration.class)
-@EnableAutoConfiguration
-@ComponentScan
+@SpringBootApplication
 public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	public static final String KMSS_URIS_PROPERTY = "kms.uris";
