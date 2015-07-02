@@ -41,4 +41,6 @@ public class JsonRpcProtocolElements {
 	public static final String ON_ICE_CANDIDATE_PARAM = "candidate";
 	public static final String ON_ICE_SDP_MID_PARAM = "sdpMid";
 	public static final String ON_ICE_SDP_M_LINE_INDEX_PARAM = "sdpMLineIndex";
+	public static final String CUSTOM_REQUEST_METHOD = "customRequest";
+	public static final String CUSTOM_REQUEST_PARAM = "custom";
 }

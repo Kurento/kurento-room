@@ -14,11 +14,13 @@
 
 package org.kurento.room.demo;
 
+import java.io.IOException;
+
 import org.kurento.client.FaceOverlayFilter;
+import org.kurento.client.MediaElement;
 import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.room.api.pojo.ParticipantRequest;
-import org.kurento.room.rpc.JsonRpcProtocolElements;
 import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,59 +33,85 @@ import com.google.gson.JsonObject;
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
 public class DemoJsonRpcUserControl extends JsonRpcUserControl {
+	private static final String SESSION_ATTRIBUTE_HAT_FILTER = "hatFilter";
+
+	private static final String CUSTOM_REQUEST_HAT_PARAM = "hat";
+
 	private static final Logger log = LoggerFactory
 			.getLogger(DemoJsonRpcUserControl.class);
 
-	private boolean enableHatFilter = false;
 	private String hatUrl;
-	private boolean onlyOnFirst = true;
 
-	public void setEnableHatFilter(boolean enableFilter) {
-		this.enableHatFilter = enableFilter;
-	}
+	private float offsetXPercent;
+	private float offsetYPercent;
+	private float widthPercent;
+	private float heightPercent;
 
 	public void setHatUrl(String hatUrl) {
 		this.hatUrl = hatUrl;
+		log.info("Hat URL: {}", hatUrl);
 	}
 
-	public void setHatOnlyOnFirst(boolean onlyOnFirst) {
-		this.onlyOnFirst = onlyOnFirst;
+	public void setHatCoords(JsonObject hatCoords) {
+		if (hatCoords.get("offsetXPercent") != null)
+			offsetXPercent = hatCoords.get("offsetXPercent").getAsFloat();
+		if (hatCoords.get("offsetYPercent") != null)
+			offsetYPercent = hatCoords.get("offsetYPercent").getAsFloat();
+		if (hatCoords.get("widthPercent") != null)
+			widthPercent = hatCoords.get("widthPercent").getAsFloat();
+		if (hatCoords.get("heightPercent") != null)
+			heightPercent = hatCoords.get("heightPercent").getAsFloat();
+		log.info("Hat coords:\n\toffsetXPercent = {}\n\toffsetYPercent = {}"
+				+ "\n\twidthPercent = {}\n\theightPercent = {}",
+				offsetXPercent, offsetYPercent, widthPercent, heightPercent);
 	}
 
 	@Override
-	public void publishVideo(Transaction transaction,
+	public void customRequest(Transaction transaction,
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
-
-		String sdpOffer =
-				getStringParam(request,
-						JsonRpcProtocolElements.PUBLISH_VIDEO_SDPOFFER_PARAM);
-		boolean doLoopback =
-				getBooleanParam(request,
-						JsonRpcProtocolElements.PUBLISH_VIDEO_DOLOOPBACK_PARAM);
-
-		boolean firstOrOnlyPublisher = false;
-		if (enableHatFilter) {
-			if (onlyOnFirst) {
-				String roomName =
-						getParticipantSession(transaction).getRoomName();
-				firstOrOnlyPublisher =
-						roomManager.getPublishers(roomName).isEmpty();
+		try {
+			if (request.getParams() == null
+					|| request.getParams().get(CUSTOM_REQUEST_HAT_PARAM) == null)
+				throw new RuntimeException("Request element '"
+						+ CUSTOM_REQUEST_HAT_PARAM + "' is missing");
+			boolean hatOn =
+					request.getParams().get(CUSTOM_REQUEST_HAT_PARAM)
+							.getAsBoolean();
+			String pid = participantRequest.getParticipantId();
+			if (hatOn) {
+				if (transaction.getSession().getAttributes()
+						.containsKey(SESSION_ATTRIBUTE_HAT_FILTER))
+					throw new RuntimeException("Hat filter already on");
+				log.info("Applying face overlay filter to session {}", pid);
+				FaceOverlayFilter faceOverlayFilter =
+						new FaceOverlayFilter.Builder(
+								roomManager.getPipeline(pid)).build();
+				faceOverlayFilter.setOverlayedImage(this.hatUrl,
+						this.offsetXPercent, this.offsetYPercent,
+						this.widthPercent, this.heightPercent);
+				roomManager.addMediaElement(pid, faceOverlayFilter);
+				transaction.getSession().getAttributes()
+						.put(SESSION_ATTRIBUTE_HAT_FILTER, faceOverlayFilter);
+			} else {
+				if (!transaction.getSession().getAttributes()
+						.containsKey(SESSION_ATTRIBUTE_HAT_FILTER))
+					throw new RuntimeException(
+							"This user has no hat filter yet");
+				log.info("Removing face overlay filter from session {}", pid);
+				roomManager.removeMediaElement(pid,
+						(MediaElement) transaction.getSession().getAttributes()
+								.get(SESSION_ATTRIBUTE_HAT_FILTER));
+				transaction.getSession().getAttributes()
+						.remove(SESSION_ATTRIBUTE_HAT_FILTER);
 			}
-		}
-
-		if (!enableHatFilter || (onlyOnFirst && !firstOrOnlyPublisher))
-			roomManager.publishMedia(participantRequest, sdpOffer, doLoopback);
-		else {
-			log.info("Applying face overlay filter to session {}",
-					participantRequest.getParticipantId());
-			FaceOverlayFilter faceOverlayFilter =
-					new FaceOverlayFilter.Builder(
-							roomManager.getPipeline(participantRequest
-									.getParticipantId())).build();
-			faceOverlayFilter.setOverlayedImage(this.hatUrl, -0.35F, -1.2F,
-					1.6F, 1.6F);
-			roomManager.publishMedia(participantRequest, sdpOffer, doLoopback,
-					faceOverlayFilter);
+			transaction.sendResponse(new JsonObject());
+		} catch (Exception e) {
+			log.error("Unable to handle custom request", e);
+			try {
+				transaction.sendError(e);
+			} catch (IOException e1) {
+				log.warn("Unable to send error response", e1);
+			}
 		}
 	}
 }

@@ -61,8 +61,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 
 		updateThreadName(HANDLER_THREAD_NAME + "_" + sessionId);
 
-		log.debug("Session #{} - request: {} (requestSessionId={})", sessionId,
-				request, request.getSessionId());
+		log.debug("Session #{} - request: {}", sessionId, request);
 
 		notificationService.addTransaction(transaction, request);
 
@@ -101,6 +100,10 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 				break;
 			case JsonRpcProtocolElements.SENDMESSAGE_ROOM_METHOD:
 				userControl.sendMessage(transaction, request,
+						participantRequest);
+				break;
+			case JsonRpcProtocolElements.CUSTOM_REQUEST_METHOD:
+				userControl.customRequest(transaction, request,
 						participantRequest);
 				break;
 			default:

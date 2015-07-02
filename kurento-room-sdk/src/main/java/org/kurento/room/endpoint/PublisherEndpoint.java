@@ -133,28 +133,28 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
 					"This endpoint has no media element with id " + elementId);
 
-		MediaElement element = elements.get(elementId);
+		MediaElement element = elements.remove(elementId);
 		unregisterElementErrListener(element,
 				elementsErrorSubscriptions.remove(elementId));
-		
-		element.release();
-		if (!connected)
-			return;
 
-		String nextId = getNext(elementId);
-		String prevId = getPrevious(elementId);
-		// next connects to prev
-		MediaElement prev = null;
-		MediaElement next = null;
-		if (nextId != null)
-			next = elements.get(nextId);
-		else
-			next = endpoint;
-		if (prevId != null)
-			prev = elements.get(prevId);
-		else
-			prev = passThru;
-		next.connect(prev);
+		if (connected) {
+			String nextId = getNext(elementId);
+			String prevId = getPrevious(elementId);
+			// next connects to prev
+			MediaElement prev = null;
+			MediaElement next = null;
+			if (nextId != null)
+				next = elements.get(nextId);
+			else
+				next = endpoint;
+			if (prevId != null)
+				prev = elements.get(prevId);
+			else
+				prev = passThru;
+			next.connect(prev);
+		}
+		elementIds.remove(elementId);
+		element.release();
 	}
 
 	private String getNext(String uid) {

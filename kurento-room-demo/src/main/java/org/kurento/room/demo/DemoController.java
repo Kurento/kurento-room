@@ -1,5 +1,6 @@
 package org.kurento.room.demo;
 
+import org.kurento.commons.PropertiesManager;
 import org.kurento.room.RoomManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,20 @@ public class DemoController {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(DemoController.class);
+
+	private final static boolean DEMO_LOOPBACK_REMOTE = PropertiesManager
+			.getProperty("demo.loopback.remote", false);
+	private final static boolean DEMO_LOOPBACK_AND_LOCAL = PropertiesManager
+			.getProperty("demo.loopback.andLocal", false);
+
+	private static ClientConfig config;
+
+	static {
+		config = new ClientConfig();
+		config.setLoopbackRemote(DEMO_LOOPBACK_REMOTE);
+		config.setLoopbackAndLocal(DEMO_LOOPBACK_AND_LOCAL);
+		log.info("Set client config: {}", config);
+	}
 
 	@Autowired
 	private RoomManager roomManager;
@@ -36,5 +51,11 @@ public class DemoController {
 			throw new ResourceNotFoundException("Room '" + room + "' not found");
 		}
 		roomManager.closeRoom(room);
+	}
+
+	@RequestMapping("/getClientConfig")
+	public ClientConfig clientConfig() {
+		log.debug("Sending client config {}", config);
+		return config;
 	}
 }

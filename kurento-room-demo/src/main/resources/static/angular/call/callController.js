@@ -101,6 +101,41 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         // run the effect
         $("#effect").toggle(selectedEffect, options, 500);
     };
+    
+    $scope.showHat = function () {
+    	var targetHat = false;
+    	var offImgStyle = "md-mood";
+    	var offColorStyle = "btn--deep-purple";
+    	var onImgStyle = "md-face-unlock";
+    	var onColorStyle = "btn--purple";
+    	var element = document.getElementById("hatButton");
+        if (element.classList.contains(offImgStyle)) { //off
+            element.classList.remove(offImgStyle);
+            element.classList.remove(offColorStyle);
+            element.classList.add(onImgStyle);
+            element.classList.add(onColorStyle);
+            targetHat = true;
+        } else if (element.classList.contains(onImgStyle)) { //on
+            element.classList.remove(onImgStyle);
+            element.classList.remove(onColorStyle);
+            element.classList.add(offImgStyle);
+            element.classList.add(offColorStyle);
+            targetHat = false;
+        }
+    	
+        var hatTo = targetHat ? "on" : "off";
+    	console.log("Toggle hat to " + hatTo);
+    	ServiceRoom.getKurento().sendCustomRequest({hat: targetHat}, function (error, response) {
+    		if (error) {
+                console.error("Unable to toggle hat " + hatTo, error);
+                LxNotificationService.alert('Error!', "Unable to toggle hat " + hatTo, 
+                		'Ok', function(answer) {});
+        		return false;
+            } else {
+            	console.debug("Response on hat toggle", response);
+            }
+    	});
+    };
 });
 
 

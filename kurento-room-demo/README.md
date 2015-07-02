@@ -5,8 +5,8 @@ Copyright © 2014 Kurento. Licensed under [LGPL License].
 kurento-room-demo
 =================
 
-Kurento Room Demo implements the group communications with WebRTC service 
-using services from Kurento Room Server.
+Kurento Room Demo implements the group communications with WebRTC using 
+services from Kurento Room Server.
 
 The client-side implementation of this demo application is an AngularJS module
 that uses the KurentoRoom.js library from the room server package. 

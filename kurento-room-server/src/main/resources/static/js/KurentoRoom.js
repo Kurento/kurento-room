@@ -98,12 +98,11 @@ function Room(kurento, options) {
 
             var stream = streams[key];
 
-            ee.emitEvent('stream-added', [{
-                    stream: stream
-                }]);
-
             if (subscribeToStreams) {
                 stream.subscribe();
+                ee.emitEvent('stream-added', [{
+                    stream: stream
+                }]);
             }
         }
     } 
@@ -841,5 +840,9 @@ function KurentoRoom(wsUri, callback) {
             }
         });
     };
+    
+    this.sendCustomRequest = function (params, callback) {
+        this.sendRequest('customRequest', params, callback);
+    };    
 
 }

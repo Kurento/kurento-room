@@ -6,9 +6,25 @@
       "uri": "http://localhost:8080/"
    },
    "demo": {
-      "hat": {
-         "filter": false,
-         "onlyOnFirst": true
+      //mario-wings.png or wizard.png
+      "hatUrl": "mario-wings.png",
+      "hatCoords": {
+         // mario-wings hat
+         "offsetXPercent": -0.35F,
+         "offsetYPercent": -1.2F,
+         "widthPercent": 1.6F,
+         "heightPercent": 1.6F
+         
+         //wizard hat
+         //"offsetXPercent": -0.2F,
+         //"offsetYPercent": -1.35F,
+         //"widthPercent": 1.5F,
+         //"heightPercent": 1.5F
+      },
+      "loopback" : {
+         "remote": false,
+         //matters only when remote is true
+         "andLocal": false
       },
       "authRegex": ".*",
       "kmsLimit": 10

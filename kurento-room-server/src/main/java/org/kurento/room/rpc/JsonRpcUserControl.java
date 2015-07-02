@@ -190,6 +190,11 @@ public class JsonRpcUserControl {
 		roomManager
 				.sendMessage(message, userName, roomName, participantRequest);
 	}
+	
+	public void customRequest(Transaction transaction,
+			Request<JsonObject> request, ParticipantRequest participantRequest) {
+		throw new RuntimeException("Unsupported method");
+	}
 
 	public ParticipantSession getParticipantSession(Transaction transaction) {
 		Session session = transaction.getSession();
