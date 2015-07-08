@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.kurento.client.Continuation;
@@ -40,7 +41,9 @@ import org.slf4j.LoggerFactory;
  * @since 1.0.0
  */
 public class Room {
-	private final Logger log = LoggerFactory.getLogger(Room.class);
+	public static final int ASYNC_LATCH_TIMEOUT = 30;
+
+	private final static Logger log = LoggerFactory.getLogger(Room.class);
 
 	private final ConcurrentMap<String, Participant> participants =
 			new ConcurrentHashMap<String, Participant>();
@@ -71,7 +74,7 @@ public class Room {
 
 	public MediaPipeline getPipeline() {
 		try {
-			pipelineLatch.await();
+			pipelineLatch.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -88,12 +91,43 @@ public class Room {
 		for (Participant p : participants.values()) {
 			if (p.getName().equals(userName))
 				throw new RoomException(Code.EXISTING_USER_IN_ROOM_ERROR_CODE,
-						"User '" + userName + "' already exists in room '" + name + "'");
+						"User '" + userName + "' already exists in room '"
+								+ name + "'");
 		}
 
 		if (pipeline == null) {
 			log.info("ROOM {}: Creating MediaPipeline", name);
-			pipeline = kurentoClient.createMediaPipeline();
+			try {
+				kurentoClient
+						.createMediaPipeline(new Continuation<MediaPipeline>() {
+							@Override
+							public void onSuccess(MediaPipeline result)
+									throws Exception {
+								pipeline = result;
+								pipelineLatch.countDown();
+								log.debug("ROOM {}: Created MediaPipeline",
+										name);
+							}
+
+							@Override
+							public void onError(Throwable cause)
+									throws Exception {
+								pipelineLatch.countDown();
+								log.error(
+										"ROOM {}: Failed to create MediaPipeline",
+										name, cause);
+							}
+						});
+			} catch (Exception e) {
+				log.error("Unable to create media pipeline for room '{}'",
+						name, e);
+				pipelineLatch.countDown();
+			}
+			if (getPipeline() == null)
+				throw new RoomException(Code.CANNOT_CREATE_ROOM_ERROR_CODE,
+						"Unable to create media pipeline for room '" + name
+								+ "'");
+
 			pipeline.addErrorListener(new EventListener<ErrorEvent>() {
 				@Override
 				public void onEvent(ErrorEvent event) {
@@ -106,12 +140,11 @@ public class Room {
 							desc);
 				}
 			});
-			pipelineLatch.countDown();
 		}
 
 		participants.put(participantId, new Participant(participantId,
 				userName, this, this.pipeline));
-		
+
 		log.info("ROOM {}: Added participant {}", name, userName);
 	}
 

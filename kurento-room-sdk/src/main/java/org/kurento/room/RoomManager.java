@@ -797,6 +797,9 @@ public class RoomManager {
 		if (room == null && getOrCreate) {
 			KurentoClient kurentoClient =
 					kcProvider.getKurentoClient(request.getParticipantId());
+			if (kurentoClient == null)
+				throw new RoomException(Code.CANNOT_CREATE_ROOM_ERROR_CODE,
+						"Unable to obtain a KurentoClient instance");
 			room = new Room(roomName, kurentoClient, roomEventHandler);
 			Room oldRoom = rooms.putIfAbsent(roomName, room);
 			if (oldRoom != null)

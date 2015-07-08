@@ -18,7 +18,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
+import org.kurento.client.Continuation;
 import org.kurento.client.ListenerSubscription;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
@@ -27,6 +29,8 @@ import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
 import org.kurento.room.internal.Participant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Publisher aspect of the {@link TrickleIceEndpoint}.
@@ -35,6 +39,8 @@ import org.kurento.room.internal.Participant;
  */
 public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		MediaShapingEndpoint {
+	private final static Logger log = LoggerFactory
+			.getLogger(PublisherEndpoint.class);
 
 	private PassThrough passThru = null;
 	private ListenerSubscription passThruSubscription = null;
@@ -49,12 +55,13 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 
 	public PublisherEndpoint(Participant owner, String endpointName,
 			MediaPipeline pipeline) {
-		super(owner, endpointName, pipeline);
+		super(owner, endpointName, pipeline, log);
 	}
 
 	@Override
-	protected void internalEndpointInitialization() {
-		super.internalEndpointInitialization();
+	protected void internalEndpointInitialization(
+			final CountDownLatch endpointLatch) {
+		super.internalEndpointInitialization(endpointLatch);
 		passThru = new PassThrough.Builder(getPipeline()).build();
 		passThruSubscription = registerElemErrListener(passThru);
 	}
@@ -101,7 +108,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 	public synchronized void connect(MediaElement other) {
 		if (!connected)
 			innerConnect();
-		passThru.connect(other);
+		internalSinkConnect(passThru, other);
 	}
 
 	@Override
@@ -115,10 +122,10 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			first = elements.get(elementIds.getFirst());
 		if (connected) {
 			if (first != null)
-				first.connect(shaper);
+				internalSinkConnect(first, shaper);
 			else
-				endpoint.connect(shaper);
-			shaper.connect(passThru);
+				internalSinkConnect(endpoint, shaper);
+			internalSinkConnect(shaper, passThru);
 		}
 		elementIds.addFirst(id);
 		elements.put(id, shaper);
@@ -128,7 +135,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 
 	@Override
 	public synchronized void revert(MediaElement shaper) throws RoomException {
-		String elementId = shaper.getId();
+		final String elementId = shaper.getId();
 		if (!elements.containsKey(elementId))
 			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
 					"This endpoint has no media element with id " + elementId);
@@ -151,10 +158,20 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 				prev = elements.get(prevId);
 			else
 				prev = passThru;
-			next.connect(prev);
+			internalSinkConnect(next, prev);
 		}
 		elementIds.remove(elementId);
-		element.release();
+		element.release(new Continuation<Void>() {
+			@Override
+			public void onSuccess(Void result) throws Exception {
+				log.trace("Released media element {}", elementId);
+			}
+
+			@Override
+			public void onError(Throwable cause) throws Exception {
+				log.warn("Failed to release media element {}", elementId, cause);
+			}
+		});
 	}
 
 	private String getNext(String uid) {
@@ -182,11 +199,25 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			if (prev == null)
 				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
 						"No media element with id " + prevId);
-			current.connect(prev);
+			internalSinkConnect(current, prev);
 			current = prev;
 			prevId = getPrevious(prevId);
 		}
-		current.connect(passThru);
+		internalSinkConnect(current, passThru);
 		connected = true;
+	}
+
+	private void internalSinkConnect(MediaElement source, MediaElement sink) {
+		source.connect(sink, new Continuation<Void>() {
+			@Override
+			public void onSuccess(Void result) throws Exception {
+				log.trace("Elements have been connected");
+			}
+
+			@Override
+			public void onError(Throwable cause) throws Exception {
+				log.warn("Failed to connect media elements", cause);
+			}
+		});
 	}
 }

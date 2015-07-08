@@ -15,6 +15,7 @@ package org.kurento.room.test;
  */
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 
@@ -36,7 +37,7 @@ public class SeqAddRemoveUser extends RoomTest {
 
 	@Test
 	public void nUsersRoomTest() throws InterruptedException,
-			ExecutionException {
+			ExecutionException, TimeoutException {
 
 		boolean[] activeUsers = new boolean[NUM_USERS];
 

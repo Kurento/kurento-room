@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.kurento.client.Continuation;
 import org.kurento.client.ErrorEvent;
@@ -74,8 +75,7 @@ public class Participant {
 	}
 
 	public void createPublishingEndpoint() {
-		publisher.createEndpoint();
-		endPointLatch.countDown();
+		publisher.createEndpoint(endPointLatch);
 	}
 
 	public String getId() {
@@ -88,7 +88,7 @@ public class Participant {
 
 	public PublisherEndpoint getPublisher() {
 		try {
-			endPointLatch.await();
+			endPointLatch.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -159,7 +159,8 @@ public class Participant {
 				sdpOffer);
 
 		if (senderName.equals(this.name)) {
-			log.warn("PARTICIPANT {}: trying to configure loopback by subscribing",
+			log.warn(
+					"PARTICIPANT {}: trying to configure loopback by subscribing",
 					this.name);
 			throw new RoomException(Code.USER_NOT_STREAMING_ERROR_CODE,
 					"Can loopback only when publishing media");
@@ -181,7 +182,15 @@ public class Participant {
 		if (oldSubscriber != null)
 			subscriber = oldSubscriber;
 
-		WebRtcEndpoint oldWrEndpoint = subscriber.createEndpoint();
+		CountDownLatch subscriberLatch = new CountDownLatch(1);
+		WebRtcEndpoint oldWrEndpoint =
+				subscriber.createEndpoint(subscriberLatch);
+		try {
+			subscriberLatch.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+
 		if (oldWrEndpoint != null) {
 			log.warn("PARTICIPANT {}: Two threads are trying to create at "
 					+ "the same time a subscriber endpoint for user {}",

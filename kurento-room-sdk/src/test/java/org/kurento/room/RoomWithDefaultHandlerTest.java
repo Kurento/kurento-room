@@ -47,6 +47,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.kurento.client.Continuation;
 import org.kurento.client.ErrorEvent;
 import org.kurento.client.EventListener;
 import org.kurento.client.IceCandidate;
@@ -88,14 +89,22 @@ public class RoomWithDefaultHandlerTest {
 	private UserNotificationService notificationService;
 	@Mock
 	private KurentoClientProvider kcProvider;
+
 	@Mock
 	private KurentoClient kurentoClient;
+	@Captor
+	private ArgumentCaptor<Continuation<MediaPipeline>> kurentoClientCaptor;
+
 	@Mock
 	private MediaPipeline pipeline;
 	@Mock
 	private WebRtcEndpoint.Builder webRtcBuilder;
+	@Captor
+	private ArgumentCaptor<Continuation<WebRtcEndpoint>> webRtcCaptor;
+
 	@Mock
 	private PassThrough.Builder passThruBuilder;
+
 	@Mock
 	private WebRtcEndpoint endpoint;
 	@Mock
@@ -124,7 +133,6 @@ public class RoomWithDefaultHandlerTest {
 
 	@Before
 	public void setup() {
-
 		manager = new RoomManager(notificationService, kcProvider);
 
 		doAnswer(new Answer<KurentoClient>() {
@@ -135,26 +143,49 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(kcProvider).getKurentoClient(anyString());
 
-		when(kurentoClient.createMediaPipeline()).thenAnswer(
-				new Answer<MediaPipeline>() {
-					@Override
-					public MediaPipeline answer(InvocationOnMock invocation)
-							throws Throwable {
-						return pipeline;
-					}
-				});
+		// not used anymore, replaced by the Continuation version
+		// when(kurentoClient.createMediaPipeline()).thenAnswer(
+		// new Answer<MediaPipeline>() {
+		// @Override
+		// public MediaPipeline answer(InvocationOnMock invocation)
+		// throws Throwable {
+		// return pipeline;
+		// }
+		// });
 
-		when(webRtcBuilder.build()).thenReturn(endpoint);
+		// call onSuccess when creating the pipeline to use the mocked instance
+		doAnswer(new Answer<Continuation<MediaPipeline>>() {
+			@Override
+			public Continuation<MediaPipeline> answer(
+					InvocationOnMock invocation) throws Throwable {
+				kurentoClientCaptor.getValue().onSuccess(pipeline);
+				return null;
+			}
+		}).when(kurentoClient).createMediaPipeline(
+				kurentoClientCaptor.capture());
+
+		// call onSuccess when building the endpoint to use the mocked instance
+		doAnswer(new Answer<Continuation<WebRtcEndpoint>>() {
+			@Override
+			public Continuation<WebRtcEndpoint> answer(
+					InvocationOnMock invocation) throws Throwable {
+				webRtcCaptor.getValue().onSuccess(endpoint);
+				return null;
+			}
+		}).when(webRtcBuilder).buildAsync(webRtcCaptor.capture());
+
+		// not used anymore, replaced by the Continuation version
+		// when(webRtcBuilder.build()).thenReturn(endpoint);
+
+		// still using the sync version
 		when(passThruBuilder.build()).thenReturn(passThru);
 
-		try {
+		try { // mock the constructor for the endpoint builder
 			whenNew(WebRtcEndpoint.Builder.class).withArguments(pipeline)
 					.thenAnswer(new Answer<WebRtcEndpoint.Builder>() {
-
 						@Override
 						public WebRtcEndpoint.Builder answer(
 								InvocationOnMock invocation) throws Throwable {
-
 							return webRtcBuilder;
 						}
 					});
@@ -163,7 +194,7 @@ public class RoomWithDefaultHandlerTest {
 			fail(e.getMessage());
 		}
 
-		try {
+		try { // mock the constructor for the passThru builder
 			whenNew(PassThrough.Builder.class).withArguments(pipeline)
 					.thenAnswer(new Answer<PassThrough.Builder>() {
 
@@ -294,6 +325,9 @@ public class RoomWithDefaultHandlerTest {
 			manager.joinRoom(userRoom.getKey(), userRoom.getValue(),
 					usersParticipantRequests.get(userRoom.getKey()));
 		}
+		// verifies create media pipeline was called once for each new room
+		verify(kurentoClient, times(roomsUsers.size())).createMediaPipeline(
+				kurentoClientCaptor.capture());
 
 		int expectedNotifications = 0;
 		for (Entry<String, List<String>> roomUser : roomsUsers.entrySet())
@@ -864,6 +898,10 @@ public class RoomWithDefaultHandlerTest {
 				any(ParticipantRequest.class), any(), any(RoomException.class));
 
 		manager.joinRoom(user, room, participantRequest);
+
+		// verifies create media pipeline was called once
+		verify(kurentoClient, times(1)).createMediaPipeline(
+				kurentoClientCaptor.capture());
 	}
 
 	private void participantsSubscribe(final ParticipantRequest publisher) {

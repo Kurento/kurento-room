@@ -17,6 +17,8 @@ package org.kurento.room.endpoint;
 
 import org.kurento.client.MediaPipeline;
 import org.kurento.room.internal.Participant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Subscriber aspect of the {@link TrickleIceEndpoint}.
@@ -24,12 +26,13 @@ import org.kurento.room.internal.Participant;
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
 public class SubscriberEndpoint extends IceWebRtcEndpoint {
-
+	private final static Logger log = LoggerFactory.getLogger(SubscriberEndpoint.class);
+	
 	private boolean connectedToPublisher = false;
 
 	public SubscriberEndpoint(Participant owner, String endpointName,
 			MediaPipeline pipeline) {
-		super(owner, endpointName, pipeline);
+		super(owner, endpointName, pipeline, log);
 	}
 
 	public synchronized String subscribe(String sdpOffer,

@@ -15,6 +15,7 @@ package org.kurento.room.test;
  */
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ public class SeqNUsersEqualLifetime extends RoomTest {
 
 	@Test
 	public void twoUsersRoomTest() throws InterruptedException,
-			ExecutionException {
+			ExecutionException, TimeoutException {
 
 		browsers = createBrowsers(2);
 

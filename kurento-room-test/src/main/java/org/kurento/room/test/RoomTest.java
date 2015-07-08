@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.After;
@@ -103,6 +104,8 @@ public class RoomTest extends KurentoTest {
 		random = new SecureRandom();
 	}
 
+	private static final int DRIVER_INIT_TIMEOUT = 120; // seconds
+
 	private static final int TEST_TIMEOUT = 20; // seconds
 
 	private static final int MAX_WIDTH = 1200;
@@ -123,12 +126,17 @@ public class RoomTest extends KurentoTest {
 	public static void setupClass() {
 		appUrl = BASIC_ROOM_APP_URL;
 		// Chrome binary
-		new ChromeDriverManager().setup();
+		ChromeDriverManager.getInstance().setup();
 	}
 
 	@Before
 	public void setup() {
-		super.setupKurentoTest();
+		try {
+			super.setupKurentoTest();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 		roomName = ROOM_NAME + random.nextInt(9999);
 	}
 
@@ -237,7 +245,7 @@ public class RoomTest extends KurentoTest {
 			log.warn(
 					"Timeout when waiting for element {} to disappear in browser {}",
 					id, label, e);
-			throw new TimeoutException("Element with id=" + id
+			throw new TimeoutException("Element with id='" + id
 					+ "' is present in page after " + TEST_TIMEOUT + " seconds");
 		}
 	}
@@ -251,19 +259,31 @@ public class RoomTest extends KurentoTest {
 			log.warn(
 					"Timeout when waiting for element {} to exist in browser {}",
 					id, label);
-			throw new NoSuchElementException("Element with id=" + id
-					+ "' not found after " + TEST_TIMEOUT + " seconds");
+			try {
+				WebElement elem = browser.findElement(By.id(id));
+				log.info(
+						"Additional findElement call was able to locate {} in browser {}",
+						id, label);
+				return elem;
+			} catch (NoSuchElementException e1) {
+				log.debug(
+						"Additional findElement call couldn't locate {} in browser {} ({})",
+						id, label, e1.getMessage());
+				throw new NoSuchElementException("Element with id='" + id
+						+ "' not found after " + TEST_TIMEOUT
+						+ " seconds in browser " + label);
+			}
 		}
 	}
 
 	public void parallelUsers(int numUsers, final UserLifecycle user)
-			throws InterruptedException, ExecutionException {
+			throws InterruptedException, ExecutionException, TimeoutException {
 		iterParallelUsers(numUsers, 1, user);
 	}
 
 	public void iterParallelUsers(int numUsers, int iterations,
 			final UserLifecycle user) throws InterruptedException,
-			ExecutionException {
+			ExecutionException, TimeoutException {
 
 		int totalExecutions = iterations * numUsers;
 		ExecutorService threadPool =
@@ -310,17 +330,18 @@ public class RoomTest extends KurentoTest {
 	}
 
 	protected List<WebDriver> createBrowsers(int numUsers)
-			throws InterruptedException, ExecutionException {
+			throws InterruptedException, ExecutionException, TimeoutException {
 
 		final List<WebDriver> browsers =
 				Collections.synchronizedList(new ArrayList<WebDriver>());
 
-		parallelTask(numUsers, new Function<Integer, Void>() {
+		parallelTask(numUsers, DRIVER_INIT_TIMEOUT, new Function<Integer, Void>() {
 			@Override
 			public Void apply(Integer num) {
 				WebDriver browser = newWebDriver();
+				log.debug("Created browser #{}", num);
 				browsers.add(browser);
-				log.debug("Added browser #{}", num);
+				log.debug("Added browser #{} to browsers list", num);
 				return null;
 			}
 		});
@@ -350,7 +371,13 @@ public class RoomTest extends KurentoTest {
 	}
 
 	protected void parallelTask(int num, final Function<Integer, Void> function)
-			throws InterruptedException, ExecutionException {
+			throws InterruptedException, ExecutionException, TimeoutException {
+		parallelTask(num, -1, function);
+	}
+
+	protected void parallelTask(int num, int timeout,
+			final Function<Integer, Void> function)
+			throws InterruptedException, ExecutionException, TimeoutException {
 
 		ExecutorService threadPool = Executors.newFixedThreadPool(num);
 		ExecutorCompletionService<Void> exec =
@@ -369,10 +396,24 @@ public class RoomTest extends KurentoTest {
 
 		try {
 			for (int i = 0; i < num; i++) {
+				log.debug(
+						"Starting to wait for job execution to complete ({}/{})",
+						i + 1, num);
 				try {
-					exec.take().get();
+					if (timeout > 0)
+						try {
+							exec.take().get(timeout, TimeUnit.SECONDS);
+						} catch (TimeoutException e) {
+							log.error(
+									"Timeout reached ({}s) while waiting for job execution ({}/{})",
+									timeout, i + 1, num, e);
+							throw e;
+						}
+					else
+						exec.take().get();
+					log.debug("Job completed ({}/{})", i + 1, num);
 				} catch (ExecutionException e) {
-					log.error("Execution exception", e);
+					log.error("Execution exception of job {}/{}", i + 1, num, e);
 					throw e;
 				}
 			}

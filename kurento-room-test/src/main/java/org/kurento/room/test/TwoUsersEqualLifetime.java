@@ -15,6 +15,7 @@ package org.kurento.room.test;
  */
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 import org.openqa.selenium.WebDriver;
@@ -37,7 +38,7 @@ public class TwoUsersEqualLifetime extends RoomTest {
 
 	@Test
 	public void twoUsersRoomTest() throws InterruptedException,
-			ExecutionException {
+			ExecutionException, TimeoutException {
 
 		browsers = createBrowsers(2);
 		user1Browser = browsers.get(0);
