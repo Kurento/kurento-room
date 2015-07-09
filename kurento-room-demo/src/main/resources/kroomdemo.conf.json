@@ -5,6 +5,12 @@
    "app": {
       "uri": "http://localhost:8080/"
    },
+   "kurento": {
+      "client": {
+         //milliseconds
+         "requestTimeout": 20000
+      }
+   },
    "demo": {
       //mario-wings.png or wizard.png
       "hatUrl": "mario-wings.png",

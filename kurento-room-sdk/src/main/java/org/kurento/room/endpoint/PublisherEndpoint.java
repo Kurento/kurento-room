@@ -138,7 +138,8 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		final String elementId = shaper.getId();
 		if (!elements.containsKey(elementId))
 			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
-					"This endpoint has no media element with id " + elementId);
+					"This endpoint (" + getEndpointName()
+							+ ") has no media element with id " + elementId);
 
 		MediaElement element = elements.remove(elementId);
 		unregisterElementErrListener(element,
@@ -164,12 +165,14 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		element.release(new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {
-				log.trace("Released media element {}", elementId);
+				log.trace("EP {}: Released media element {}",
+						getEndpointName(), elementId);
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
-				log.warn("Failed to release media element {}", elementId, cause);
+				log.error("EP {}: Failed to release media element {}",
+						getEndpointName(), elementId, cause);
 			}
 		});
 	}
@@ -191,14 +194,16 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 	private void innerConnect() {
 		if (endpoint == null)
 			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
-					"Can't connect null WebRtcEndpoint");
+					"Can't connect null WebRtcEndpoint (ep: "
+							+ getEndpointName() + ")");
 		MediaElement current = endpoint;
 		String prevId = elementIds.peekLast();
 		while (prevId != null) {
 			MediaElement prev = elements.get(prevId);
 			if (prev == null)
 				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
-						"No media element with id " + prevId);
+						"No media element with id " + prevId + " (ep: "
+								+ getEndpointName() + ")");
 			internalSinkConnect(current, prev);
 			current = prev;
 			prevId = getPrevious(prevId);
@@ -211,12 +216,14 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		source.connect(sink, new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {
-				log.trace("Elements have been connected");
+				log.trace("EP {}: Elements have been connected",
+						getEndpointName());
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
-				log.warn("Failed to connect media elements", cause);
+				log.warn("EP {}: Failed to connect media elements",
+						getEndpointName(), cause);
 			}
 		});
 	}

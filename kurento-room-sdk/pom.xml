@@ -46,10 +46,6 @@
 		</developer>
 	</developers>
 
-	<properties>
-		<version.powermock>1.6.2</version.powermock>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.kurento</groupId>
@@ -74,13 +70,11 @@
 		<dependency>
 			<groupId>org.powermock</groupId>
 			<artifactId>powermock-module-junit4</artifactId>
-			<version>${version.powermock}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.powermock</groupId>
 			<artifactId>powermock-api-mockito</artifactId>
-			<version>${version.powermock}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -92,11 +92,14 @@ public abstract class IceWebRtcEndpoint {
 	 * thread-safe way using the internal {@link MediaPipeline}. Otherwise no
 	 * actions are taken. It also registers an error listener for the endpoint
 	 * and for any additional media elements.
-	 * @param endpointLatch latch whose countdown is performed when the asynchronous call to build the {@link WebRtcEndpoint} returns
+	 * 
+	 * @param endpointLatch latch whose countdown is performed when the
+	 *        asynchronous call to build the {@link WebRtcEndpoint} returns
 	 * 
 	 * @return the existing endpoint, if any
 	 */
-	public synchronized WebRtcEndpoint createEndpoint(CountDownLatch endpointLatch) {
+	public synchronized WebRtcEndpoint createEndpoint(
+			CountDownLatch endpointLatch) {
 		WebRtcEndpoint old = this.endpoint;
 		if (this.endpoint == null)
 			internalEndpointInitialization(endpointLatch);
@@ -163,23 +166,32 @@ public abstract class IceWebRtcEndpoint {
 
 	/**
 	 * Create the endpoint and any other additional elements (if needed).
+	 * 
 	 * @param endpointLatch
 	 */
-	protected void internalEndpointInitialization(final CountDownLatch endpointLatch) {
-		new WebRtcEndpoint.Builder(pipeline).buildAsync(new Continuation<WebRtcEndpoint>() {
-			@Override
-			public void onSuccess(WebRtcEndpoint result) throws Exception {
-				endpoint = result;
-				endpointLatch.countDown();
-				log.trace("Created a new WebRtcEndpoint");
-				endpointSubscription = registerElemErrListener(endpoint);
-			}
+	protected void internalEndpointInitialization(
+			final CountDownLatch endpointLatch) {
+		new WebRtcEndpoint.Builder(pipeline)
+				.buildAsync(new Continuation<WebRtcEndpoint>() {
+					@Override
+					public void onSuccess(WebRtcEndpoint result)
+							throws Exception {
+						endpoint = result;
+						endpointLatch.countDown();
+						log.trace("EP {}: Created a new WebRtcEndpoint",
+								endpointName);
+						endpointSubscription =
+								registerElemErrListener(endpoint);
+					}
 
-			@Override
-			public void onError(Throwable cause) throws Exception {
-				endpointLatch.countDown();
-				log.warn("Failed to create a new WebRtcEndpoint", cause);
-			}});
+					@Override
+					public void onError(Throwable cause) throws Exception {
+						endpointLatch.countDown();
+						log.error(
+								"EP {}: Failed to create a new WebRtcEndpoint",
+								endpointName, cause);
+					}
+				});
 	}
 
 	/**
@@ -194,7 +206,8 @@ public abstract class IceWebRtcEndpoint {
 	protected void registerOnIceCandidateEventListener() throws RoomException {
 		if (endpoint == null)
 			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
-					"Can't register event listener for null WebRtcEndpoint");
+					"Can't register event listener for null WebRtcEndpoint (ep: "
+							+ endpointName + ")");
 		endpoint.addOnIceCandidateListener(new EventListener<OnIceCandidateEvent>() {
 			@Override
 			public void onEvent(OnIceCandidateEvent event) {
@@ -244,7 +257,8 @@ public abstract class IceWebRtcEndpoint {
 	protected String processOffer(String offer) {
 		if (endpoint == null)
 			throw new KurentoException(
-					"Can't process offer when WebRtcEndpoint is null");
+					"Can't process offer when WebRtcEndpoint is null (ep: "
+							+ endpointName + ")");
 		return endpoint.processOffer(offer);
 	}
 
@@ -255,33 +269,38 @@ public abstract class IceWebRtcEndpoint {
 	protected void gatherCandidates() {
 		if (endpoint == null)
 			throw new KurentoException(
-					"Can't start gathering ICE candidates on null WebRtcEndpoint");
+					"Can't start gathering ICE candidates on null WebRtcEndpoint (ep: "
+							+ endpointName + ")");
 		endpoint.gatherCandidates(new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {
-				log.trace("Internal endpoint started to gather candidates");
+				log.trace(
+						"EP {}: Internal endpoint started to gather candidates",
+						endpointName);
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
-				log.warn("Internal endpoint failed to start gathering candidates", cause);
-			}});
+				log.warn(
+						"EP {}: Internal endpoint failed to start gathering candidates",
+						endpointName, cause);
+			}
+		});
 	}
-	
-	private void internalAddIceCandidate(IceCandidate candidate) {
-		this.endpoint.addIceCandidate(candidate,
-				new Continuation<Void>() {
-					@Override
-					public void onSuccess(Void result) throws Exception {
-						log.trace("Ice candidate added to the internal endpoint");
-					}
 
-					@Override
-					public void onError(Throwable cause) throws Exception {
-						log.warn(
-								"Failed to add ice candidate added to the internal endpoint",
-								cause);
-					}
-				});
+	private void internalAddIceCandidate(IceCandidate candidate) {
+		this.endpoint.addIceCandidate(candidate, new Continuation<Void>() {
+			@Override
+			public void onSuccess(Void result) throws Exception {
+				log.trace("Ice candidate added to the internal endpoint");
+			}
+
+			@Override
+			public void onError(Throwable cause) throws Exception {
+				log.warn(
+						"EP {}: Failed to add ice candidate to the internal endpoint",
+						endpointName, cause);
+			}
+		});
 	}
 }

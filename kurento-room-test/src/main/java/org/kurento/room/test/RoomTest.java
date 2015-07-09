@@ -50,6 +50,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
@@ -104,7 +105,8 @@ public class RoomTest extends KurentoTest {
 		random = new SecureRandom();
 	}
 
-	private static final int DRIVER_INIT_TIMEOUT = 120; // seconds
+	private static final int DRIVER_INIT_THREAD_TIMEOUT = 30; // seconds
+	private static final int DRIVER_INIT_THREAD_JOIN = 1; // seconds
 
 	private static final int TEST_TIMEOUT = 20; // seconds
 
@@ -147,20 +149,39 @@ public class RoomTest extends KurentoTest {
 	}
 
 	protected WebDriver newWebDriver() {
-
 		ChromeOptions options = new ChromeOptions();
-		// This flag avoids a warning in Chrome. See:
-		// https://code.google.com/p/chromedriver/issues/detail?id=799
-		options.addArguments("--test-type");
+
 		// This flag avoids granting camera/microphone
 		options.addArguments("--use-fake-ui-for-media-stream");
+
 		// This flag makes using a synthetic video (green with spinner) in
 		// WebRTC instead of real media from camera/microphone
 		options.addArguments("--use-fake-device-for-media-stream");
 
-		ChromeDriver chromeDriver = new ChromeDriver(options);
+		DesiredCapabilities capabilities = new DesiredCapabilities();
+		capabilities.setCapability(ChromeOptions.CAPABILITY, options);
+		capabilities.setBrowserName(DesiredCapabilities.chrome()
+				.getBrowserName());
 
-		return chromeDriver;
+		ExecutorService webExec = Executors.newFixedThreadPool(1);
+		BrowserInit initThread = new BrowserInit(capabilities);
+		webExec.execute(initThread);
+		webExec.shutdown();
+		try {
+			if (!webExec.awaitTermination(DRIVER_INIT_THREAD_TIMEOUT,
+					TimeUnit.SECONDS)) {
+				log.warn(
+						"Webdriver init thread timed-out after {}s, will be interrupted",
+						DRIVER_INIT_THREAD_TIMEOUT);
+				initThread.interrupt();
+				initThread.join(DRIVER_INIT_THREAD_JOIN);
+			}
+		} catch (InterruptedException e) {
+			log.error("Interrupted exception", e);
+			fail(e.getMessage());
+		}
+
+		return initThread.getBrowser();
 	}
 
 	protected void exitFromRoom(String label, WebDriver userBrowser) {
@@ -335,16 +356,18 @@ public class RoomTest extends KurentoTest {
 		final List<WebDriver> browsers =
 				Collections.synchronizedList(new ArrayList<WebDriver>());
 
-		parallelTask(numUsers, DRIVER_INIT_TIMEOUT, new Function<Integer, Void>() {
-			@Override
-			public Void apply(Integer num) {
-				WebDriver browser = newWebDriver();
-				log.debug("Created browser #{}", num);
-				browsers.add(browser);
-				log.debug("Added browser #{} to browsers list", num);
-				return null;
-			}
-		});
+		parallelBrowserInit(numUsers, 0, browsers);
+
+		if (browsers.size() < numUsers) {
+			int required = numUsers - browsers.size();
+			log.warn("Not enough browsers were created, will retry to "
+					+ "recreate the missing ones: {}", required);
+			parallelBrowserInit(required, browsers.size(), browsers);
+		}
+
+		if (browsers.size() < numUsers)
+			fail("Unable to create the required number of browsers: "
+					+ numUsers);
 
 		int row = 0;
 		int col = 0;
@@ -357,9 +380,7 @@ public class RoomTest extends KurentoTest {
 					.setPosition(
 							new Point(col * BROWSER_WIDTH + LEFT_BAR_WIDTH, row
 									* BROWSER_HEIGHT + TOP_BAR_WIDTH));
-
 			col++;
-
 			if (col * BROWSER_WIDTH + LEFT_BAR_WIDTH > MAX_WIDTH) {
 				col = 0;
 				row++;
@@ -370,13 +391,26 @@ public class RoomTest extends KurentoTest {
 		return browsers;
 	}
 
-	protected void parallelTask(int num, final Function<Integer, Void> function)
-			throws InterruptedException, ExecutionException, TimeoutException {
-		parallelTask(num, -1, function);
+	private void parallelBrowserInit(int required, final int existing,
+			final List<WebDriver> browsers) throws InterruptedException,
+			ExecutionException, TimeoutException {
+		parallelTask(required, new Function<Integer, Void>() {
+			@Override
+			public Void apply(Integer num) {
+				WebDriver browser = newWebDriver();
+				if (browser != null) {
+					browsers.add(browser);
+					log.debug("Created and added browser #{} to browsers list",
+							existing + num);
+				} else
+					log.warn("Browser instance #{} found to be null", existing
+							+ num);
+				return null;
+			}
+		});
 	}
 
-	protected void parallelTask(int num, int timeout,
-			final Function<Integer, Void> function)
+	protected void parallelTask(int num, final Function<Integer, Void> function)
 			throws InterruptedException, ExecutionException, TimeoutException {
 
 		ExecutorService threadPool = Executors.newFixedThreadPool(num);
@@ -396,21 +430,11 @@ public class RoomTest extends KurentoTest {
 
 		try {
 			for (int i = 0; i < num; i++) {
-				log.debug(
-						"Starting to wait for job execution to complete ({}/{})",
-						i + 1, num);
 				try {
-					if (timeout > 0)
-						try {
-							exec.take().get(timeout, TimeUnit.SECONDS);
-						} catch (TimeoutException e) {
-							log.error(
-									"Timeout reached ({}s) while waiting for job execution ({}/{})",
-									timeout, i + 1, num, e);
-							throw e;
-						}
-					else
-						exec.take().get();
+					log.debug(
+							"Waiting for the job execution to complete ({}/{})",
+							i + 1, num);
+					exec.take().get();
 					log.debug("Job completed ({}/{})", i + 1, num);
 				} catch (ExecutionException e) {
 					log.error("Execution exception of job {}/{}", i + 1, num, e);
@@ -526,6 +550,24 @@ public class RoomTest extends KurentoTest {
 			cdl[i] = new CountDownLatch(numUsers);
 		}
 		return cdl;
+	}
+
+	static class BrowserInit extends Thread {
+		private DesiredCapabilities capabilities;
+		private WebDriver browser;
+
+		BrowserInit(DesiredCapabilities capabilities) {
+			this.capabilities = capabilities;
+		}
+
+		@Override
+		public void run() {
+			browser = new ChromeDriver(capabilities);
+		}
+
+		WebDriver getBrowser() {
+			return browser;
+		}
 	}
 
 }

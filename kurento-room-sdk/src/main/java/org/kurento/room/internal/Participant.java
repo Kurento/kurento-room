@@ -76,6 +76,9 @@ public class Participant {
 
 	public void createPublishingEndpoint() {
 		publisher.createEndpoint(endPointLatch);
+		if (getPublisher().getEndpoint() == null)
+			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+					"Unable to create publisher endpoint");
 	}
 
 	public String getId() {
@@ -88,9 +91,14 @@ public class Participant {
 
 	public PublisherEndpoint getPublisher() {
 		try {
-			endPointLatch.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS);
+			if (!endPointLatch
+					.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS))
+				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						"Timeout reached while waiting for publisher endpoint to be ready");
 		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
+			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+					"Interrupted while waiting for publisher endpoint to be ready: "
+							+ e.getMessage());
 		}
 		return this.publisher;
 	}
@@ -182,20 +190,32 @@ public class Participant {
 		if (oldSubscriber != null)
 			subscriber = oldSubscriber;
 
-		CountDownLatch subscriberLatch = new CountDownLatch(1);
-		WebRtcEndpoint oldWrEndpoint =
-				subscriber.createEndpoint(subscriberLatch);
 		try {
-			subscriberLatch.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
-
-		if (oldWrEndpoint != null) {
-			log.warn("PARTICIPANT {}: Two threads are trying to create at "
-					+ "the same time a subscriber endpoint for user {}",
-					this.name, senderName);
-			return null;
+			CountDownLatch subscriberLatch = new CountDownLatch(1);
+			WebRtcEndpoint oldWrEndpoint =
+					subscriber.createEndpoint(subscriberLatch);
+			try {
+				if (!subscriberLatch.await(Room.ASYNC_LATCH_TIMEOUT,
+						TimeUnit.SECONDS))
+					throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+							"Timeout reached when creating subscriber endpoint");
+			} catch (InterruptedException e) {
+				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						"Interrupted when creating subscriber endpoint: "
+								+ e.getMessage());
+			}
+			if (oldWrEndpoint != null) {
+				log.warn("PARTICIPANT {}: Two threads are trying to create at "
+						+ "the same time a subscriber endpoint for user {}",
+						this.name, senderName);
+				return null;
+			}
+			if (subscriber.getEndpoint() == null)
+				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						"Unable to create subscriber endpoint");
+		} catch (RoomException e) {
+			this.subscribers.remove(senderName);
+			throw e;
 		}
 
 		log.debug("PARTICIPANT {}: Created subscriber endpoint for user {}",
