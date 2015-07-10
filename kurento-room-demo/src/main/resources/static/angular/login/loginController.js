@@ -124,6 +124,13 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                 room.connect();
             });
 
+            localStream.addEventListener("access-denied", function () {
+            	ServiceParticipant.showError($window, LxNotificationService, {
+            		error : {
+            			message : "Access not granted to camera and microphone"
+            				}
+            	});
+            });
             localStream.init();
         });
 

@@ -497,7 +497,8 @@ function Stream(kurento, local, room, options) {
             wrStream = userStream;
             ee.emitEvent('access-accepted', null);
         }, function (error) {
-            console.error(JSON.stringify(error));
+            console.error("Access denied", error);
+            ee.emitEvent('access-denied', null);
         });
     }
 
