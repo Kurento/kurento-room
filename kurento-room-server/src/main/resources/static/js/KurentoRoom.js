@@ -405,7 +405,19 @@ function Stream(kurento, local, room, options) {
         ee.addListener(eventName, listener);
     }
 
-    this.playOnlyVideo = function (element) {
+    function showSpinner(spinnerParentId) {
+        var progress = document.createElement('div');
+        progress.id = 'progress-' + that.getGlobalID();
+        progress.style.background = "center transparent url('img/spinner.gif') no-repeat";
+        document.getElementById(spinnerParentId).appendChild(progress);
+    }
+
+    function hideSpinner(spinnerId) {
+    	spinnerId = (typeof spinnerId === 'undefined') ? that.getGlobalID() : spinnerId;
+        $('#progress-' + spinnerId).hide();
+    }
+
+    this.playOnlyVideo = function (parentElement, thumbnailId) {
         video = document.createElement('video');
 
         video.id = 'native-video-' + that.getGlobalID();
@@ -413,41 +425,33 @@ function Stream(kurento, local, room, options) {
         video.controls = false;
         if (wrStream) {
         	video.src = URL.createObjectURL(wrStream);
-            $("#video-" + that.getGlobalID()).show();
-            hideSpinner(that.getGlobalID());
+            $("#" + thumbnailId).show();
+            hideSpinner();
         } else
         	console.log("No wrStream yet for", that.getGlobalID());
 
-        videoElements.push(video);
+        videoElements.push({
+        	thumb: thumbnailId,
+        	video: video
+        });
 
         if (local) {
             video.setAttribute("muted", "muted");
         }
-        
-        if (typeof element === "string") {
-            document.getElementById(element).appendChild(video);
+
+        if (typeof parentElement === "string") {
+            document.getElementById(parentElement).appendChild(video);
         } else {
-            element.appendChild(video);
+        	parentElement.appendChild(video);
         }
     }
 
-    function showSpinner(elementId) {
-        var progress = document.createElement('div');
-        progress.id = 'progress-' + that.getGlobalID();
-        progress.style.background = "center transparent url('img/spinner.gif') no-repeat";
-        document.getElementById(elementId).appendChild(progress);
-    }
-
-    function hideSpinner(elementId) {
-        $('#progress-' + elementId).hide();
-    }
-
-    this.play = function (elementId) {
+    this.playThumbnail = function (thumbnailId) {
 
         var container = document.createElement('div');
         container.className = "participant";
         container.id = that.getGlobalID();
-        document.getElementById(elementId).appendChild(container);
+        document.getElementById(thumbnailId).appendChild(container);
 
         elements.push(container);
 
@@ -457,9 +461,9 @@ function Stream(kurento, local, room, options) {
         name.id = "name-" + that.getGlobalID();
         name.className = "name";
 
-        showSpinner(elementId);
+        showSpinner(thumbnailId);
 
-        that.playOnlyVideo(container);
+        that.playOnlyVideo(container, thumbnailId);
     }
 
     this.getID = function () {
@@ -610,11 +614,14 @@ function Stream(kurento, local, room, options) {
                 wrStream = pc.getRemoteStreams()[0];
                 console.log("Peer remote stream", wrStream);
                 for (i = 0; i < videoElements.length; i++) {
-                    videoElements[i].src = URL.createObjectURL(wrStream);
-                    videoElements[i].onplay = function() {
-                        var elementId = this.id;
+                	var thumbnailId = videoElements[i].thumb;
+                	var video = videoElements[i].video;
+                	video.src = URL.createObjectURL(wrStream);
+                	video.onplay = function() {
+                    	//is ('native-video-' + that.getGlobalID())
+                    	var elementId = this.id;
                         var videoId = elementId.split("-");
-                        $('#video-' + videoId[2]).show();
+                        $("#" + thumbnailId).show();
                         hideSpinner(videoId[2]);
                     };
                 }
@@ -658,7 +665,7 @@ function Stream(kurento, local, room, options) {
         }
 
         for (i = 0; i < videoElements.length; i++) {
-            disposeElement(videoElements[i]);
+            disposeElement(videoElements[i].video);
         }
         
         if (wp) {

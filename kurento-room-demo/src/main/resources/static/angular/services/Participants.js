@@ -2,7 +2,8 @@ function AppParticipant(stream) {
 
     this.stream = stream;
     this.videoElement;
-
+    this.thumbnailId;
+    
     var that = this;
 
     this.getStream = function() {
@@ -14,7 +15,7 @@ function AppParticipant(stream) {
         var mainVideo = document.getElementById("main-video");
         var oldVideo = mainVideo.firstChild;
 
-        stream.playOnlyVideo("main-video");
+        stream.playOnlyVideo("main-video", that.thumbnailId);
 
         that.videoElement.className += " active-video";
 
@@ -37,10 +38,10 @@ function AppParticipant(stream) {
 
     function playVideo() {
 
-        var elementId = "video-" + stream.getGlobalID();
+        that.thumbnailId = "video-" + stream.getGlobalID();
 
         that.videoElement = document.createElement('div');
-        that.videoElement.setAttribute("id", elementId);
+        that.videoElement.setAttribute("id", that.thumbnailId);
         that.videoElement.className = "video";
 
         var buttonVideo = document.createElement('button');
@@ -56,7 +57,7 @@ function AppParticipant(stream) {
 
         document.getElementById("participants").appendChild(that.videoElement);
         
-        that.stream.play(elementId);
+        that.stream.playThumbnail(that.thumbnailId);
     }
 
     playVideo();
@@ -88,16 +89,13 @@ function Participants() {
 	}
     
     function updateVideoStyle() {
-
-        var MAX_WIDTH = 15;
-        roomName = room.name;
+        var MAX_WIDTH = 14;
         var numParticipants = Object.keys(participants).length;
-        console.log("room: " + room.name);
-        var maxParticipantsWithMaxWidth = 95 / MAX_WIDTH;
+        var maxParticipantsWithMaxWidth = 98 / MAX_WIDTH;
 
         if (numParticipants > maxParticipantsWithMaxWidth) {
             $('.video').css({
-                "width": (95 / numParticipants) + "%"
+                "width": (98 / numParticipants) + "%"
             });
         } else {
             $('.video').css({

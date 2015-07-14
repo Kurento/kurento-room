@@ -36,7 +36,7 @@ function register() {
 				var div = document.createElement('div');
 				div.setAttribute("id", elementId);
 				document.getElementById("participants").appendChild(div);
-				stream.play(elementId);
+				stream.playThumbnail(elementId);
 
 				// Check color
 				var videoTag = document.getElementById("native-" + elementId);
