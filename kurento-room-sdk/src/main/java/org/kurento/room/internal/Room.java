@@ -27,8 +27,7 @@ import org.kurento.client.EventListener;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
-import org.kurento.commons.exception.KurentoException;
-import org.kurento.room.api.RoomEventHandler;
+import org.kurento.room.api.RoomHandler;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
 import org.slf4j.Logger;
@@ -54,17 +53,17 @@ public class Room {
 
 	private KurentoClient kurentoClient;
 
-	private RoomEventHandler roomEventHandler;
+	private RoomHandler roomHandler;
 
 	private volatile boolean closed = false;
 
 	private AtomicInteger activePublishers = new AtomicInteger(0);
 
 	public Room(String roomName, KurentoClient kurentoClient,
-			RoomEventHandler roomEventHandler) {
+			RoomHandler roomHandler) {
 		this.name = roomName;
 		this.kurentoClient = kurentoClient;
-		this.roomEventHandler = roomEventHandler;
+		this.roomHandler = roomHandler;
 		log.info("ROOM {} has been created", roomName);
 	}
 
@@ -81,7 +80,8 @@ public class Room {
 		return this.pipeline;
 	}
 
-	public void join(String participantId, String userName) {
+	public void join(String participantId, String userName)
+			throws RoomException {
 
 		checkClosed();
 
@@ -136,8 +136,8 @@ public class Room {
 									+ "(errCode=" + event.getErrorCode() + ")";
 					log.warn("ROOM {}: Pipeline error encountered: {}", name,
 							desc);
-					roomEventHandler.onPipelineError(name, getParticipantIds(),
-							desc);
+					roomHandler
+							.onPipelineError(name, getParticipantIds(), desc);
 				}
 			});
 		}
@@ -261,13 +261,12 @@ public class Room {
 
 	public void sendIceCandidate(String participantId, String endpointName,
 			IceCandidate candidate) {
-		this.roomEventHandler.onSendIceCandidate(participantId, endpointName,
+		this.roomHandler.onIceCandidate(name, participantId, endpointName,
 				candidate);
 	}
 
 	public void sendMediaError(String participantId, String description) {
-		this.roomEventHandler.onParticipantMediaError(participantId,
-				description);
+		this.roomHandler.onMediaElementError(name, participantId, description);
 	}
 
 	public boolean isClosed() {
@@ -275,9 +274,9 @@ public class Room {
 	}
 
 	private void checkClosed() {
-		if (closed) {
-			throw new KurentoException("The room '" + name + "' is closed");
-		}
+		if (closed)
+			throw new RoomException(Code.ROOM_CLOSED_ERROR_CODE, "The room '"
+					+ name + "' is closed");
 	}
 
 	private void removeParticipant(Participant participant) {

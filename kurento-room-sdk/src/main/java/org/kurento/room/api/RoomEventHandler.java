@@ -16,7 +16,6 @@ package org.kurento.room.api;
 
 import java.util.Set;
 
-import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaElement;
 import org.kurento.room.RoomManager;
 import org.kurento.room.api.pojo.ParticipantRequest;
@@ -30,7 +29,7 @@ import org.kurento.room.exception.RoomException;
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public interface RoomEventHandler {
+public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
@@ -192,19 +191,6 @@ public interface RoomEventHandler {
 	void onRecvIceCandidate(ParticipantRequest request, RoomException error);
 
 	/**
-	 * Called when a new {@link IceCandidate} is gathered for the local WebRTC
-	 * endpoint. The user should receive a notification with all the provided
-	 * information so that the candidate is added to the remote WebRTC peer.
-	 * 
-	 * @param participantId identifier of the participant
-	 * @param endpointName String the identifier of the local WebRTC endpoint
-	 *        (created in the server)
-	 * @param candidate the gathered {@link IceCandidate}
-	 */
-	void onSendIceCandidate(String participantId, String endpointName,
-			IceCandidate candidate);
-
-	/**
 	 * Called as a result of {@link RoomManager#closeRoom(String)} or
 	 * {@link RoomManager#evictParticipant(String)} - server domain methods, not
 	 * as a consequence of a room API request. All resources on the server,
@@ -216,21 +202,4 @@ public interface RoomEventHandler {
 	 * @param participantIds identifiers of the participants in the room
 	 */
 	void onRoomClosed(String roomName, Set<String> participantIds);
-
-	/**
-	 * Called as a result of an error intercepted on the media pipeline. The
-	 * affected participants should be notified.
-	 * @param roomName the room where the error occurred
-	 * @param participantIds the participants identifiers
-	 * @param description description of the error
-	 */
-	void onPipelineError(String roomName, Set<String> participantIds, String description);
-
-	/**
-	 * Called as a result of an error intercepted on a media element of a
-	 * participant. The participant should be notified.
-	 * @param participantId identifier of the participant
-	 * @param description description of the error
-	 */
-	void onParticipantMediaError(String participantId, String description);
 }

@@ -126,6 +126,16 @@ public class RoomManager {
 					userName, roomName, e);
 			roomEventHandler.onParticipantJoined(request, roomName, userName,
 					null, e);
+		} catch (AdminException e) {
+			log.warn("PARTICIPANT {}: Error joining/creating room {}",
+					userName, roomName, e);
+			roomEventHandler.onParticipantJoined(
+					request,
+					roomName,
+					userName,
+					null,
+					new RoomException(Code.ROOM_NOT_FOUND_ERROR_CODE, e
+							.getMessage()));
 		}
 	}
 

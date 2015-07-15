@@ -70,7 +70,7 @@ public class JsonRpcUserControl {
 		boolean doLoopback =
 				getBooleanParam(request,
 						JsonRpcProtocolElements.PUBLISH_VIDEO_DOLOOPBACK_PARAM);
-		
+
 		roomManager.publishMedia(participantRequest, sdpOffer, doLoopback);
 	}
 
@@ -117,7 +117,7 @@ public class JsonRpcUserControl {
 	}
 
 	public void leaveRoom(Transaction transaction, Request<JsonObject> request,
-			ParticipantRequest participantRequest) {
+			ParticipantRequest participantRequest) throws AdminException {
 		boolean exists = false;
 		String pid = participantRequest.getParticipantId();
 		// trying with room info from session
@@ -190,7 +190,7 @@ public class JsonRpcUserControl {
 		roomManager
 				.sendMessage(message, userName, roomName, participantRequest);
 	}
-	
+
 	public void customRequest(Transaction transaction,
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
 		throw new RuntimeException("Unsupported method");
@@ -222,7 +222,7 @@ public class JsonRpcUserControl {
 					+ "' is missing");
 		return request.getParams().get(key).getAsInt();
 	}
-	
+
 	protected boolean getBooleanParam(Request<JsonObject> request, String key) {
 		if (request.getParams() == null || request.getParams().get(key) == null)
 			throw new RuntimeException("Request element '" + key

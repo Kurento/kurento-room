@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2015 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 package org.kurento.room.internal;
@@ -37,18 +36,20 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 
 	public static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
 	public static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
-	public static final String PARTICIPANT_PUBLISHED_METHOD = "participantPublished";
-	public static final String PARTICIPANT_UNPUBLISHED_METHOD = "participantUnpublished";
+	public static final String PARTICIPANT_PUBLISHED_METHOD =
+			"participantPublished";
+	public static final String PARTICIPANT_UNPUBLISHED_METHOD =
+			"participantUnpublished";
 	public static final String PARTICIPANT_SEND_MESSAGE_METHOD = "sendMessage";
 	public static final String ROOM_CLOSED_METHOD = "roomClosed";
 	public static final String MEDIA_ERROR_METHOD = "mediaError";
-	
+
 	public static final String ICE_CANDIDATE_METHOD = "iceCandidate";
 	public static final String ON_ICE_EP_NAME_PARAM = "endpointName";
 	public static final String ON_ICE_CANDIDATE_PARAM = "candidate";
 	public static final String ON_ICE_SDP_MID_PARAM = "sdpMid";
 	public static final String ON_ICE_SDP_M_LINE_INDEX_PARAM = "sdpMLineIndex";
-	
+
 	private UserNotificationService notifService;
 
 	public DefaultRoomEventHandler(UserNotificationService notifService) {
@@ -69,9 +70,9 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 	}
 
 	@Override
-	public void onParticipantJoined(ParticipantRequest request, String roomName,
-			String newUserName, Set<UserParticipant> existingParticipants,
-			RoomException error) {
+	public void onParticipantJoined(ParticipantRequest request,
+			String roomName, String newUserName,
+			Set<UserParticipant> existingParticipants, RoomException error) {
 		if (error != null) {
 			notifService.sendErrorResponse(request, null, error);
 			return;
@@ -100,7 +101,8 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 
 	@Override
 	public void onParticipantLeft(ParticipantRequest request, String roomName,
-			String userName, Set<String> remainingParticipantIds, RoomException error) {
+			String userName, Set<String> remainingParticipantIds,
+			RoomException error) {
 		if (error != null) {
 			notifService.sendErrorResponse(request, null, error);
 			return;
@@ -110,7 +112,7 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 		params.addProperty("name", userName);
 		for (String pid : remainingParticipantIds)
 			notifService.sendNotification(pid, PARTICIPANT_LEFT_METHOD, params);
-		
+
 		notifService.sendResponse(request, new JsonObject());
 		notifService.closeSession(request);
 	}
@@ -152,7 +154,7 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 			return;
 		}
 		notifService.sendResponse(request, new JsonObject());
-		
+
 		JsonObject params = new JsonObject();
 		params.addProperty("name", publisherName);
 
@@ -163,7 +165,7 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 				notifService.sendNotification(pid,
 						PARTICIPANT_UNPUBLISHED_METHOD, params);
 	}
-	
+
 	@Override
 	public void onSubscribe(ParticipantRequest request, String sdpAnswer,
 			RoomException error) {
@@ -175,7 +177,7 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 		result.addProperty("sdpAnswer", sdpAnswer);
 		notifService.sendResponse(request, result);
 	}
-	
+
 	@Override
 	public void onUnsubscribe(ParticipantRequest request, RoomException error) {
 		if (error != null) {
@@ -217,16 +219,16 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 	}
 
 	@Override
-	public void onSendIceCandidate(String participantId, String endpointName,
-			IceCandidate candidate) {
+	public void onIceCandidate(String roomName, String participantId,
+			String endpointName, IceCandidate candidate) {
 		JsonObject params = new JsonObject();
 		params.addProperty(ON_ICE_EP_NAME_PARAM, endpointName);
 		params.addProperty(ON_ICE_SDP_M_LINE_INDEX_PARAM,
 				candidate.getSdpMLineIndex());
 		params.addProperty(ON_ICE_SDP_MID_PARAM, candidate.getSdpMid());
 		params.addProperty(ON_ICE_CANDIDATE_PARAM, candidate.getCandidate());
-		notifService.sendNotification(participantId,
-				ICE_CANDIDATE_METHOD, params);
+		notifService.sendNotification(participantId, ICE_CANDIDATE_METHOD,
+				params);
 	}
 
 	@Override
@@ -239,10 +241,12 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 	}
 
 	@Override
-	public void onParticipantMediaError(String participantId, String description) {
+	public void onMediaElementError(String roomName, String participantId,
+			String description) {
 		JsonObject notifParams = new JsonObject();
 		notifParams.addProperty("error", description);
-		notifService.sendNotification(participantId, MEDIA_ERROR_METHOD, notifParams);
+		notifService.sendNotification(participantId, MEDIA_ERROR_METHOD,
+				notifParams);
 	}
 
 }
