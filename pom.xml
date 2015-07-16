@@ -1,60 +1,76 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.kurento</groupId>
-        <artifactId>kurento-parent-pom</artifactId>
-        <version>6.0.1-SNAPSHOT</version>
-    </parent>
+	<parent>
+		<groupId>org.kurento</groupId>
+		<artifactId>kurento-parent-pom</artifactId>
+		<version>6.0.1-SNAPSHOT</version>
+	</parent>
 
-    <artifactId>kurento-room</artifactId>
-    <packaging>pom</packaging>
+	<artifactId>kurento-room</artifactId>
+	<packaging>pom</packaging>
 
-    <name>Kurento Room</name>
-    <description>
+	<name>Kurento Room</name>
+	<description>
         Kurento Room modules: sdk, client, server, demo and test
     </description>
-    <url>http://www.kurento.org/docs/${project.version}</url>
+	<url>http://www.kurento.org/docs/${project.version}</url>
 
-    <licenses>
-        <license>
-            <name>GNU Lesser General Public License</name>
-            <url>http://www.gnu.org/licenses/lgpl-2.1.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
+	<licenses>
+		<license>
+			<name>GNU Lesser General Public License</name>
+			<url>http://www.gnu.org/licenses/lgpl-2.1.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 
-    <organization>
-        <name>Kurento</name>
-        <url>http://www.kurento.org</url>
-    </organization>
+	<organization>
+		<name>Kurento</name>
+		<url>http://www.kurento.org</url>
+	</organization>
 
-    <scm>
-        <url>${kurento-room.scm.url}</url>
-        <connection>scm:git:${kurento-room.scm.connection}</connection>
-        <developerConnection>scm:git:${kurento-room.scm.connection}</developerConnection>
-        <tag>develop</tag>
-    </scm>
+	<scm>
+		<url>${kurento-room.scm.url}</url>
+		<connection>scm:git:${kurento-room.scm.connection}</connection>
+		<developerConnection>scm:git:${kurento-room.scm.connection}</developerConnection>
+		<tag>develop</tag>
+	</scm>
 
-    <developers>
-        <developer>
-            <id>kurento.org</id>
-            <name>-kurento.org Community</name>
-            <organization>Kurento.org</organization>
-            <organizationUrl>http://www.kurento.org</organizationUrl>
-        </developer>
-    </developers>
+	<developers>
+		<developer>
+			<id>kurento.org</id>
+			<name>-kurento.org Community</name>
+			<organization>Kurento.org</organization>
+			<organizationUrl>http://www.kurento.org</organizationUrl>
+		</developer>
+	</developers>
 
 	<properties>
 		<kurento-room.scm.url>https://github.com/Kurento/kurento-room</kurento-room.scm.url>
 		<kurento-room.scm.connection>git@github.com:Kurento/kurento-room.git</kurento-room.scm.connection>
 	</properties>
 
-    <modules>
-    	<module>kurento-room-sdk</module>
-        <module>kurento-room-server</module>
-        <module>kurento-room-demo</module>
-        <module>kurento-room-test</module>
-    </modules>
+	<profiles>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>kurento-room-sdk</module>
+				<module>kurento-room-server</module>
+				<module>kurento-room-demo</module>
+				<module>kurento-room-test</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>deploy</id>
+			<modules>
+				<module>kurento-room-sdk</module>
+				<module>kurento-room-server</module>
+			</modules>
+		</profile>
+	</profiles>
 
 </project>
