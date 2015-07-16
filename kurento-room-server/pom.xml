@@ -30,12 +30,12 @@
 		<url>http://www.kurento.org</url>
 	</organization>
 
-	<scm>
-		<url>${kurento-java.scm.url}</url>
-		<connection>scm:git:${kurento-java.scm.connection}</connection>
-		<developerConnection>scm:git:${kurento-java.scm.connection}</developerConnection>
-		<tag>develop</tag>
-	</scm>
+    <scm>
+        <url>${kurento-room.scm.url}</url>
+        <connection>scm:git:${kurento-room.scm.connection}</connection>
+        <developerConnection>scm:git:${kurento-room.scm.connection}</developerConnection>
+        <tag>develop</tag>
+    </scm>
 
 	<developers>
 		<developer>
@@ -46,32 +46,9 @@
 		</developer>
 	</developers>
 
-	<properties>
-		<!-- Main class -->
-        <start-class>org.kurento.room.demo.KurentoRoomServerApp</start-class>
-	</properties>
-
 	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<mainClass>${start-class}</mainClass>
-					<layout>ZIP</layout>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>repackage</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-
-        <resources>
-            <resource>
+		<resources>
+			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>false</filtering>
 			</resource>
@@ -93,10 +70,6 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-jsonrpc-server</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.kurento</groupId>
-			<artifactId>kurento-client</artifactId>
 		</dependency>
 	</dependencies>
 

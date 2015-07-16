@@ -30,9 +30,9 @@
     </organization>
 
     <scm>
-        <url>${kurento-java.scm.url}</url>
-        <connection>scm:git:${kurento-java.scm.connection}</connection>
-        <developerConnection>scm:git:${kurento-java.scm.connection}</developerConnection>
+        <url>${kurento-room.scm.url}</url>
+        <connection>scm:git:${kurento-room.scm.connection}</connection>
+        <developerConnection>scm:git:${kurento-room.scm.connection}</developerConnection>
         <tag>develop</tag>
     </scm>
 
@@ -44,6 +44,11 @@
             <organizationUrl>http://www.kurento.org</organizationUrl>
         </developer>
     </developers>
+
+	<properties>
+		<kurento-room.scm.url>https://github.com/Kurento/kurento-room</kurento-room.scm.url>
+		<kurento-room.scm.connection>git@github.com:Kurento/kurento-room.git</kurento-room.scm.connection>
+	</properties>
 
     <modules>
     	<module>kurento-room-sdk</module>

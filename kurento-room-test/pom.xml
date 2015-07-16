@@ -32,12 +32,12 @@
 		<url>http://www.kurento.org</url>
 	</organization>
 
-	<scm>
-		<url>${kurento-java.scm.url}</url>
-		<connection>scm:git:${kurento-java.scm.connection}</connection>
-		<developerConnection>scm:git:${kurento-java.scm.connection}</developerConnection>
-		<tag>develop</tag>
-	</scm>
+    <scm>
+        <url>${kurento-room.scm.url}</url>
+        <connection>scm:git:${kurento-room.scm.connection}</connection>
+        <developerConnection>scm:git:${kurento-room.scm.connection}</developerConnection>
+        <tag>develop</tag>
+    </scm>
 
 	<developers>
 		<developer>
@@ -47,6 +47,11 @@
 			<organizationUrl>http://www.kurento.org</organizationUrl>
 		</developer>
 	</developers>
+
+	<properties>
+		<!-- Main class -->
+		<start-class>org.kurento.room.KurentoRoomTestApp</start-class>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -124,10 +129,32 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>${start-class}</mainClass>
+					<layout>ZIP</layout>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
 				<executions>
 					<execution>
+						<id>java</id>
+						<goals>
+							<goal>java</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>bower</id>
 						<phase>generate-sources</phase>
 						<goals>
 							<goal>exec</goal>
@@ -140,6 +167,9 @@
 						</configuration>
 					</execution>
 				</executions>
+				<configuration>
+					<mainClass>${start-class}</mainClass>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -152,13 +182,18 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<configuration>
-					<!-- <excludes> execute only IT tests from suites
-						<exclude>**/*Test.java</exclude>
-					</excludes> -->
+					<!-- execute only IT tests from suites -->
+					<!--
+						<excludes> 
+							<exclude>**/*Test.java</exclude> 
+						</excludes>
+					-->
 					<includes>
-						<!-- <include>**/RoomDemoSimpleTestSuite.java</include>
-						<include>**/RoomDemoTestSuite.java</include>
-						<include>**/RoomBasicTestSuite.java</include> -->
+						<!-- 
+							<include>**/RoomDemoSimpleTestSuite.java</include> 
+							<include>**/RoomDemoTestSuite.java</include> 
+							<include>**/RoomBasicTestSuite.java</include> 
+						-->
 						<include>**/*Test.java</include>
 					</includes>
 				</configuration>
