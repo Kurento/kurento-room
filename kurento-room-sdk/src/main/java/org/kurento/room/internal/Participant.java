@@ -25,6 +25,7 @@ import org.kurento.client.ErrorEvent;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
+import org.kurento.client.MediaType;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
 import org.kurento.room.endpoint.PublisherEndpoint;
@@ -70,8 +71,7 @@ public class Participant {
 
 		for (Participant other : room.getParticipants())
 			if (!other.getName().equals(this.name))
-				subscribers.put(other.getName(), new SubscriberEndpoint(this,
-						other.getName(), pipeline));
+				addSubscriber(other.getName());
 	}
 
 	public void createPublishingEndpoint() {
@@ -87,6 +87,13 @@ public class Participant {
 
 	public String getName() {
 		return name;
+	}
+
+	public void shapePublisherMedia(MediaElement element, MediaType type) {
+		if (type == null)
+			this.publisher.apply(element);
+		else
+			this.publisher.apply(element, type);
 	}
 
 	public PublisherEndpoint getPublisher() {

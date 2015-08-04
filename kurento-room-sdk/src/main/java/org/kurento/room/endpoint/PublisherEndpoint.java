@@ -24,6 +24,7 @@ import org.kurento.client.Continuation;
 import org.kurento.client.ListenerSubscription;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
+import org.kurento.client.MediaType;
 import org.kurento.client.PassThrough;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.exception.RoomException;
@@ -113,7 +114,16 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 
 	@Override
 	public synchronized String apply(MediaElement shaper) throws RoomException {
+		return apply(shaper, null);
+	}
+
+	@Override
+	public String apply(MediaElement shaper, MediaType type)
+			throws RoomException {
 		String id = shaper.getId();
+		if (id == null)
+			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+					"Unable to connect media element with null id");
 		if (elements.containsKey(id))
 			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
 					"This endpoint already has a media element with id " + id);
@@ -122,10 +132,10 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			first = elements.get(elementIds.getFirst());
 		if (connected) {
 			if (first != null)
-				internalSinkConnect(first, shaper);
+				internalSinkConnect(first, shaper, type);
 			else
-				internalSinkConnect(endpoint, shaper);
-			internalSinkConnect(shaper, passThru);
+				internalSinkConnect(endpoint, shaper, type);
+			internalSinkConnect(shaper, passThru, type);
 		}
 		elementIds.addFirst(id);
 		elements.put(id, shaper);
@@ -145,6 +155,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		unregisterElementErrListener(element,
 				elementsErrorSubscriptions.remove(elementId));
 
+		// careful, the order in the elems list is reverted
 		if (connected) {
 			String nextId = getNext(elementId);
 			String prevId = getPrevious(elementId);
@@ -212,19 +223,57 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		connected = true;
 	}
 
-	private void internalSinkConnect(MediaElement source, MediaElement sink) {
+	private void internalSinkConnect(final MediaElement source,
+			final MediaElement sink) {
 		source.connect(sink, new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {
-				log.trace("EP {}: Elements have been connected",
-						getEndpointName());
+				log.debug(
+						"EP {}: Elements have been connected (source {} -> sink {})",
+						getEndpointName(), source.getId(), sink.getId());
 			}
 
 			@Override
 			public void onError(Throwable cause) throws Exception {
-				log.warn("EP {}: Failed to connect media elements",
-						getEndpointName(), cause);
+				log.warn(
+						"EP {}: Failed to connect media elements (source {} -> sink {})",
+						getEndpointName(), source.getId(), sink.getId(), cause);
 			}
 		});
+	}
+
+	/**
+	 * Same as {@link #internalSinkConnect(MediaElement, MediaElement)}, but can
+	 * specify the type of the media that will be streamed.
+	 * 
+	 * @see #internalSinkConnect(MediaElement, MediaElement)
+	 * @param source
+	 * @param sink
+	 * @param type if null,
+	 *        {@link #internalSinkConnect(MediaElement, MediaElement)} will be
+	 *        used instead
+	 */
+	private void internalSinkConnect(final MediaElement source,
+			final MediaElement sink, final MediaType type) {
+		if (type == null)
+			internalSinkConnect(source, sink);
+		else
+			source.connect(sink, type, new Continuation<Void>() {
+				@Override
+				public void onSuccess(Void result) throws Exception {
+					log.debug(
+							"EP {}: {} media elements have been connected (source {} -> sink {})",
+							getEndpointName(), type, source.getId(),
+							sink.getId());
+				}
+
+				@Override
+				public void onError(Throwable cause) throws Exception {
+					log.warn(
+							"EP {}: Failed to connect {} media elements (source {} -> sink {})",
+							getEndpointName(), type, source.getId(),
+							sink.getId(), cause);
+				}
+			});
 	}
 }

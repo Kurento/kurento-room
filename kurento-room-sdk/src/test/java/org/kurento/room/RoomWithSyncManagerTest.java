@@ -20,9 +20,11 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -37,6 +39,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
@@ -48,8 +55,10 @@ import org.junit.runner.RunWith;
 import org.kurento.client.Continuation;
 import org.kurento.client.ErrorEvent;
 import org.kurento.client.EventListener;
+import org.kurento.client.FaceOverlayFilter;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.KurentoClient;
+import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.OnIceCandidateEvent;
 import org.kurento.client.PassThrough;
@@ -106,6 +115,8 @@ public class RoomWithSyncManagerTest {
 	private WebRtcEndpoint.Builder webRtcBuilder;
 	@Captor
 	private ArgumentCaptor<Continuation<WebRtcEndpoint>> webRtcCaptor;
+	@Captor
+	private ArgumentCaptor<Continuation<Void>> webRtcConnectCaptor;
 
 	@Mock
 	private PassThrough.Builder passThruBuilder;
@@ -114,6 +125,14 @@ public class RoomWithSyncManagerTest {
 	private WebRtcEndpoint endpoint;
 	@Mock
 	private PassThrough passThru;
+
+	@Mock
+	private FaceOverlayFilter.Builder faceFilterBuilder;
+	@Mock
+	private FaceOverlayFilter faceFilter;
+	@Captor
+	private ArgumentCaptor<Continuation<Void>> faceFilterConnectCaptor;
+
 	@Captor
 	private ArgumentCaptor<EventListener<OnIceCandidateEvent>> iceEventCaptor;
 	@Captor
@@ -188,7 +207,47 @@ public class RoomWithSyncManagerTest {
 			fail(e.getMessage());
 		}
 
+		// mock the SDP answer when processing the offer on the endpoint
 		when(endpoint.processOffer(anyString())).thenReturn(SDP_ANSWER);
+
+		// call onSuccess when connecting the WebRtc endpoint to any media
+		// filter
+		doAnswer(new Answer<Continuation<Void>>() {
+			@Override
+			public Continuation<Void> answer(InvocationOnMock invocation)
+					throws Throwable {
+				webRtcConnectCaptor.getValue().onSuccess(null);
+				return null;
+			}
+		}).when(endpoint).connect(any(MediaElement.class),
+				webRtcConnectCaptor.capture());
+
+
+		try { // mock the constructor for the face filter builder
+			whenNew(FaceOverlayFilter.Builder.class).withArguments(pipeline)
+					.thenReturn(faceFilterBuilder);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		// using the sync version to build the face filter
+		when(faceFilterBuilder.build()).thenReturn(faceFilter);
+
+		// call onSuccess when connecting the face filter to any media element
+		doAnswer(new Answer<Continuation<Void>>() {
+			@Override
+			public Continuation<Void> answer(InvocationOnMock invocation)
+					throws Throwable {
+				faceFilterConnectCaptor.getValue().onSuccess(null);
+				return null;
+			}
+		}).when(faceFilter).connect(any(MediaElement.class),
+				faceFilterConnectCaptor.capture());
+
+		when(pipeline.getId()).thenReturn("mocked-pipeline");
+		when(endpoint.getId()).thenReturn("mocked-webrtc-endpoint");
+		when(passThru.getId()).thenReturn("mocked-pass-through");
+		when(faceFilter.getId()).thenReturn("mocked-faceoverlay-filter");
 
 		for (int i = 0; i < USERS; i++) {
 			users[i] = "user" + i;
@@ -338,6 +397,119 @@ public class RoomWithSyncManagerTest {
 				assertEquals("SDP answer doesn't match", SDP_ANSWER,
 						manager.subscribe(users[0], SDP_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
+
+		Set<UserParticipant> remainingUsers = manager.leaveRoom(participantId0);
+		Set<UserParticipant> roomParticipants = manager.getParticipants(roomx);
+		assertEquals(roomParticipants, remainingUsers);
+		assertThat(roomParticipants,
+				not(hasItem(usersParticipants.get(users[0]))));
+		assertThat(manager.getPublishers(roomx).size(), is(0));
+
+		// peers are automatically unsubscribed
+		assertThat(manager.getSubscribers(roomx).size(), is(0));
+	}
+
+	@Test
+	public void addMediaFilterInParallel() throws AdminException,
+			InterruptedException, ExecutionException {
+		joinManyUsersOneRoom();
+
+		final FaceOverlayFilter filter =
+				new FaceOverlayFilter.Builder(pipeline).build();
+		assertNotNull("FaceOverlayFiler is null", filter);
+		assertThat(
+				"Filter returned by the builder is not the same as the mocked one",
+				filter, is(faceFilter));
+
+		final String participantId0 = usersParticipantIds.get(users[0]);
+
+		ExecutorService threadPool = Executors.newFixedThreadPool(1);
+		ExecutorCompletionService<Void> exec =
+				new ExecutorCompletionService<>(threadPool);
+		exec.submit(new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				System.out.println("Starting execution of addMediaElement");
+				manager.addMediaElement(participantId0, filter);
+				return null;
+			}
+		});
+
+		Thread.sleep(10);
+
+		assertEquals("SDP answer doesn't match", SDP_ANSWER,
+				manager.publishMedia(participantId0, SDP_OFFER, false));
+
+		assertThat(manager.getPublishers(roomx).size(), is(1));
+
+		boolean firstSubscriber = true;
+		for (String pid : usersParticipantIds.values()) {
+			if (pid.equals(participantId0))
+				continue;
+			assertEquals("SDP answer doesn't match", SDP_ANSWER,
+					manager.subscribe(users[0], SDP_OFFER, pid));
+			if (firstSubscriber) {
+				firstSubscriber = false;
+				try {
+					exec.take().get();
+					System.out
+							.println("Execution of addMediaElement ended (just after first peer subscribed)");
+				} finally {
+					threadPool.shutdownNow();
+				}
+			}
+		}
+		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
+
+		verify(faceFilter, times(1)).connect(passThru,
+				faceFilterConnectCaptor.getValue());
+		verify(endpoint, times(1)).connect(faceFilter,
+				webRtcConnectCaptor.getValue());
+
+		Set<UserParticipant> remainingUsers = manager.leaveRoom(participantId0);
+		Set<UserParticipant> roomParticipants = manager.getParticipants(roomx);
+		assertEquals(roomParticipants, remainingUsers);
+		assertThat(roomParticipants,
+				not(hasItem(usersParticipants.get(users[0]))));
+		assertThat(manager.getPublishers(roomx).size(), is(0));
+
+		// peers are automatically unsubscribed
+		assertThat(manager.getSubscribers(roomx).size(), is(0));
+	}
+
+	@Test
+	public void addMediaFilterBeforePublishing() throws AdminException,
+			InterruptedException, ExecutionException {
+		joinManyUsersOneRoom();
+
+		final FaceOverlayFilter filter =
+				new FaceOverlayFilter.Builder(pipeline).build();
+		assertNotNull("FaceOverlayFiler is null", filter);
+		assertThat(
+				"Filter returned by the builder is not the same as the mocked one",
+				filter, is(faceFilter));
+
+		final String participantId0 = usersParticipantIds.get(users[0]);
+
+		System.out.println("Starting execution of addMediaElement");
+		manager.addMediaElement(participantId0, filter);
+		System.out.println("Execution of addMediaElement ended");
+
+		assertEquals("SDP answer doesn't match", SDP_ANSWER,
+				manager.publishMedia(participantId0, SDP_OFFER, false));
+
+		assertThat(manager.getPublishers(roomx).size(), is(1));
+
+		for (String pid : usersParticipantIds.values())
+			if (!pid.equals(participantId0))
+				assertEquals("SDP answer doesn't match", SDP_ANSWER,
+						manager.subscribe(users[0], SDP_OFFER, pid));
+		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
+
+		verify(faceFilter, times(1)).connect(passThru,
+				faceFilterConnectCaptor.getValue());
+		verify(endpoint, times(1)).connect(faceFilter,
+				webRtcConnectCaptor.getValue());
 
 		Set<UserParticipant> remainingUsers = manager.leaveRoom(participantId0);
 		Set<UserParticipant> roomParticipants = manager.getParticipants(roomx);
