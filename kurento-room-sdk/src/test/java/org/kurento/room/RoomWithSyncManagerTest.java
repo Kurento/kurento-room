@@ -382,6 +382,31 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
+	public void getPublisherEndpoint() throws AdminException,
+			InterruptedException {
+		joinManyUsersOneRoom();
+
+		final String participantId0 = usersParticipantIds.get(users[0]);
+
+		// exception.expect(AdminException.class);
+		// exception.expectMessage(containsString("Timeout reached while "
+		// + "waiting for publisher endpoint to be ready"));
+		// manager.getPublishEndpoint(participantId0);
+
+		assertEquals("SDP answer doesn't match", SDP_ANSWER,
+				manager.publishMedia(participantId0, SDP_OFFER, false));
+
+		assertThat(manager.getPublishers(roomx).size(), is(1));
+
+		WebRtcEndpoint ep = manager.getPublishEndpoint(participantId0);
+		assertThat("Publish endpoint is not the mocked instance", ep,
+				is(endpoint));
+
+		manager.unpublishMedia(participantId0);
+		assertThat(manager.getPublishers(roomx).size(), is(0));
+	}
+
+	@Test
 	public void publishAndLeave() throws AdminException {
 		joinManyUsersOneRoom();
 
