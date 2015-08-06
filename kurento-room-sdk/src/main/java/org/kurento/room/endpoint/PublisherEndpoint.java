@@ -98,18 +98,21 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 	 * @param sdpString offer or answer from the remote peer
 	 * @param doLoopback loopback flag
 	 * @param loopbackAlternativeSrc alternative loopback source
+	 * @param loopbackConnectionType how to connect the loopback source
 	 * @return the SDP response (the answer if processing an offer SDP,
 	 *         otherwise is the updated offer generated previously by this
 	 *         endpoint)
 	 */
 	public synchronized String publish(SdpType sdpType, String sdpString,
-			boolean doLoopback, MediaElement loopbackAlternativeSrc) {
+			boolean doLoopback, MediaElement loopbackAlternativeSrc,
+			MediaType loopbackConnectionType) {
 		registerOnIceCandidateEventListener();
 		if (doLoopback) {
 			if (loopbackAlternativeSrc == null)
-				connect(endpoint);
+				connect(endpoint, loopbackConnectionType);
 			else
-				connectAltLoopbackSrc(loopbackAlternativeSrc);
+				connectAltLoopbackSrc(loopbackAlternativeSrc,
+						loopbackConnectionType);
 		}
 		String sdpResponse = null;
 		switch (sdpType) {
@@ -131,16 +134,24 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		return generateOffer();
 	}
 
-	private void connectAltLoopbackSrc(MediaElement loopbackAlternativeSrc) {
+	private void connectAltLoopbackSrc(MediaElement loopbackAlternativeSrc,
+			MediaType loopbackConnectionType) {
 		if (!connected)
 			innerConnect();
-		internalSinkConnect(loopbackAlternativeSrc, endpoint);
+		internalSinkConnect(loopbackAlternativeSrc, endpoint,
+				loopbackConnectionType);
 	}
 
 	public synchronized void connect(MediaElement other) {
 		if (!connected)
 			innerConnect();
 		internalSinkConnect(passThru, other);
+	}
+
+	public synchronized void connect(MediaElement other, MediaType type) {
+		if (!connected)
+			innerConnect();
+		internalSinkConnect(passThru, other, type);
 	}
 
 	@Override

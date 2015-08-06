@@ -157,7 +157,8 @@ public class Participant {
 	}
 
 	public String publishToRoom(SdpType sdpType, String sdpString,
-			boolean doLoopback, MediaElement loopbackAlternativeSrc) {
+			boolean doLoopback, MediaElement loopbackAlternativeSrc,
+			MediaType loopbackConnectionType) {
 		log.info("USER {}: Request to publish video in room {} (sdp type {})",
 				this.name, this.room.getName(), sdpType);
 		log.trace("USER {}: Publishing Sdp ({}) is {}", this.name, sdpType,
@@ -165,7 +166,7 @@ public class Participant {
 
 		String sdpResponse =
 				this.getPublisher().publish(sdpType, sdpString, doLoopback,
-						loopbackAlternativeSrc);
+						loopbackAlternativeSrc, loopbackConnectionType);
 		this.streaming = true;
 
 		log.trace("USER {}: Publishing Sdp ({}) is {}", this.name, sdpType,

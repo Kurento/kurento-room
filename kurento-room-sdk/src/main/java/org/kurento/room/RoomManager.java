@@ -223,7 +223,7 @@ public class RoomManager {
 
 			String sdpAnswer =
 					participant.publishToRoom(SdpType.OFFER, sdpOffer,
-							doLoopback, null);
+							doLoopback, null, null);
 			if (sdpAnswer != null)
 				roomEventHandler.onPublishMedia(request, name, sdpAnswer,
 						room.getParticipantIds(), null);
