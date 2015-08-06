@@ -263,6 +263,36 @@ public abstract class IceWebRtcEndpoint {
 	}
 
 	/**
+	 * Orders the internal {@link WebRtcEndpoint} to generate the offer String
+	 * that can be used to initiate a connection.
+	 * 
+	 * @see WebRtcEndpoint#generateOffer()
+	 * @return the Sdp offer
+	 */
+	protected String generateOffer() {
+		if (endpoint == null)
+			throw new KurentoException(
+					"Can't generate offer when WebRtcEndpoint is null (ep: "
+							+ endpointName + ")");
+		return endpoint.generateOffer();
+	}
+
+	/**
+	 * Orders the internal {@link WebRtcEndpoint} to process the answer String.
+	 * 
+	 * @see WebRtcEndpoint#processAnswer(String)
+	 * @param answer String with the Sdp answer from remote
+	 * @return the updated Sdp offer, based on the received answer
+	 */
+	protected String processAnswer(String answer) {
+		if (endpoint == null)
+			throw new KurentoException(
+					"Can't process answer when WebRtcEndpoint is null (ep: "
+							+ endpointName + ")");
+		return endpoint.processAnswer(answer);
+	}
+
+	/**
 	 * Instructs the internal {@link WebRtcEndpoint} to start gathering
 	 * {@link IceCandidate}s.
 	 */

@@ -31,6 +31,7 @@ import org.kurento.room.api.RoomEventHandler;
 import org.kurento.room.api.UserNotificationService;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
+import org.kurento.room.endpoint.SdpType;
 import org.kurento.room.exception.AdminException;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
@@ -220,7 +221,9 @@ public class RoomManager {
 			for (MediaElement elem : mediaElements)
 				participant.getPublisher().apply(elem);
 
-			String sdpAnswer = participant.publishToRoom(sdpOffer, doLoopback);
+			String sdpAnswer =
+					participant.publishToRoom(SdpType.OFFER, sdpOffer,
+							doLoopback);
 			if (sdpAnswer != null)
 				roomEventHandler.onPublishMedia(request, name, sdpAnswer,
 						room.getParticipantIds(), null);

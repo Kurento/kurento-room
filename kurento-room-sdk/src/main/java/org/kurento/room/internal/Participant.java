@@ -29,6 +29,7 @@ import org.kurento.client.MediaType;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
 import org.kurento.room.endpoint.PublisherEndpoint;
+import org.kurento.room.endpoint.SdpType;
 import org.kurento.room.endpoint.SubscriberEndpoint;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
@@ -141,19 +142,37 @@ public class Participant {
 		return subscribedToSet;
 	}
 
-	public String publishToRoom(String sdpOffer, boolean doLoopback) {
-		log.info("USER {}: Request to publish video in room {}", this.name,
-				this.room.getName());
-		log.trace("USER {}: Publishing SdpOffer is {}", this.name, sdpOffer);
 
-		String sdpAnswer = this.getPublisher().publish(sdpOffer, doLoopback);
+	public String preparePublishConnection() {
+		log.info("USER {}: Request to publish video in room {} by "
+				+ "initiating connection from server", this.name,
+				this.room.getName());
+
+		String sdpOffer = this.getPublisher().preparePublishConnection();
+
+		log.trace("USER {}: Publishing SdpOffer is {}", this.name, sdpOffer);
+		log.info("USER {}: Generated Sdp offer for publishing in room {}",
+				this.name, this.room.getName());
+		return sdpOffer;
+	}
+
+	public String publishToRoom(SdpType sdpType, String sdpString,
+			boolean doLoopback) {
+		log.info("USER {}: Request to publish video in room {} (sdp type {})",
+				this.name, this.room.getName(), sdpType);
+		log.trace("USER {}: Publishing Sdp ({}) is {}", this.name, sdpType,
+				sdpString);
+
+		String sdpResponse =
+				this.getPublisher().publish(sdpType, sdpString, doLoopback);
 		this.streaming = true;
 
-		log.trace("USER {}: Publishing SdpAnswer is {}", this.name, sdpAnswer);
+		log.trace("USER {}: Publishing Sdp ({}) is {}", this.name, sdpType,
+				sdpResponse);
 		log.info("USER {}: Is now publishing video in room {}", this.name,
 				this.room.getName());
 
-		return sdpAnswer;
+		return sdpResponse;
 	}
 
 	public void unpublishMedia() {

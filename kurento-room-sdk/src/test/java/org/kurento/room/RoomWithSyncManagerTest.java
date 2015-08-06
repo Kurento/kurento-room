@@ -364,7 +364,7 @@ public class RoomWithSyncManagerTest {
 		String participantId0 = usersParticipantIds.get(users[0]);
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, SDP_OFFER, false));
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -394,7 +394,7 @@ public class RoomWithSyncManagerTest {
 		// manager.getPublishEndpoint(participantId0);
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, SDP_OFFER, false));
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -413,7 +413,7 @@ public class RoomWithSyncManagerTest {
 		String participantId0 = usersParticipantIds.get(users[0]);
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, SDP_OFFER, false));
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -463,7 +463,7 @@ public class RoomWithSyncManagerTest {
 		Thread.sleep(10);
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, SDP_OFFER, false));
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -521,7 +521,7 @@ public class RoomWithSyncManagerTest {
 		System.out.println("Execution of addMediaElement ended");
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, SDP_OFFER, false));
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -554,7 +554,7 @@ public class RoomWithSyncManagerTest {
 		final String participantId0 = usersParticipantIds.get(users[0]);
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, SDP_OFFER, false));
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -627,7 +627,7 @@ public class RoomWithSyncManagerTest {
 		final String participantId0 = usersParticipantIds.get(users[0]);
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, SDP_OFFER, false));
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 

@@ -89,21 +89,41 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 	/**
 	 * Initializes this {@link WebRtcEndpoint} for publishing media. Registers
 	 * an event listener for the ICE candidates, instructs the endpoint to start
-	 * gathering the candidates and processes the SDP offer. If required, it
-	 * connects to itself (after applying the intermediate media elements and
-	 * the {@link PassThrough}) to allow loopback of the media stream.
+	 * gathering the candidates and processes the SDP offer or answer. If
+	 * required, it connects to itself (after applying the intermediate media
+	 * elements and the {@link PassThrough}) to allow loopback of the media
+	 * stream.
 	 * 
-	 * @param sdpOffer offer from the remote peer
+	 * @param sdpType indicates the type of the sdpString (offer or answer)
+	 * @param sdpString offer or answer from the remote peer
 	 * @param doLoopback loopback flag
-	 * @return the SDP answer
+	 * @return the SDP response (the answer if processing an offer SDP,
+	 *         otherwise is the updated offer generated previously by this
+	 *         endpoint)
 	 */
-	public synchronized String publish(String sdpOffer, boolean doLoopback) {
+	public synchronized String publish(SdpType sdpType, String sdpString,
+			boolean doLoopback) {
 		registerOnIceCandidateEventListener();
 		if (doLoopback)
 			connect(endpoint);
-		String sdpAnswer = processOffer(sdpOffer);
+		String sdpResponse = null;
+		switch (sdpType) {
+			case ANSWER:
+				sdpResponse = processAnswer(sdpString);
+				break;
+			case OFFER:
+				sdpResponse = processOffer(sdpString);
+				break;
+			default:
+				throw new RoomException(Code.SDP_ERROR_CODE,
+						"Sdp type not supported: " + sdpType);
+		}
 		gatherCandidates();
-		return sdpAnswer;
+		return sdpResponse;
+	}
+
+	public synchronized String preparePublishConnection() {
+		return generateOffer();
 	}
 
 	public synchronized void connect(MediaElement other) {
