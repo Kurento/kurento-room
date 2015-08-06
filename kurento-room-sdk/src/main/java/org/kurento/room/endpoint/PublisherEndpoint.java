@@ -97,15 +97,20 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 	 * @param sdpType indicates the type of the sdpString (offer or answer)
 	 * @param sdpString offer or answer from the remote peer
 	 * @param doLoopback loopback flag
+	 * @param loopbackAlternativeSrc alternative loopback source
 	 * @return the SDP response (the answer if processing an offer SDP,
 	 *         otherwise is the updated offer generated previously by this
 	 *         endpoint)
 	 */
 	public synchronized String publish(SdpType sdpType, String sdpString,
-			boolean doLoopback) {
+			boolean doLoopback, MediaElement loopbackAlternativeSrc) {
 		registerOnIceCandidateEventListener();
-		if (doLoopback)
-			connect(endpoint);
+		if (doLoopback) {
+			if (loopbackAlternativeSrc == null)
+				connect(endpoint);
+			else
+				connectAltLoopbackSrc(loopbackAlternativeSrc);
+		}
 		String sdpResponse = null;
 		switch (sdpType) {
 			case ANSWER:
@@ -124,6 +129,12 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 
 	public synchronized String preparePublishConnection() {
 		return generateOffer();
+	}
+
+	private void connectAltLoopbackSrc(MediaElement loopbackAlternativeSrc) {
+		if (!connected)
+			innerConnect();
+		internalSinkConnect(loopbackAlternativeSrc, endpoint);
 	}
 
 	public synchronized void connect(MediaElement other) {
