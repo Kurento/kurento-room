@@ -70,6 +70,7 @@ import org.kurento.client.PassThrough;
 import org.kurento.client.ServerManager;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.api.KurentoClientProvider;
+import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.api.RoomHandler;
 import org.kurento.room.api.UserNotificationService;
 import org.kurento.room.api.pojo.UserParticipant;
@@ -190,7 +191,7 @@ public class RoomWithSyncManagerTest {
 	public void setup() {
 		manager = new SyncRoomManager(roomHandler, kcProvider);
 
-		when(kcProvider.getKurentoClient(anyString()))
+		when(kcProvider.getKurentoClient(any(KurentoClientSessionInfo.class)))
 				.thenReturn(kurentoClient);
 		when(kurentoClient.getServerManager()).thenReturn(serverManager);
 
@@ -419,8 +420,13 @@ public class RoomWithSyncManagerTest {
 				roomsUsers.put(room, new ArrayList<String>());
 			roomsUsers.get(room).add(users[i]);
 		}
-		for (String room : roomsUsers.keySet())
-			manager.createRoom(room);
+		for (final String room : roomsUsers.keySet())
+			manager.createRoom(new KurentoClientSessionInfo() {
+				@Override
+				public String getRoomName() {
+					return room;
+				}
+			});
 		for (Entry<String, String> userRoom : usersRooms.entrySet()) {
 			String user = userRoom.getKey();
 			String room = userRoom.getValue();
@@ -1146,7 +1152,12 @@ public class RoomWithSyncManagerTest {
 	private Set<UserParticipant> userJoinRoom(final String room, String user,
 			String pid, boolean createRoomBefore) throws AdminException {
 		if (createRoomBefore)
-			manager.createRoom(room);
+			manager.createRoom(new KurentoClientSessionInfo() {
+				@Override
+				public String getRoomName() {
+					return room;
+				}
+			});
 
 		Set<UserParticipant> existingPeers = manager.joinRoom(user, room, pid);
 

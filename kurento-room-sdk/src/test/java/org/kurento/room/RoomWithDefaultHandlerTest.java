@@ -57,6 +57,7 @@ import org.kurento.client.OnIceCandidateEvent;
 import org.kurento.client.PassThrough;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.api.KurentoClientProvider;
+import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.api.UserNotificationService;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
@@ -148,7 +149,7 @@ public class RoomWithDefaultHandlerTest {
 					throws Throwable {
 				return kurentoClient;
 			}
-		}).when(kcProvider).getKurentoClient(anyString());
+		}).when(kcProvider).getKurentoClient(any(KurentoClientSessionInfo.class));
 
 		// not used anymore, replaced by the Continuation version
 		// when(kurentoClient.createMediaPipeline()).thenAnswer(

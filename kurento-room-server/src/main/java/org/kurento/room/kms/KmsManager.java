@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2015 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 package org.kurento.room.kms;
@@ -22,7 +21,10 @@ import java.util.List;
 
 import org.kurento.client.KurentoClient;
 import org.kurento.room.api.KurentoClientProvider;
+import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.exception.RoomException;
+import org.kurento.room.exception.RoomException.Code;
+import org.kurento.room.internal.DefaultKurentoClientSessionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,16 +60,23 @@ public abstract class KmsManager implements KurentoClientProvider {
 	private Iterator<Kms> usageIterator = null;
 
 	@Override
-	public KurentoClient getKurentoClient(String participantId)
+	public KurentoClient getKurentoClient(KurentoClientSessionInfo sessionInfo)
 			throws RoomException {
-		return getKms(participantId).getKurentoClient();
+		if (!(sessionInfo instanceof DefaultKurentoClientSessionInfo))
+			throw new RoomException(Code.GENERIC_ERROR_CODE,
+					"Unkown session info bean type (expected "
+							+ DefaultKurentoClientSessionInfo.class.getName()
+							+ ")");
+		return getKms((DefaultKurentoClientSessionInfo) sessionInfo)
+				.getKurentoClient();
 	}
 
 	/**
 	 * Returns a {@link Kms} using a round-robin strategy.
-	 * @param participantId session's id
+	 * 
+	 * @param sessionInfo session's id
 	 */
-	public synchronized Kms getKms(String participantId) {
+	public synchronized Kms getKms(DefaultKurentoClientSessionInfo sessionInfo) {
 		if (usageIterator == null || !usageIterator.hasNext())
 			usageIterator = kmss.iterator();
 		return usageIterator.next();

@@ -28,6 +28,7 @@ import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.MediaType;
 import org.kurento.room.api.KurentoClientProvider;
+import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.api.RoomHandler;
 import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.endpoint.SdpType;
@@ -687,19 +688,24 @@ public class SyncRoomManager {
 	}
 
 	/**
-	 * Creates a room if it doesn’t already exist.
+	 * Creates a room if it doesn’t already exist. The room's name will be
+	 * indicated by the session info bean.
 	 * 
-	 * @param roomName name or identifier of the room
+	 * @param sessionInfo bean that will be passed to the
+	 *        {@link KurentoClientProvider} in order to obtain the
+	 *        {@link KurentoClient} that will be used by the room
 	 * @return the created {@link Room}
 	 * @throws AdminException in case of error while creating the room
 	 */
-	public void createRoom(String roomName) throws AdminException {
-		Room room = rooms.get(roomName);
+	public void createRoom(KurentoClientSessionInfo sessionInfo)
+			throws AdminException {
+		String roomName = sessionInfo.getRoomName();
+		Room room = rooms.get(sessionInfo);
 		if (room != null)
 			throw new AdminException("Room '" + roomName + "' already exists");
 		KurentoClient kurentoClient = null;
 		try {
-			kurentoClient = kcProvider.getKurentoClient(null);
+			kurentoClient = kcProvider.getKurentoClient(sessionInfo);
 			room = new Room(roomName, kurentoClient, roomHandler);
 		} catch (RoomException e) {
 			log.warn("Error creating room {}", roomName, e);

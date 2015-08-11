@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2015 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 package org.kurento.room.demo;
@@ -22,6 +21,7 @@ import java.util.regex.Pattern;
 import org.kurento.client.KurentoClient;
 import org.kurento.jsonrpc.Session;
 import org.kurento.room.exception.RoomException;
+import org.kurento.room.internal.DefaultKurentoClientSessionInfo;
 import org.kurento.room.kms.Kms;
 import org.kurento.room.kms.KmsManager;
 import org.kurento.room.kms.MaxWebRtcLoadManager;
@@ -57,19 +57,22 @@ public class FixedNKmsManager extends KmsManager {
 	public synchronized void setAuthRegex(String regex) {
 		this.authRegex = (regex != null ? regex.trim() : null);
 		if (authRegex != null && !authRegex.isEmpty())
-			authPattern = Pattern.compile(authRegex, Pattern.UNICODE_CASE
-					| Pattern.CASE_INSENSITIVE);
+			authPattern =
+					Pattern.compile(authRegex, Pattern.UNICODE_CASE
+							| Pattern.CASE_INSENSITIVE);
 	}
 
 	@Override
-	public synchronized Kms getKms(String participantId) {
+	public synchronized Kms getKms(DefaultKurentoClientSessionInfo sessionInfo) {
 		String userName = null;
+		String participantId = sessionInfo.getParticipantId();
 		Session session = notificationService.getSession(participantId);
 		if (session != null) {
-			Object sessionValue = session.getAttributes().get(
-					ParticipantSession.SESSION_KEY);
+			Object sessionValue =
+					session.getAttributes().get(ParticipantSession.SESSION_KEY);
 			if (sessionValue != null) {
-				ParticipantSession participantSession = (ParticipantSession) sessionValue;
+				ParticipantSession participantSession =
+						(ParticipantSession) sessionValue;
 				userName = participantSession.getParticipantName();
 			}
 		}
@@ -96,6 +99,8 @@ public class FixedNKmsManager extends KmsManager {
 				type = "next ";
 		}
 		if (!kms.allowMoreElements()) {
+			log.debug("Was trying Kms which has no resources left: highQ={}, "
+					+ "{}less loaded KMS, uri={}", hq, type, kms.getUri());
 			throw new RoomException(
 					RoomException.Code.CANNOT_CREATE_ROOM_ERROR_CODE,
 					"No resources left to create new room");
