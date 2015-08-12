@@ -113,7 +113,8 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			else
 				connectAltLoopbackSrc(loopbackAlternativeSrc,
 						loopbackConnectionType);
-		}
+		} else
+			innerConnect();
 		String sdpResponse = null;
 		switch (sdpType) {
 			case ANSWER:

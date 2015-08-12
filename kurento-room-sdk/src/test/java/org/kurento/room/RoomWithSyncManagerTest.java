@@ -520,10 +520,10 @@ public class RoomWithSyncManagerTest {
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
-		// connected without loopback, no internal connection until someone
-		// subscribes
-		verify(endpoint, never()).connect(any(MediaElement.class),
+		// connected without loopback, publisher's internal connection
+		verify(endpoint, times(1)).connect(any(MediaElement.class),
 				webRtcConnectCaptor.capture());
+		// no external connection until someone subscribes
 		verify(passThru, never()).connect(any(MediaElement.class),
 				passThruConnectCaptor.capture());
 
@@ -533,7 +533,7 @@ public class RoomWithSyncManagerTest {
 						manager.subscribe(users[0], SDP_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
-		// connected without loopback, publisher's internal connection
+		// connected without loopback,
 		verify(endpoint, times(1)).connect(any(MediaElement.class),
 				webRtcConnectCaptor.capture());
 		// using same endpoint, subscribers connections
@@ -568,9 +568,9 @@ public class RoomWithSyncManagerTest {
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
-		// connected without loopback, no internal connection until someone
+		// connected without loopback, no external connection until someone
 		// subscribes
-		verify(endpoint, never()).connect(any(MediaElement.class),
+		verify(endpoint, times(1)).connect(any(MediaElement.class),
 				webRtcConnectCaptor.capture());
 		verify(passThru, never()).connect(any(MediaElement.class),
 				passThruConnectCaptor.capture());
@@ -607,11 +607,11 @@ public class RoomWithSyncManagerTest {
 
 		doThrow(
 				new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
-						"Loopback connection")).when(passThru).connect(
+						"Loopback connection error test")).when(passThru).connect(
 				any(WebRtcEndpoint.class), Matchers.<Continuation<Void>>any());
 
 		exception.expect(AdminException.class);
-		exception.expectMessage(containsString("Loopback connection"));
+		exception.expectMessage(containsString("Loopback connection error test"));
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
 				manager.publishMedia(participantId0, true, SDP_OFFER, true));
