@@ -71,13 +71,12 @@ import org.kurento.client.ServerManager;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.api.KurentoClientProvider;
 import org.kurento.room.api.KurentoClientSessionInfo;
+import org.kurento.room.api.MutedMediaType;
 import org.kurento.room.api.RoomHandler;
-import org.kurento.room.api.UserNotificationService;
 import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.exception.AdminException;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
-import org.kurento.room.internal.DefaultRoomEventHandler;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Matchers;
@@ -88,9 +87,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Tests for {@link SyncRoomManager} when using a mo
- * {@link DefaultRoomEventHandler} (mocked {@link UserNotificationService} and
- * {@link KurentoClient} resources).
+ * Tests for {@link SyncRoomManager} when using mocked {@link KurentoClient}
+ * resources.
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
@@ -136,11 +134,15 @@ public class RoomWithSyncManagerTest {
 	private ArgumentCaptor<Continuation<WebRtcEndpoint>> webRtcCaptor;
 	@Captor
 	private ArgumentCaptor<Continuation<Void>> webRtcConnectCaptor;
+	@Captor
+	private ArgumentCaptor<Continuation<Void>> webRtcDisconnectCaptor;
 
 	@Mock
 	private PassThrough.Builder passThruBuilder;
 	@Captor
 	private ArgumentCaptor<Continuation<Void>> passThruConnectCaptor;
+	@Captor
+	private ArgumentCaptor<Continuation<Void>> passThruDisconnectCaptor;
 
 	@Mock
 	private Mixer mixer;
@@ -259,6 +261,18 @@ public class RoomWithSyncManagerTest {
 		}).when(endpoint).connect(any(MediaElement.class),
 				webRtcConnectCaptor.capture());
 
+		// call onSuccess when disconnecting the WebRtc endpoint from any media
+		// element
+		doAnswer(new Answer<Continuation<Void>>() {
+			@Override
+			public Continuation<Void> answer(InvocationOnMock invocation)
+					throws Throwable {
+				webRtcDisconnectCaptor.getValue().onSuccess(null);
+				return null;
+			}
+		}).when(endpoint).disconnect(any(MediaElement.class),
+				webRtcDisconnectCaptor.capture());
+
 		// call onSuccess when connecting the PassThrough element to any media
 		// element
 		doAnswer(new Answer<Continuation<Void>>() {
@@ -270,6 +284,20 @@ public class RoomWithSyncManagerTest {
 			}
 		}).when(passThru).connect(any(MediaElement.class),
 				passThruConnectCaptor.capture());
+
+		// call onSuccess when disconnecting the PassThrough element from any
+		// media
+		// element
+		doAnswer(new Answer<Continuation<Void>>() {
+			@Override
+			public Continuation<Void> answer(InvocationOnMock invocation)
+					throws Throwable {
+				passThruDisconnectCaptor.getValue().onSuccess(null);
+				return null;
+			}
+		}).when(passThru).disconnect(any(MediaElement.class),
+				passThruDisconnectCaptor.capture());
+
 
 		try { // mock the constructor for the mixer builder
 			whenNew(Mixer.Builder.class).withArguments(pipeline).thenReturn(
@@ -551,6 +579,12 @@ public class RoomWithSyncManagerTest {
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
 	}
 
+	/**
+	 * Tests publishing (w/o loopback) when the SDP offer is generated on the
+	 * server-side.
+	 * 
+	 * @throws AdminException
+	 */
 	@Test
 	public void invertedPublishAndLeave() throws AdminException {
 		joinManyUsersOneRoom();
@@ -607,11 +641,13 @@ public class RoomWithSyncManagerTest {
 
 		doThrow(
 				new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
-						"Loopback connection error test")).when(passThru).connect(
-				any(WebRtcEndpoint.class), Matchers.<Continuation<Void>>any());
+						"Loopback connection error test")).when(passThru)
+				.connect(any(WebRtcEndpoint.class),
+						Matchers.<Continuation<Void>>any());
 
 		exception.expect(AdminException.class);
-		exception.expectMessage(containsString("Loopback connection error test"));
+		exception
+				.expectMessage(containsString("Loopback connection error test"));
 
 		assertEquals("SDP answer doesn't match", SDP_ANSWER,
 				manager.publishMedia(participantId0, true, SDP_OFFER, true));
@@ -659,6 +695,12 @@ public class RoomWithSyncManagerTest {
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
 	}
 
+	/**
+	 * Tests publishing (w/ loopback) when the SDP offer is generated on the
+	 * server-side.
+	 * 
+	 * @throws AdminException
+	 */
 	@Test
 	public void invertedPublishWithLoopback() throws AdminException {
 		joinManyUsersOneRoom();
@@ -805,6 +847,112 @@ public class RoomWithSyncManagerTest {
 		verify(passThru, times(users.length - 1)).connect(
 				any(MediaElement.class), passThruConnectCaptor.capture());
 
+		Set<UserParticipant> remainingUsers = manager.leaveRoom(participantId0);
+		Set<UserParticipant> roomParticipants = manager.getParticipants(roomx);
+		assertEquals(roomParticipants, remainingUsers);
+		assertThat(roomParticipants,
+				not(hasItem(usersParticipants.get(users[0]))));
+		assertThat(manager.getPublishers(roomx).size(), is(0));
+
+		// peers are automatically unsubscribed
+		assertThat(manager.getSubscribers(roomx).size(), is(0));
+	}
+
+	@Test
+	public void muteUnmutePublished() throws AdminException {
+		joinManyUsersOneRoom();
+
+		String participantId0 = usersParticipantIds.get(users[0]);
+
+		assertEquals("SDP answer doesn't match", SDP_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+
+		assertThat(manager.getPublishers(roomx).size(), is(1));
+
+		// connected without loopback, publisher's internal connection
+		verify(endpoint).connect(passThru, webRtcConnectCaptor.getValue());
+		// no external connection until someone subscribes
+		verify(passThru, never()).connect(any(MediaElement.class),
+				passThruConnectCaptor.capture());
+
+		for (String pid : usersParticipantIds.values())
+			if (!pid.equals(participantId0))
+				assertEquals("SDP answer doesn't match", SDP_ANSWER,
+						manager.subscribe(users[0], SDP_OFFER, pid));
+		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
+
+		// connected without loopback,
+		verify(endpoint, times(1)).connect(any(MediaElement.class),
+				webRtcConnectCaptor.capture());
+		// using same endpoint, subscribers connections
+		verify(passThru, times(users.length - 1)).connect(
+				any(MediaElement.class), passThruConnectCaptor.capture());
+
+		manager.mutePublishedMedia(MutedMediaType.ALL, participantId0);
+
+		// disconnects once from the PassThrough
+		verify(endpoint)
+				.disconnect(passThru, webRtcDisconnectCaptor.getValue());
+
+		manager.unmutePublishedMedia(participantId0);
+
+		// reconnects once to the PassThrough
+		verify(endpoint).connect(passThru, webRtcConnectCaptor.getValue());
+
+		Set<UserParticipant> remainingUsers = manager.leaveRoom(participantId0);
+		Set<UserParticipant> roomParticipants = manager.getParticipants(roomx);
+		assertEquals(roomParticipants, remainingUsers);
+		assertThat(roomParticipants,
+				not(hasItem(usersParticipants.get(users[0]))));
+		assertThat(manager.getPublishers(roomx).size(), is(0));
+
+		// peers are automatically unsubscribed
+		assertThat(manager.getSubscribers(roomx).size(), is(0));
+	}
+
+	@Test
+	public void muteUnmuteSubscribed() throws AdminException {
+		joinManyUsersOneRoom();
+
+		String participantId0 = usersParticipantIds.get(users[0]);
+		String participantId1 = usersParticipantIds.get(users[1]);
+
+		assertEquals("SDP answer doesn't match", SDP_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+
+		assertThat(manager.getPublishers(roomx).size(), is(1));
+
+		// connected without loopback, publisher's internal connection
+		verify(endpoint).connect(passThru, webRtcConnectCaptor.getValue());
+		// no external connection until someone subscribes
+		verify(passThru, never()).connect(any(MediaElement.class),
+				passThruConnectCaptor.capture());
+
+		for (String pid : usersParticipantIds.values())
+			if (!pid.equals(participantId0))
+				assertEquals("SDP answer doesn't match", SDP_ANSWER,
+						manager.subscribe(users[0], SDP_OFFER, pid));
+		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
+
+		// connected without loopback,
+		verify(endpoint, times(1)).connect(any(MediaElement.class),
+				webRtcConnectCaptor.capture());
+		// using same endpoint, subscribers connections
+		verify(passThru, times(users.length - 1)).connect(
+				any(MediaElement.class), passThruConnectCaptor.capture());
+
+		manager.muteSubscribedMedia(users[0], MutedMediaType.ALL,
+				participantId1);
+
+		// disconnects the PassThrough once from the subscriber's endpoint
+		verify(passThru).disconnect(endpoint,
+				passThruDisconnectCaptor.getValue());
+
+		manager.unmuteSubscribedMedia(users[0], participantId1);
+
+		// reconnects once to the subscriber's endpoint
+		verify(passThru).connect(endpoint, passThruConnectCaptor.getValue());
+		
 		Set<UserParticipant> remainingUsers = manager.leaveRoom(participantId0);
 		Set<UserParticipant> roomParticipants = manager.getParticipants(roomx);
 		assertEquals(roomParticipants, remainingUsers);

@@ -29,6 +29,7 @@ import org.kurento.client.MediaPipeline;
 import org.kurento.client.MediaType;
 import org.kurento.room.api.KurentoClientProvider;
 import org.kurento.room.api.KurentoClientSessionInfo;
+import org.kurento.room.api.MutedMediaType;
 import org.kurento.room.api.RoomHandler;
 import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.endpoint.SdpType;
@@ -370,6 +371,16 @@ public class SyncRoomManager {
 						"User '" + remoteName + " not found in room '"
 								+ room.getName() + "'");
 			}
+			if (!senderParticipant.isStreaming()) {
+				log.warn(
+						"PARTICIPANT {}: Requesting to recv media from user {} "
+								+ "in room {} but user is not streaming media",
+						name, remoteName, room.getName());
+				throw new RoomException(Code.USER_NOT_STREAMING_ERROR_CODE,
+						"User '" + remoteName
+								+ " not streaming media in room '"
+								+ room.getName() + "'");
+			}
 
 			String sdpAnswer =
 					participant.receiveMediaFrom(senderParticipant, sdpOffer);
@@ -525,6 +536,154 @@ public class SyncRoomManager {
 		} catch (RoomException e) {
 			throw new AdminException("Error disconnecting media element - "
 					+ e.toString());
+		}
+	}
+
+	/**
+	 * Mutes the streamed media of this publisher in a selective manner.
+	 * 
+	 * @param muteType which leg should be disconnected (audio, video or both)
+	 * @param participantId identifier of the participant
+	 * @throws AdminException in case the participant doesn’t exist, has been
+	 *         closed, is not publishing or on error when performing the mute
+	 *         operation
+	 */
+	public void mutePublishedMedia(MutedMediaType muteType, String participantId)
+			throws AdminException {
+		log.debug("Request [MUTE_PUBLISHED] muteType={} ({})", muteType,
+				participantId);
+		Participant participant = getParticipant(participantId);
+		String name = participant.getName();
+		if (participant.isClosed())
+			throw new AdminException("Participant '" + name
+					+ "' has been closed");
+		if (!participant.isStreaming())
+			throw new AdminException("Participant '" + name
+					+ "' is not streaming media");
+		try {
+			participant.mutePublishedMedia(muteType);
+		} catch (RoomException e) {
+			throw new AdminException("Error applying mute - " + e.toString());
+		}
+	}
+
+	/**
+	 * Reverts the effects of the mute operation.
+	 * 
+	 * @param participantId identifier of the participant
+	 * @throws AdminException in case the participant doesn’t exist, has been
+	 *         closed, is not publishing or on error when reverting the mute
+	 *         operation
+	 */
+	public void unmutePublishedMedia(String participantId)
+			throws AdminException {
+		log.debug("Request [UNMUTE_PUBLISHED] muteType={} ({})", participantId);
+		Participant participant = getParticipant(participantId);
+		String name = participant.getName();
+		if (participant.isClosed())
+			throw new AdminException("Participant '" + name
+					+ "' has been closed");
+		if (!participant.isStreaming())
+			throw new AdminException("Participant '" + name
+					+ "' is not streaming media");
+		try {
+			participant.unmutePublishedMedia();
+		} catch (RoomException e) {
+			throw new AdminException("Error reverting mute - " + e.toString());
+		}
+	}
+
+	/**
+	 * Mutes the incoming media stream from the remote publisher in a selective
+	 * manner.
+	 * 
+	 * @param remoteName identification of the remote stream which is
+	 *        effectively the peer’s name (participant)
+	 * @param muteType which leg should be disconnected (audio, video or both)
+	 * @param participantId identifier of the participant
+	 * @throws AdminException in case the participant doesn’t exist, has been
+	 *         closed, is not publishing or on error when performing the mute
+	 *         operation
+	 */
+	public void muteSubscribedMedia(String remoteName, MutedMediaType muteType,
+			String participantId) throws AdminException {
+		log.debug(
+				"Request [MUTE_SUBSCRIBED] remoteParticipant={} muteType={} ({})",
+				remoteName, muteType, participantId);
+		Participant participant = getParticipant(participantId);
+		String name = participant.getName();
+		try {
+			Room room = participant.getRoom();
+			Participant senderParticipant =
+					room.getParticipantByName(remoteName);
+			if (senderParticipant == null) {
+				log.warn(
+						"PARTICIPANT {}: Requesting to mute streaming from {} "
+								+ "in room {} but user could not be found",
+						name, remoteName, room.getName());
+				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE, "User "
+						+ remoteName + " not found in room " + room.getName());
+			}
+			if (!senderParticipant.isStreaming()) {
+				log.warn(
+						"PARTICIPANT {}: Requesting to mute streaming from {} "
+								+ "in room {} but user is not streaming media",
+						name, remoteName, room.getName());
+				throw new RoomException(Code.USER_NOT_STREAMING_ERROR_CODE,
+						"User '" + remoteName
+								+ " not streaming media in room '"
+								+ room.getName() + "'");
+			}
+			participant.muteSubscribedMedia(senderParticipant, muteType);
+		} catch (RoomException e) {
+			log.warn("Error on mute streaming from {}", remoteName, e);
+			throw new AdminException("Error on mute streaming from '"
+					+ remoteName + "': " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Reverts any previous mute operation.
+	 * 
+	 * @param remoteName identification of the remote stream which is
+	 *        effectively the peer’s name (participant)
+	 * @param participantId identifier of the participant
+	 * @throws AdminException in case the participant doesn’t exist, has been
+	 *         closed or on error when reverting the mute operation
+	 */
+	public void unmuteSubscribedMedia(String remoteName, String participantId)
+			throws AdminException {
+		log.debug("Request [UNMUTE_SUBSCRIBED] remoteParticipant={} ({})",
+				remoteName, participantId);
+		Participant participant = getParticipant(participantId);
+		String name = participant.getName();
+		try {
+			Room room = participant.getRoom();
+			Participant senderParticipant =
+					room.getParticipantByName(remoteName);
+			if (senderParticipant == null) {
+				log.warn(
+						"PARTICIPANT {}: Requesting to unmute streaming from {} "
+								+ "in room {} but user could not be found",
+						name, remoteName, room.getName());
+				throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE, "User "
+						+ remoteName + " not found in room " + room.getName());
+			}
+			if (!senderParticipant.isStreaming()) {
+				log.warn(
+						"PARTICIPANT {}: Requesting to unmute streaming from {} "
+								+ "in room {} but user is not streaming media",
+						name, remoteName, room.getName());
+				throw new RoomException(Code.USER_NOT_STREAMING_ERROR_CODE,
+						"User '" + remoteName
+								+ " not streaming media in room '"
+								+ room.getName() + "'");
+			}
+			participant.unmuteSubscribedMedia(senderParticipant);
+		} catch (RoomException e) {
+			log.warn("Error on unmute streaming from {}", remoteName, e);
+			throw new AdminException("Error on unmute streaming from '"
+					+ remoteName + "': " + e.getMessage());
 		}
 	}
 

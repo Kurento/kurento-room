@@ -28,6 +28,7 @@ import org.kurento.client.MediaPipeline;
 import org.kurento.client.MediaType;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
+import org.kurento.room.api.MutedMediaType;
 import org.kurento.room.endpoint.PublisherEndpoint;
 import org.kurento.room.endpoint.SdpType;
 import org.kurento.room.endpoint.SubscriberEndpoint;
@@ -287,6 +288,66 @@ public class Participant {
 					this.name, senderName);
 
 			releaseSubscriberEndpoint(senderName, subscriberEndpoint);
+		}
+	}
+
+	public void mutePublishedMedia(MutedMediaType muteType) {
+		if (muteType == null)
+			throw new RoomException(Code.MUTE_MEDIA_ERROR_CODE,
+					"Mute type cannot be null");
+		this.getPublisher().mute(muteType);
+	}
+
+	public void unmutePublishedMedia() {
+		if (this.getPublisher().getMuteType() == null)
+			log.warn("PARTICIPANT {}: Trying to unmute published media. "
+					+ "But media is not muted.", this.name);
+		else
+			this.getPublisher().unmute();
+	}
+
+	public void muteSubscribedMedia(Participant sender, MutedMediaType muteType) {
+		if (muteType == null)
+			throw new RoomException(Code.MUTE_MEDIA_ERROR_CODE,
+					"Mute type cannot be null");
+		String senderName = sender.getName();
+		SubscriberEndpoint subscriberEndpoint = subscribers.get(senderName);
+		if (subscriberEndpoint == null
+				|| subscriberEndpoint.getEndpoint() == null) {
+			log.warn(
+					"PARTICIPANT {}: Trying to mute incoming media from user {}. "
+							+ "But there is no such subscriber endpoint.",
+					this.name, senderName);
+		} else {
+			log.debug(
+					"PARTICIPANT {}: Mute subscriber endpoint linked to user {}",
+					this.name, senderName);
+			subscriberEndpoint.mute(muteType);
+		}
+	}
+
+	public void unmuteSubscribedMedia(Participant sender) {
+		String senderName = sender.getName();
+		SubscriberEndpoint subscriberEndpoint = subscribers.get(senderName);
+		if (subscriberEndpoint == null
+				|| subscriberEndpoint.getEndpoint() == null) {
+			log.warn(
+					"PARTICIPANT {}: Trying to unmute incoming media from user {}. "
+							+ "But there is no such subscriber endpoint.",
+					this.name, senderName);
+		} else {
+			if (subscriberEndpoint.getMuteType() == null)
+				log.warn(
+						"PARTICIPANT {}: Trying to unmute incoming media from user {}. "
+								+ "But media is not muted.", this.name,
+						senderName);
+
+			else {
+				log.debug(
+						"PARTICIPANT {}: Unmute subscriber endpoint linked to user {}",
+						this.name, senderName);
+				subscriberEndpoint.unmute();
+			}
 		}
 	}
 

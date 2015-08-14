@@ -27,6 +27,7 @@ import org.kurento.client.MediaPipeline;
 import org.kurento.client.OnIceCandidateEvent;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.commons.exception.KurentoException;
+import org.kurento.room.api.MutedMediaType;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
 import org.kurento.room.internal.Participant;
@@ -54,6 +55,8 @@ public abstract class IceWebRtcEndpoint {
 	private LinkedList<IceCandidate> candidates =
 			new LinkedList<IceCandidate>();
 
+	private MutedMediaType muteType;
+	
 	/**
 	 * Constructor to set the owner, the endpoint's name and the media pipeline.
 	 * 
@@ -164,6 +167,48 @@ public abstract class IceWebRtcEndpoint {
 		unregisterElementErrListener(endpoint, endpointSubscription);
 	}
 
+	/**
+	 * Mute the media stream.
+	 * @param muteType which type of leg to disconnect (audio, video or both)
+	 */
+	public abstract void mute(MutedMediaType muteType);
+	
+	/**
+	 * Reconnect the muted media leg(s).
+	 */
+	public abstract void unmute();
+	
+	public void setMuteType(MutedMediaType muteType) {
+		this.muteType = muteType;
+	}
+
+	public MutedMediaType getMuteType() {
+		return this.muteType;
+	}
+
+	protected void resolveCurrentMuteType(MutedMediaType newMuteType) {
+		MutedMediaType prev = this.getMuteType();
+		if (prev != null) {
+			switch (prev) {
+				case AUDIO:
+					if (muteType.equals(MutedMediaType.VIDEO)) {
+						this.setMuteType(MutedMediaType.ALL);
+						return;
+					}
+					break;
+				case VIDEO:
+					if (muteType.equals(MutedMediaType.AUDIO)) {
+						this.setMuteType(MutedMediaType.ALL);
+						return;
+					}
+					break;
+				case ALL:
+					return;
+			}
+		}
+		this.setMuteType(newMuteType);
+	}
+	
 	/**
 	 * Create the endpoint and any other additional elements (if needed).
 	 * 

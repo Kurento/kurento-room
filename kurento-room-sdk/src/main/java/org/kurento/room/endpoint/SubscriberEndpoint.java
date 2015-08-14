@@ -16,6 +16,10 @@
 package org.kurento.room.endpoint;
 
 import org.kurento.client.MediaPipeline;
+import org.kurento.client.MediaType;
+import org.kurento.room.api.MutedMediaType;
+import org.kurento.room.exception.RoomException;
+import org.kurento.room.exception.RoomException.Code;
 import org.kurento.room.internal.Participant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +34,8 @@ public class SubscriberEndpoint extends IceWebRtcEndpoint {
 	
 	private boolean connectedToPublisher = false;
 
+	private PublisherEndpoint publisher = null;
+	
 	public SubscriberEndpoint(Participant owner, String endpointName,
 			MediaPipeline pipeline) {
 		super(owner, endpointName, pipeline, log);
@@ -42,6 +48,7 @@ public class SubscriberEndpoint extends IceWebRtcEndpoint {
 		gatherCandidates();
 		publisher.connect(this.endpoint);
 		setConnectedToPublisher(true);
+		setPublisher(publisher);
 		return sdpAnswer;
 	}
 
@@ -51,5 +58,37 @@ public class SubscriberEndpoint extends IceWebRtcEndpoint {
 
 	public void setConnectedToPublisher(boolean connectedToPublisher) {
 		this.connectedToPublisher = connectedToPublisher;
+	}
+
+	public PublisherEndpoint getPublisher() {
+		return publisher;
+	}
+
+	public void setPublisher(PublisherEndpoint publisher) {
+		this.publisher = publisher;
+	}
+
+	@Override
+	public synchronized void mute(MutedMediaType muteType) {
+		if (this.publisher == null)
+			throw new RoomException(Code.MUTE_MEDIA_ERROR_CODE, "Publisher endpoint not found");
+		switch (muteType) {
+			case ALL:
+				this.publisher.disconnectFrom(this.endpoint);
+				break;
+			case AUDIO:
+				this.publisher.disconnectFrom(this.endpoint, MediaType.AUDIO);
+				break;
+			case VIDEO:
+				this.publisher.disconnectFrom(this.endpoint, MediaType.VIDEO);
+				break;
+		}
+		resolveCurrentMuteType(muteType);
+	}
+
+	@Override
+	public synchronized void unmute() {
+		this.publisher.connect(this.endpoint);
+		setMuteType(null);
 	}
 }

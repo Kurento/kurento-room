@@ -27,6 +27,7 @@ import org.kurento.client.MediaPipeline;
 import org.kurento.client.MediaType;
 import org.kurento.client.PassThrough;
 import org.kurento.client.WebRtcEndpoint;
+import org.kurento.room.api.MutedMediaType;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
 import org.kurento.room.internal.Participant;
@@ -135,26 +136,26 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		return generateOffer();
 	}
 
-	private void connectAltLoopbackSrc(MediaElement loopbackAlternativeSrc,
-			MediaType loopbackConnectionType) {
+	public synchronized void connect(MediaElement sink) {
 		if (!connected)
 			innerConnect();
-		internalSinkConnect(loopbackAlternativeSrc, endpoint,
-				loopbackConnectionType);
+		internalSinkConnect(passThru, sink);
 	}
 
-	public synchronized void connect(MediaElement other) {
+	public synchronized void connect(MediaElement sink, MediaType type) {
 		if (!connected)
 			innerConnect();
-		internalSinkConnect(passThru, other);
+		internalSinkConnect(passThru, sink, type);
 	}
 
-	public synchronized void connect(MediaElement other, MediaType type) {
-		if (!connected)
-			innerConnect();
-		internalSinkConnect(passThru, other, type);
+	public synchronized void disconnectFrom(MediaElement sink) {
+		internalSinkDisconnect(passThru, sink);
 	}
 
+	public synchronized void disconnectFrom(MediaElement sink, MediaType type) {
+		internalSinkDisconnect(passThru, sink, type);
+	}
+	
 	@Override
 	public synchronized String apply(MediaElement shaper) throws RoomException {
 		return apply(shaper, null);
@@ -231,6 +232,56 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		});
 	}
 
+	@Override
+	public synchronized void mute(MutedMediaType muteType) {
+		MediaElement sink = passThru;
+		if (!elements.isEmpty()) {
+			String sinkId = elementIds.peekLast();
+			if (!elements.containsKey(sinkId))
+				throw new RoomException(
+						Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						"This endpoint ("
+								+ getEndpointName()
+								+ ") has no media element with id "
+								+ sinkId
+								+ " (should've been connected to the WebRTC ep)");
+			sink = elements.get(sinkId);
+		} else
+			log.debug("Will mute connection of WebRTC and PassThrough (no other elems)");
+		switch (muteType) {
+			case ALL:
+				internalSinkDisconnect(endpoint, sink);
+				break;
+			case AUDIO:
+				internalSinkDisconnect(endpoint, sink, MediaType.AUDIO);
+				break;
+			case VIDEO:
+				internalSinkDisconnect(endpoint, sink, MediaType.VIDEO);
+				break;
+		}
+		resolveCurrentMuteType(muteType);
+	}
+
+	@Override
+	public synchronized void unmute() {
+		MediaElement sink = passThru;
+		if (!elements.isEmpty()) {
+			String sinkId = elementIds.peekLast();
+			if (!elements.containsKey(sinkId))
+				throw new RoomException(
+						Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						"This endpoint ("
+								+ getEndpointName()
+								+ ") has no media element with id "
+								+ sinkId
+								+ " (should've been connected to the WebRTC ep)");
+			sink = elements.get(sinkId);
+		} else
+			log.debug("Will unmute connection of WebRTC and PassThrough (no other elems)");
+		internalSinkConnect(endpoint, sink);
+		setMuteType(null);
+	}
+
 	private String getNext(String uid) {
 		int idx = elementIds.indexOf(uid);
 		if (idx < 0 || idx + 1 == elementIds.size())
@@ -243,6 +294,14 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		if (idx <= 0)
 			return null;
 		return elementIds.get(idx - 1);
+	}
+
+	private void connectAltLoopbackSrc(MediaElement loopbackAlternativeSrc,
+			MediaType loopbackConnectionType) {
+		if (!connected)
+			innerConnect();
+		internalSinkConnect(loopbackAlternativeSrc, endpoint,
+				loopbackConnectionType);
 	}
 
 	private void innerConnect() {
@@ -314,6 +373,60 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 				public void onError(Throwable cause) throws Exception {
 					log.warn(
 							"EP {}: Failed to connect {} media elements (source {} -> sink {})",
+							getEndpointName(), type, source.getId(),
+							sink.getId(), cause);
+				}
+			});
+	}
+
+	private void internalSinkDisconnect(final MediaElement source,
+			final MediaElement sink) {
+		source.disconnect(sink, new Continuation<Void>() {
+			@Override
+			public void onSuccess(Void result) throws Exception {
+				log.debug(
+						"EP {}: Elements have been disconnected (source {} -> sink {})",
+						getEndpointName(), source.getId(), sink.getId());
+			}
+
+			@Override
+			public void onError(Throwable cause) throws Exception {
+				log.warn(
+						"EP {}: Failed to disconnect media elements (source {} -> sink {})",
+						getEndpointName(), source.getId(), sink.getId(), cause);
+			}
+		});
+	}
+
+	/**
+	 * Same as {@link #internalSinkDisconnect(MediaElement, MediaElement)}, but
+	 * can specify the type of the media that will be disconnected.
+	 * 
+	 * @see #internalSinkConnect(MediaElement, MediaElement)
+	 * @param source
+	 * @param sink
+	 * @param type if null,
+	 *        {@link #internalSinkConnect(MediaElement, MediaElement)} will be
+	 *        used instead
+	 */
+	private void internalSinkDisconnect(final MediaElement source,
+			final MediaElement sink, final MediaType type) {
+		if (type == null)
+			internalSinkDisconnect(source, sink);
+		else
+			source.disconnect(sink, type, new Continuation<Void>() {
+				@Override
+				public void onSuccess(Void result) throws Exception {
+					log.debug(
+							"EP {}: {} media elements have been disconnected (source {} -> sink {})",
+							getEndpointName(), type, source.getId(),
+							sink.getId());
+				}
+
+				@Override
+				public void onError(Throwable cause) throws Exception {
+					log.warn(
+							"EP {}: Failed to disconnect {} media elements (source {} -> sink {})",
 							getEndpointName(), type, source.getId(),
 							sink.getId(), cause);
 				}
