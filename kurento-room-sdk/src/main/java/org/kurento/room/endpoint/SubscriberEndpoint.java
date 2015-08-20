@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2013 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 package org.kurento.room.endpoint;
@@ -25,20 +24,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Subscriber aspect of the {@link TrickleIceEndpoint}.
+ * Subscriber aspect of the {@link MediaEndpoint}.
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public class SubscriberEndpoint extends IceWebRtcEndpoint {
-	private final static Logger log = LoggerFactory.getLogger(SubscriberEndpoint.class);
-	
+public class SubscriberEndpoint extends MediaEndpoint {
+	private final static Logger log = LoggerFactory
+			.getLogger(SubscriberEndpoint.class);
+
 	private boolean connectedToPublisher = false;
 
 	private PublisherEndpoint publisher = null;
-	
-	public SubscriberEndpoint(Participant owner, String endpointName,
-			MediaPipeline pipeline) {
-		super(owner, endpointName, pipeline, log);
+
+	public SubscriberEndpoint(boolean web, Participant owner,
+			String endpointName, MediaPipeline pipeline) {
+		super(web, owner, endpointName, pipeline, log);
 	}
 
 	public synchronized String subscribe(String sdpOffer,
@@ -46,7 +46,7 @@ public class SubscriberEndpoint extends IceWebRtcEndpoint {
 		registerOnIceCandidateEventListener();
 		String sdpAnswer = processOffer(sdpOffer);
 		gatherCandidates();
-		publisher.connect(this.endpoint);
+		publisher.connect(this.getEndpoint());
 		setConnectedToPublisher(true);
 		setPublisher(publisher);
 		return sdpAnswer;
@@ -71,16 +71,19 @@ public class SubscriberEndpoint extends IceWebRtcEndpoint {
 	@Override
 	public synchronized void mute(MutedMediaType muteType) {
 		if (this.publisher == null)
-			throw new RoomException(Code.MUTE_MEDIA_ERROR_CODE, "Publisher endpoint not found");
+			throw new RoomException(Code.MUTE_MEDIA_ERROR_CODE,
+					"Publisher endpoint not found");
 		switch (muteType) {
 			case ALL:
-				this.publisher.disconnectFrom(this.endpoint);
+				this.publisher.disconnectFrom(this.getEndpoint());
 				break;
 			case AUDIO:
-				this.publisher.disconnectFrom(this.endpoint, MediaType.AUDIO);
+				this.publisher.disconnectFrom(this.getEndpoint(),
+						MediaType.AUDIO);
 				break;
 			case VIDEO:
-				this.publisher.disconnectFrom(this.endpoint, MediaType.VIDEO);
+				this.publisher.disconnectFrom(this.getEndpoint(),
+						MediaType.VIDEO);
 				break;
 		}
 		resolveCurrentMuteType(muteType);
@@ -88,7 +91,7 @@ public class SubscriberEndpoint extends IceWebRtcEndpoint {
 
 	@Override
 	public synchronized void unmute() {
-		this.publisher.connect(this.endpoint);
+		this.publisher.connect(this.getEndpoint());
 		setMuteType(null);
 	}
 }

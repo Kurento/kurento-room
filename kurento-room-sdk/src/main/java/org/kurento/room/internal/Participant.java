@@ -26,7 +26,7 @@ import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.MediaType;
-import org.kurento.client.WebRtcEndpoint;
+import org.kurento.client.SdpEndpoint;
 import org.kurento.client.internal.server.KurentoServerException;
 import org.kurento.room.api.MutedMediaType;
 import org.kurento.room.endpoint.PublisherEndpoint;
@@ -48,6 +48,8 @@ public class Participant {
 	private static final Logger log = LoggerFactory
 			.getLogger(Participant.class);
 
+	private boolean web = false;
+
 	private String id;
 	private String name;
 
@@ -64,12 +66,14 @@ public class Participant {
 	private volatile boolean streaming = false;
 	private volatile boolean closed;
 
-	public Participant(String id, String name, Room room, MediaPipeline pipeline) {
+	public Participant(String id, String name, Room room,
+			MediaPipeline pipeline, boolean web) {
+		this.web = web;
 		this.id = id;
 		this.name = name;
 		this.pipeline = pipeline;
 		this.room = room;
-		this.publisher = new PublisherEndpoint(this, name, pipeline);
+		this.publisher = new PublisherEndpoint(web, this, name, pipeline);
 
 		for (Participant other : room.getParticipants())
 			if (!other.getName().equals(this.name))
@@ -79,7 +83,7 @@ public class Participant {
 	public void createPublishingEndpoint() {
 		publisher.createEndpoint(endPointLatch);
 		if (getPublisher().getEndpoint() == null)
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
 					"Unable to create publisher endpoint");
 	}
 
@@ -102,10 +106,10 @@ public class Participant {
 		try {
 			if (!endPointLatch
 					.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS))
-				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
 						"Timeout reached while waiting for publisher endpoint to be ready");
 		} catch (InterruptedException e) {
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
 					"Interrupted while waiting for publisher endpoint to be ready: "
 							+ e.getMessage());
 		}
@@ -182,7 +186,7 @@ public class Participant {
 		log.debug("PARTICIPANT {}: unpublishing media stream from room {}",
 				this.name, this.room.getName());
 		releasePublisherEndpoint();
-		this.publisher = new PublisherEndpoint(this, name, pipeline);
+		this.publisher = new PublisherEndpoint(web, this, name, pipeline);
 		log.debug("PARTICIPANT {}: released publisher endpoint and left it "
 				+ "initialized (ready for future streaming)", this.name);
 	}
@@ -213,7 +217,7 @@ public class Participant {
 				this.name, senderName);
 
 		SubscriberEndpoint subscriber =
-				new SubscriberEndpoint(this, senderName, pipeline);
+				new SubscriberEndpoint(web, this, senderName, pipeline);
 		SubscriberEndpoint oldSubscriber =
 				this.subscribers.putIfAbsent(senderName, subscriber);
 		if (oldSubscriber != null)
@@ -221,26 +225,26 @@ public class Participant {
 
 		try {
 			CountDownLatch subscriberLatch = new CountDownLatch(1);
-			WebRtcEndpoint oldWrEndpoint =
+			SdpEndpoint oldMediaEndpoint =
 					subscriber.createEndpoint(subscriberLatch);
 			try {
 				if (!subscriberLatch.await(Room.ASYNC_LATCH_TIMEOUT,
 						TimeUnit.SECONDS))
-					throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+					throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
 							"Timeout reached when creating subscriber endpoint");
 			} catch (InterruptedException e) {
-				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
 						"Interrupted when creating subscriber endpoint: "
 								+ e.getMessage());
 			}
-			if (oldWrEndpoint != null) {
+			if (oldMediaEndpoint != null) {
 				log.warn("PARTICIPANT {}: Two threads are trying to create at "
 						+ "the same time a subscriber endpoint for user {}",
 						this.name, senderName);
 				return null;
 			}
 			if (subscriber.getEndpoint() == null)
-				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
 						"Unable to create subscriber endpoint");
 		} catch (RoomException e) {
 			this.subscribers.remove(senderName);
@@ -371,21 +375,19 @@ public class Participant {
 	}
 
 	public SubscriberEndpoint addSubscriber(String newUserName) {
-		SubscriberEndpoint iceSendingEndpoint =
-				new SubscriberEndpoint(this, newUserName, pipeline);
-		SubscriberEndpoint existingIceSendingEndpoint =
-				this.subscribers.putIfAbsent(newUserName, iceSendingEndpoint);
-		if (existingIceSendingEndpoint != null) {
-			iceSendingEndpoint = existingIceSendingEndpoint;
+		SubscriberEndpoint sendingEndpoint =
+				new SubscriberEndpoint(web, this, newUserName, pipeline);
+		SubscriberEndpoint existingSendingEndpoint =
+				this.subscribers.putIfAbsent(newUserName, sendingEndpoint);
+		if (existingSendingEndpoint != null) {
+			sendingEndpoint = existingSendingEndpoint;
 			log.trace(
-					"PARTICIPANT {}: There is an existing placeholder for WebRtcEndpoint "
-							+ "with ICE candidates queue for user {}",
+					"PARTICIPANT {}: Already exists a subscriber endpoint to user {}",
 					this.name, newUserName);
 		} else
-			log.debug("PARTICIPANT {}: New placeholder for WebRtcEndpoint "
-					+ "with ICE candidates queue for user {}", this.name,
-					newUserName);
-		return iceSendingEndpoint;
+			log.debug("PARTICIPANT {}: New subscriber endpoint to user {}",
+					this.name, newUserName);
+		return sendingEndpoint;
 	}
 
 	public void addIceCandidate(String endpointName, IceCandidate iceCandidate) {

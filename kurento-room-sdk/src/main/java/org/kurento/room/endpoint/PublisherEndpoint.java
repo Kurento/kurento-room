@@ -35,12 +35,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Publisher aspect of the {@link TrickleIceEndpoint}.
+ * Publisher aspect of the {@link MediaEndpoint}.
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public class PublisherEndpoint extends IceWebRtcEndpoint implements
-		MediaShapingEndpoint {
+public class PublisherEndpoint extends MediaEndpoint {
 	private final static Logger log = LoggerFactory
 			.getLogger(PublisherEndpoint.class);
 
@@ -55,9 +54,9 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 	private Map<String, ListenerSubscription> elementsErrorSubscriptions =
 			new HashMap<String, ListenerSubscription>();
 
-	public PublisherEndpoint(Participant owner, String endpointName,
-			MediaPipeline pipeline) {
-		super(owner, endpointName, pipeline, log);
+	public PublisherEndpoint(boolean web, Participant owner,
+			String endpointName, MediaPipeline pipeline) {
+		super(web, owner, endpointName, pipeline, log);
 	}
 
 	@Override
@@ -88,10 +87,11 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 	}
 
 	/**
-	 * Initializes this {@link WebRtcEndpoint} for publishing media. Registers
-	 * an event listener for the ICE candidates, instructs the endpoint to start
-	 * gathering the candidates and processes the SDP offer or answer. If
-	 * required, it connects to itself (after applying the intermediate media
+	 * Initializes this media endpoint for publishing media and processes the
+	 * SDP offer or answer. If the internal endpoint is an
+	 * {@link WebRtcEndpoint}, it first registers an event listener for the ICE
+	 * candidates and instructs the endpoint to start gathering the candidates.
+	 * If required, it connects to itself (after applying the intermediate media
 	 * elements and the {@link PassThrough}) to allow loopback of the media
 	 * stream.
 	 * 
@@ -110,7 +110,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		registerOnIceCandidateEventListener();
 		if (doLoopback) {
 			if (loopbackAlternativeSrc == null)
-				connect(endpoint, loopbackConnectionType);
+				connect(this.getEndpoint(), loopbackConnectionType);
 			else
 				connectAltLoopbackSrc(loopbackAlternativeSrc,
 						loopbackConnectionType);
@@ -155,14 +155,35 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 	public synchronized void disconnectFrom(MediaElement sink, MediaType type) {
 		internalSinkDisconnect(passThru, sink, type);
 	}
-	
-	@Override
-	public synchronized String apply(MediaElement shaper) throws RoomException {
+
+	/**
+	 * Changes the media passing through a chain of media elements by applying
+	 * the specified element/shaper. The element is plugged into the stream only
+	 * if the chain has been initialized (a.k.a. media streaming has started),
+	 * otherwise it is left ready for when the connections between elements will
+	 * materialize and the streaming begins.
+	 * 
+	 * @param shaper {@link MediaElement} that will be linked to the end of the
+	 *        chain (e.g. a filter)
+	 * @return the element's id
+	 * @throws RoomException if thrown, the media element was not added
+	 */
+	public String apply(MediaElement shaper) throws RoomException {
 		return apply(shaper, null);
 	}
 
-	@Override
-	public String apply(MediaElement shaper, MediaType type)
+	/**
+	 * Same as {@link #apply(MediaElement)}, can specify the
+	 * media type that will be streamed through the shaper element.
+	 * 
+	 * @param shaper {@link MediaElement} that will be linked to the end of the
+	 *        chain (e.g. a filter)
+	 * @param type indicates which type of media will be connected to the shaper
+	 *        ({@link MediaType}), if null then the connection is mixed
+	 * @return the element's id
+	 * @throws RoomException if thrown, the media element was not added
+	 */
+	public synchronized String apply(MediaElement shaper, MediaType type)
 			throws RoomException {
 		String id = shaper.getId();
 		if (id == null)
@@ -178,7 +199,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			if (first != null)
 				internalSinkConnect(first, shaper, type);
 			else
-				internalSinkConnect(endpoint, shaper, type);
+				internalSinkConnect(this.getEndpoint(), shaper, type);
 			internalSinkConnect(shaper, passThru, type);
 		}
 		elementIds.addFirst(id);
@@ -187,11 +208,18 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 		return id;
 	}
 
-	@Override
+	/**
+	 * Removes the media element object found from the media chain structure.
+	 * The object is released. If the chain is connected, both adjacent
+	 * remaining elements will be interconnected.
+	 * 
+	 * @param shaper {@link MediaElement} that will be removed from the chain
+	 * @throws RoomException if thrown, the media element was not removed
+	 */
 	public synchronized void revert(MediaElement shaper) throws RoomException {
 		final String elementId = shaper.getId();
 		if (!elements.containsKey(elementId))
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
 					"This endpoint (" + getEndpointName()
 							+ ") has no media element with id " + elementId);
 
@@ -209,7 +237,7 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			if (nextId != null)
 				next = elements.get(nextId);
 			else
-				next = endpoint;
+				next = this.getEndpoint();
 			if (prevId != null)
 				prev = elements.get(prevId);
 			else
@@ -239,24 +267,26 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			String sinkId = elementIds.peekLast();
 			if (!elements.containsKey(sinkId))
 				throw new RoomException(
-						Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						Code.MEDIA_ENDPOINT_ERROR_CODE,
 						"This endpoint ("
 								+ getEndpointName()
 								+ ") has no media element with id "
 								+ sinkId
-								+ " (should've been connected to the WebRTC ep)");
+								+ " (should've been connected to the internal ep)");
 			sink = elements.get(sinkId);
 		} else
 			log.debug("Will mute connection of WebRTC and PassThrough (no other elems)");
 		switch (muteType) {
 			case ALL:
-				internalSinkDisconnect(endpoint, sink);
+				internalSinkDisconnect(this.getEndpoint(), sink);
 				break;
 			case AUDIO:
-				internalSinkDisconnect(endpoint, sink, MediaType.AUDIO);
+				internalSinkDisconnect(this.getEndpoint(), sink,
+						MediaType.AUDIO);
 				break;
 			case VIDEO:
-				internalSinkDisconnect(endpoint, sink, MediaType.VIDEO);
+				internalSinkDisconnect(this.getEndpoint(), sink,
+						MediaType.VIDEO);
 				break;
 		}
 		resolveCurrentMuteType(muteType);
@@ -269,16 +299,16 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			String sinkId = elementIds.peekLast();
 			if (!elements.containsKey(sinkId))
 				throw new RoomException(
-						Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						Code.MEDIA_ENDPOINT_ERROR_CODE,
 						"This endpoint ("
 								+ getEndpointName()
 								+ ") has no media element with id "
 								+ sinkId
-								+ " (should've been connected to the WebRTC ep)");
+								+ " (should've been connected to the internal ep)");
 			sink = elements.get(sinkId);
 		} else
 			log.debug("Will unmute connection of WebRTC and PassThrough (no other elems)");
-		internalSinkConnect(endpoint, sink);
+		internalSinkConnect(this.getEndpoint(), sink);
 		setMuteType(null);
 	}
 
@@ -300,21 +330,21 @@ public class PublisherEndpoint extends IceWebRtcEndpoint implements
 			MediaType loopbackConnectionType) {
 		if (!connected)
 			innerConnect();
-		internalSinkConnect(loopbackAlternativeSrc, endpoint,
+		internalSinkConnect(loopbackAlternativeSrc, this.getEndpoint(),
 				loopbackConnectionType);
 	}
 
 	private void innerConnect() {
-		if (endpoint == null)
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
-					"Can't connect null WebRtcEndpoint (ep: "
-							+ getEndpointName() + ")");
-		MediaElement current = endpoint;
+		if (this.getEndpoint() == null)
+			throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+					"Can't connect null endpoint (ep: " + getEndpointName()
+							+ ")");
+		MediaElement current = this.getEndpoint();
 		String prevId = elementIds.peekLast();
 		while (prevId != null) {
 			MediaElement prev = elements.get(prevId);
 			if (prev == null)
-				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
 						"No media element with id " + prevId + " (ep: "
 								+ getEndpointName() + ")");
 			internalSinkConnect(current, prev);

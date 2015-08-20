@@ -114,7 +114,7 @@ public class RoomManager {
 			if (!room.isClosed()) {
 				Set<UserParticipant> existingParticipants =
 						getParticipants(roomName);
-				room.join(request.getParticipantId(), userName);
+				room.join(request.getParticipantId(), userName, true);
 				roomEventHandler.onParticipantJoined(request, roomName,
 						userName, existingParticipants, null);
 			} else {

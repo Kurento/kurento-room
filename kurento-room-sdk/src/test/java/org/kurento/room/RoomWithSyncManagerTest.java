@@ -14,24 +14,11 @@
 
 package org.kurento.room;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.util.ArrayList;
@@ -67,6 +54,7 @@ import org.kurento.client.MediaType;
 import org.kurento.client.Mixer;
 import org.kurento.client.OnIceCandidateEvent;
 import org.kurento.client.PassThrough;
+import org.kurento.client.RtpEndpoint;
 import org.kurento.client.ServerManager;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.api.KurentoClientProvider;
@@ -96,13 +84,19 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(fullyQualifiedNames = "org.kurento.*")
 public class RoomWithSyncManagerTest {
 
-	private static final String SDP_OFFER = "peer sdp offer";
-	private static final String SDP_ANSWER = "endpoint sdp answer";
+	private static final String SDP_WEB_OFFER = "peer sdp web offer";
+	private static final String SDP_WEB_ANSWER = "endpoint sdp web answer";
+	private static final String SDP_WEB_SERVER_OFFER = "server sdp web offer";
+	private static final String SDP_WEB_PEER_ANSWER = "peer sdp web answer";
+	private static final String SDP_WEB_SERVER_UPDATED_OFFER =
+			"server sdp updated web offer";
 
-	private static final String SDP_SERVER_OFFER = "server sdp offer";
-	private static final String SDP_PEER_ANSWER = "peer sdp answer";
-	private static final String SDP_SERVER_UPDATED_OFFER =
-			"server sdp updated offer";
+	private static final String SDP_RTP_OFFER = "peer sdp rtp offer";
+	private static final String SDP_RTP_ANSWER = "endpoint sdp rtp answer";
+	// private static final String SDP_WEB_SERVER_OFFER = "server sdp offer";
+	// private static final String SDP_WEB_PEER_ANSWER = "peer sdp answer";
+	// private static final String SDP_WEB_SERVER_UPDATED_OFFER =
+	// "server sdp updated offer";
 
 	private static final int USERS = 10;
 	private static final int ROOMS = 3;
@@ -127,6 +121,8 @@ public class RoomWithSyncManagerTest {
 	private WebRtcEndpoint endpoint;
 	@Mock
 	private PassThrough passThru;
+	@Mock
+	private RtpEndpoint rtpEndpoint;
 
 	@Mock
 	private WebRtcEndpoint.Builder webRtcBuilder;
@@ -143,6 +139,15 @@ public class RoomWithSyncManagerTest {
 	private ArgumentCaptor<Continuation<Void>> passThruConnectCaptor;
 	@Captor
 	private ArgumentCaptor<Continuation<Void>> passThruDisconnectCaptor;
+
+	@Mock
+	private RtpEndpoint.Builder rtpBuilder;
+	@Captor
+	private ArgumentCaptor<Continuation<RtpEndpoint>> rtpCaptor;
+	@Captor
+	private ArgumentCaptor<Continuation<Void>> rtpConnectCaptor;
+	@Captor
+	private ArgumentCaptor<Continuation<Void>> rtpDisconnectCaptor;
 
 	@Mock
 	private Mixer mixer;
@@ -220,12 +225,31 @@ public class RoomWithSyncManagerTest {
 			}
 		}).when(webRtcBuilder).buildAsync(webRtcCaptor.capture());
 
+		// call onSuccess when building the RTP endpoint to use the mocked
+		// instance
+		doAnswer(new Answer<Continuation<RtpEndpoint>>() {
+			@Override
+			public Continuation<RtpEndpoint> answer(InvocationOnMock invocation)
+					throws Throwable {
+				rtpCaptor.getValue().onSuccess(rtpEndpoint);
+				return null;
+			}
+		}).when(rtpBuilder).buildAsync(rtpCaptor.capture());
+
 		// still using the sync version
 		when(passThruBuilder.build()).thenReturn(passThru);
 
 		try { // mock the constructor for the endpoint builder
 			whenNew(WebRtcEndpoint.Builder.class).withArguments(pipeline)
 					.thenReturn(webRtcBuilder);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+		try { // mock the constructor for the RTP endpoint builder
+			whenNew(RtpEndpoint.Builder.class).withArguments(pipeline)
+					.thenReturn(rtpBuilder);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
@@ -240,14 +264,18 @@ public class RoomWithSyncManagerTest {
 		}
 
 		// mock the SDP answer when processing the offer on the endpoint
-		when(endpoint.processOffer(SDP_OFFER)).thenReturn(SDP_ANSWER);
+		when(endpoint.processOffer(SDP_WEB_OFFER)).thenReturn(SDP_WEB_ANSWER);
 
 		// mock the SDP offer when generating it from the server endpoint
-		when(endpoint.generateOffer()).thenReturn(SDP_SERVER_OFFER);
+		when(endpoint.generateOffer()).thenReturn(SDP_WEB_SERVER_OFFER);
 
 		// mock the SDP offer when generating it from the server endpoint
-		when(endpoint.processAnswer(SDP_PEER_ANSWER)).thenReturn(
-				SDP_SERVER_UPDATED_OFFER);
+		when(endpoint.processAnswer(SDP_WEB_PEER_ANSWER)).thenReturn(
+				SDP_WEB_SERVER_UPDATED_OFFER);
+
+		// mock the SDP answer when processing the offer on the RTP endpoint
+		when(rtpEndpoint.processOffer(SDP_RTP_OFFER))
+				.thenReturn(SDP_RTP_ANSWER);
 
 		// call onSuccess when connecting the WebRtc endpoint to any media
 		// element
@@ -272,6 +300,32 @@ public class RoomWithSyncManagerTest {
 			}
 		}).when(endpoint).disconnect(any(MediaElement.class),
 				webRtcDisconnectCaptor.capture());
+
+
+		// call onSuccess when connecting the RTP endpoint to any media
+		// element
+		doAnswer(new Answer<Continuation<Void>>() {
+			@Override
+			public Continuation<Void> answer(InvocationOnMock invocation)
+					throws Throwable {
+				rtpConnectCaptor.getValue().onSuccess(null);
+				return null;
+			}
+		}).when(rtpEndpoint).connect(any(MediaElement.class),
+				rtpConnectCaptor.capture());
+
+		// call onSuccess when disconnecting the RTP endpoint from any media
+		// element
+		doAnswer(new Answer<Continuation<Void>>() {
+			@Override
+			public Continuation<Void> answer(InvocationOnMock invocation)
+					throws Throwable {
+				rtpDisconnectCaptor.getValue().onSuccess(null);
+				return null;
+			}
+		}).when(rtpEndpoint).disconnect(any(MediaElement.class),
+				rtpDisconnectCaptor.capture());
+
 
 		// call onSuccess when connecting the PassThrough element to any media
 		// element
@@ -366,6 +420,7 @@ public class RoomWithSyncManagerTest {
 
 		when(pipeline.getId()).thenReturn("mocked-pipeline");
 		when(endpoint.getId()).thenReturn("mocked-webrtc-endpoint");
+		when(rtpEndpoint.getId()).thenReturn("mocked-rtp-endpoint");
 		when(passThru.getId()).thenReturn("mocked-pass-through");
 		when(hubPort.getId()).thenReturn("mocked-hub-port");
 		when(faceFilter.getId()).thenReturn("mocked-faceoverlay-filter");
@@ -390,6 +445,17 @@ public class RoomWithSyncManagerTest {
 		assertThat(manager.getRooms(), not(hasItem(roomx)));
 
 		assertTrue(userJoinRoom(roomx, userx, pidx, true).isEmpty());
+
+		assertThat(manager.getRooms(), hasItem(roomx));
+		assertThat(manager.getParticipants(roomx), hasItem(new UserParticipant(
+				pidx, userx)));
+	}
+
+	@Test
+	public void rtpJoinNewRoom() throws AdminException {
+		assertThat(manager.getRooms(), not(hasItem(roomx)));
+
+		assertTrue(userJoinRoom(roomx, userx, pidx, true, false).isEmpty());
 
 		assertThat(manager.getRooms(), hasItem(roomx));
 		assertThat(manager.getParticipants(roomx), hasItem(new UserParticipant(
@@ -437,6 +503,17 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
+	public void joinManyWebUsersAndOneRTP() throws AdminException {
+		joinManyUsersOneRoom();
+
+		assertFalse(userJoinRoom(roomx, userx, pidx, false, false).isEmpty());
+
+		assertThat(manager.getRooms(), hasItem(roomx));
+		assertThat(manager.getParticipants(roomx), hasItem(new UserParticipant(
+				pidx, userx)));
+	}
+
+	@Test
 	public void joinManyUsersManyRooms() throws AdminException {
 		final Map<String, String> usersRooms = new HashMap<String, String>();
 		final Map<String, List<String>> roomsUsers =
@@ -459,7 +536,8 @@ public class RoomWithSyncManagerTest {
 			String user = userRoom.getKey();
 			String room = userRoom.getValue();
 			Set<UserParticipant> peers =
-					manager.joinRoom(user, room, usersParticipantIds.get(user));
+					manager.joinRoom(user, room, true,
+							usersParticipantIds.get(user));
 			if (peers.isEmpty())
 				assertEquals("Expected one peer in room " + room + ": " + user,
 						1, manager.getParticipants(room).size());
@@ -484,23 +562,60 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
+	public void rtpLeaveRoom() throws AdminException {
+		joinManyWebUsersAndOneRTP();
+		UserParticipant userxParticipant = new UserParticipant(pidx, userx);
+		assertThat(manager.getParticipants(roomx), hasItem(userxParticipant));
+		Set<UserParticipant> remainingUsers = manager.leaveRoom(pidx);
+		assertEquals(new HashSet<UserParticipant>(usersParticipants.values()),
+				remainingUsers);
+		assertEquals(manager.getParticipants(roomx), remainingUsers);
+		assertThat(manager.getParticipants(roomx),
+				not(hasItem(userxParticipant)));
+	}
+
+	@Test
 	public void publisherLifecycle() throws AdminException {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+		assertEquals(
+				"SDP answer doesn't match",
+				SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		manager.unpublishMedia(participantId0);
+		assertThat(manager.getPublishers(roomx).size(), is(0));
+
+		// peers are automatically unsubscribed
+		assertThat(manager.getSubscribers(roomx).size(), is(0));
+	}
+
+	@Test
+	public void rtpPublisherLifecycle() throws AdminException {
+		joinManyWebUsersAndOneRTP();
+
+		assertEquals("SDP RTP answer doesn't match", SDP_RTP_ANSWER,
+				manager.publishMedia(pidx, true, SDP_RTP_OFFER, false));
+
+		assertThat(manager.getPublishers(roomx).size(), is(1));
+
+		for (String pid : usersParticipantIds.values())
+			assertEquals("SDP WEB answer (for the web peer) doesn't match",
+					SDP_WEB_ANSWER,
+					manager.subscribe(userx, SDP_WEB_OFFER, pid));
+		assertThat(manager.getSubscribers(roomx).size(), is(users.length));
+
+		manager.unpublishMedia(pidx);
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 
 		// peers are automatically unsubscribed
@@ -513,21 +628,21 @@ public class RoomWithSyncManagerTest {
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP server offer doesn't match", SDP_SERVER_OFFER,
+		assertEquals("SDP server offer doesn't match", SDP_WEB_SERVER_OFFER,
 				manager.generatePublishOffer(participantId0));
 
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 
 		assertEquals("SDP updated offer doesn't match",
-				SDP_SERVER_UPDATED_OFFER, manager.publishMedia(participantId0,
-						false, SDP_PEER_ANSWER, false));
+				SDP_WEB_SERVER_UPDATED_OFFER, manager.publishMedia(
+						participantId0, false, SDP_WEB_PEER_ANSWER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		manager.unpublishMedia(participantId0);
@@ -543,8 +658,10 @@ public class RoomWithSyncManagerTest {
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+		assertEquals(
+				"SDP answer doesn't match",
+				SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -557,8 +674,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// connected without loopback,
@@ -591,14 +708,14 @@ public class RoomWithSyncManagerTest {
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP server offer doesn't match", SDP_SERVER_OFFER,
+		assertEquals("SDP server offer doesn't match", SDP_WEB_SERVER_OFFER,
 				manager.generatePublishOffer(participantId0));
 
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 
 		assertEquals("SDP updated offer doesn't match",
-				SDP_SERVER_UPDATED_OFFER, manager.publishMedia(participantId0,
-						false, SDP_PEER_ANSWER, false));
+				SDP_WEB_SERVER_UPDATED_OFFER, manager.publishMedia(
+						participantId0, false, SDP_WEB_PEER_ANSWER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -611,8 +728,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// connected without loopback, publisher's internal connection
@@ -649,8 +766,8 @@ public class RoomWithSyncManagerTest {
 		exception
 				.expectMessage(containsString("Loopback connection error test"));
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, true));
+		assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, true));
 
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
@@ -662,8 +779,8 @@ public class RoomWithSyncManagerTest {
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, true));
+		assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, true));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -676,8 +793,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// using same endpoint, subscribers connections + the internal one
@@ -707,14 +824,14 @@ public class RoomWithSyncManagerTest {
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP server offer doesn't match", SDP_SERVER_OFFER,
+		assertEquals("SDP server offer doesn't match", SDP_WEB_SERVER_OFFER,
 				manager.generatePublishOffer(participantId0));
 
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 
 		assertEquals("SDP updated offer doesn't match",
-				SDP_SERVER_UPDATED_OFFER, manager.publishMedia(participantId0,
-						false, SDP_PEER_ANSWER, true));
+				SDP_WEB_SERVER_UPDATED_OFFER, manager.publishMedia(
+						participantId0, false, SDP_WEB_PEER_ANSWER, true));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -727,8 +844,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// using same endpoint, subscribers connections + the internal one
@@ -762,9 +879,9 @@ public class RoomWithSyncManagerTest {
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, hb, null,
-						true));
+		assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, hb,
+						null, true));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -781,8 +898,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// using same endpoint, subscribers connections only
@@ -817,8 +934,8 @@ public class RoomWithSyncManagerTest {
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, hb,
+		assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, hb,
 						MediaType.AUDIO, true));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
@@ -839,8 +956,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// using same endpoint, subscribers connections only
@@ -864,8 +981,10 @@ public class RoomWithSyncManagerTest {
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+		assertEquals(
+				"SDP answer doesn't match",
+				SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -877,8 +996,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// connected without loopback,
@@ -917,8 +1036,10 @@ public class RoomWithSyncManagerTest {
 		String participantId0 = usersParticipantIds.get(users[0]);
 		String participantId1 = usersParticipantIds.get(users[1]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+		assertEquals(
+				"SDP answer doesn't match",
+				SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -930,8 +1051,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// connected without loopback,
@@ -952,7 +1073,7 @@ public class RoomWithSyncManagerTest {
 
 		// reconnects once to the subscriber's endpoint
 		verify(passThru).connect(endpoint, passThruConnectCaptor.getValue());
-		
+
 		Set<UserParticipant> remainingUsers = manager.leaveRoom(participantId0);
 		Set<UserParticipant> roomParticipants = manager.getParticipants(roomx);
 		assertEquals(roomParticipants, remainingUsers);
@@ -992,8 +1113,10 @@ public class RoomWithSyncManagerTest {
 
 		Thread.sleep(10);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+		assertEquals(
+				"SDP answer doesn't match",
+				SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -1001,8 +1124,8 @@ public class RoomWithSyncManagerTest {
 		for (String pid : usersParticipantIds.values()) {
 			if (pid.equals(participantId0))
 				continue;
-			assertEquals("SDP answer doesn't match", SDP_ANSWER,
-					manager.subscribe(users[0], SDP_OFFER, pid));
+			assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+					manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 			if (firstSubscriber) {
 				firstSubscriber = false;
 				try {
@@ -1050,15 +1173,17 @@ public class RoomWithSyncManagerTest {
 		manager.addMediaElement(participantId0, filter);
 		System.out.println("Execution of addMediaElement ended");
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+		assertEquals(
+				"SDP answer doesn't match",
+				SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		verify(faceFilter, times(1)).connect(passThru,
@@ -1083,8 +1208,10 @@ public class RoomWithSyncManagerTest {
 
 		final String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+		assertEquals(
+				"SDP answer doesn't match",
+				SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -1094,8 +1221,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// verifies listener is added to each subscriber
@@ -1156,8 +1283,10 @@ public class RoomWithSyncManagerTest {
 
 		final String participantId0 = usersParticipantIds.get(users[0]);
 
-		assertEquals("SDP answer doesn't match", SDP_ANSWER,
-				manager.publishMedia(participantId0, true, SDP_OFFER, false));
+		assertEquals(
+				"SDP answer doesn't match",
+				SDP_WEB_ANSWER,
+				manager.publishMedia(participantId0, true, SDP_WEB_OFFER, false));
 
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 
@@ -1201,8 +1330,8 @@ public class RoomWithSyncManagerTest {
 
 		for (String pid : usersParticipantIds.values())
 			if (!pid.equals(participantId0))
-				assertEquals("SDP answer doesn't match", SDP_ANSWER,
-						manager.subscribe(users[0], SDP_OFFER, pid));
+				assertEquals("SDP answer doesn't match", SDP_WEB_ANSWER,
+						manager.subscribe(users[0], SDP_WEB_OFFER, pid));
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
 
 		// verifies listener is added to each subscriber
@@ -1299,6 +1428,12 @@ public class RoomWithSyncManagerTest {
 
 	private Set<UserParticipant> userJoinRoom(final String room, String user,
 			String pid, boolean createRoomBefore) throws AdminException {
+		return userJoinRoom(room, user, pid, createRoomBefore, true);
+	}
+
+	private Set<UserParticipant> userJoinRoom(final String room, String user,
+			String pid, boolean createRoomBefore, boolean webParticipant)
+			throws AdminException {
 		if (createRoomBefore)
 			manager.createRoom(new KurentoClientSessionInfo() {
 				@Override
@@ -1307,7 +1442,8 @@ public class RoomWithSyncManagerTest {
 				}
 			});
 
-		Set<UserParticipant> existingPeers = manager.joinRoom(user, room, pid);
+		Set<UserParticipant> existingPeers =
+				manager.joinRoom(user, room, webParticipant, pid);
 
 		// verifies create media pipeline was called once
 		verify(kurentoClient, times(1)).createMediaPipeline(

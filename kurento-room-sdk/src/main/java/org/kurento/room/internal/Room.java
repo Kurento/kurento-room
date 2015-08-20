@@ -80,8 +80,8 @@ public class Room {
 		return this.pipeline;
 	}
 
-	public void join(String participantId, String userName)
-			throws RoomException {
+	public void join(String participantId, String userName,
+			boolean webParticipant) throws RoomException {
 
 		checkClosed();
 
@@ -143,7 +143,7 @@ public class Room {
 		}
 
 		participants.put(participantId, new Participant(participantId,
-				userName, this, this.pipeline));
+				userName, this, this.pipeline, webParticipant));
 
 		log.info("ROOM {}: Added participant {}", name, userName);
 	}

@@ -25,8 +25,9 @@ import org.kurento.client.ListenerSubscription;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.OnIceCandidateEvent;
+import org.kurento.client.RtpEndpoint;
+import org.kurento.client.SdpEndpoint;
 import org.kurento.client.WebRtcEndpoint;
-import org.kurento.commons.exception.KurentoException;
 import org.kurento.room.api.MutedMediaType;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
@@ -42,21 +43,25 @@ import org.slf4j.LoggerFactory;
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public abstract class IceWebRtcEndpoint {
+public abstract class MediaEndpoint {
 	private static Logger log;
+
+	private boolean web = false;
+
+	private WebRtcEndpoint webEndpoint = null;
+	private RtpEndpoint endpoint = null;
 
 	private Participant owner;
 	private String endpointName;
 
 	private MediaPipeline pipeline = null;
-	protected WebRtcEndpoint endpoint = null;
 	private ListenerSubscription endpointSubscription = null;
 
 	private LinkedList<IceCandidate> candidates =
 			new LinkedList<IceCandidate>();
 
 	private MutedMediaType muteType;
-	
+
 	/**
 	 * Constructor to set the owner, the endpoint's name and the media pipeline.
 	 * 
@@ -64,16 +69,20 @@ public abstract class IceWebRtcEndpoint {
 	 * @param endpointName
 	 * @param pipeline
 	 */
-	public IceWebRtcEndpoint(Participant owner, String endpointName,
+	public MediaEndpoint(boolean web, Participant owner, String endpointName,
 			MediaPipeline pipeline, Logger log) {
 		if (log == null)
-			IceWebRtcEndpoint.log =
-					LoggerFactory.getLogger(IceWebRtcEndpoint.class);
+			MediaEndpoint.log = LoggerFactory.getLogger(MediaEndpoint.class);
 		else
-			IceWebRtcEndpoint.log = log;
+			MediaEndpoint.log = log;
+		this.web = web;
 		this.owner = owner;
 		this.setEndpointName(endpointName);
 		this.setMediaPipeline(pipeline);
+	}
+
+	public boolean isWeb() {
+		return web;
 	}
 
 	/**
@@ -84,9 +93,21 @@ public abstract class IceWebRtcEndpoint {
 	}
 
 	/**
-	 * @return the internal {@link WebRtcEndpoint}
+	 * @return the internal endpoint ({@link RtpEndpoint} or
+	 *         {@link WebRtcEndpoint})
 	 */
-	public WebRtcEndpoint getEndpoint() {
+	public SdpEndpoint getEndpoint() {
+		if (this.isWeb())
+			return this.webEndpoint;
+		else
+			return this.endpoint;
+	}
+
+	protected WebRtcEndpoint getWebEndpoint() {
+		return webEndpoint;
+	}
+
+	protected RtpEndpoint getRtpEndpoint() {
 		return endpoint;
 	}
 
@@ -101,15 +122,15 @@ public abstract class IceWebRtcEndpoint {
 	 * 
 	 * @return the existing endpoint, if any
 	 */
-	public synchronized WebRtcEndpoint createEndpoint(
-			CountDownLatch endpointLatch) {
-		WebRtcEndpoint old = this.endpoint;
+	public synchronized SdpEndpoint createEndpoint(CountDownLatch endpointLatch) {
+		SdpEndpoint old = this.endpoint;
 		if (this.endpoint == null)
 			internalEndpointInitialization(endpointLatch);
 		else
 			endpointLatch.countDown();
-		while (!candidates.isEmpty())
-			internalAddIceCandidate(candidates.removeFirst());
+		if (this.isWeb())
+			while (!candidates.isEmpty())
+				internalAddIceCandidate(candidates.removeFirst());
 		return old;
 	}
 
@@ -147,19 +168,6 @@ public abstract class IceWebRtcEndpoint {
 	}
 
 	/**
-	 * Add a new {@link IceCandidate} received gathered by the remote peer of
-	 * this {@link WebRtcEndpoint}.
-	 * 
-	 * @param candidate the remote candidate
-	 */
-	public synchronized void addIceCandidate(IceCandidate candidate) {
-		if (endpoint == null)
-			candidates.addLast(candidate);
-		else
-			internalAddIceCandidate(candidate);
-	}
-
-	/**
 	 * Unregisters all error listeners created for media elements owned by this
 	 * instance.
 	 */
@@ -169,15 +177,16 @@ public abstract class IceWebRtcEndpoint {
 
 	/**
 	 * Mute the media stream.
+	 * 
 	 * @param muteType which type of leg to disconnect (audio, video or both)
 	 */
 	public abstract void mute(MutedMediaType muteType);
-	
+
 	/**
 	 * Reconnect the muted media leg(s).
 	 */
 	public abstract void unmute();
-	
+
 	public void setMuteType(MutedMediaType muteType) {
 		this.muteType = muteType;
 	}
@@ -208,57 +217,77 @@ public abstract class IceWebRtcEndpoint {
 		}
 		this.setMuteType(newMuteType);
 	}
-	
+
 	/**
-	 * Create the endpoint and any other additional elements (if needed).
+	 * Creates the endpoint (RTP or WebRTC) and any other additional elements
+	 * (if needed).
 	 * 
 	 * @param endpointLatch
 	 */
 	protected void internalEndpointInitialization(
 			final CountDownLatch endpointLatch) {
-		new WebRtcEndpoint.Builder(pipeline)
-				.buildAsync(new Continuation<WebRtcEndpoint>() {
-					@Override
-					public void onSuccess(WebRtcEndpoint result)
-							throws Exception {
-						endpoint = result;
-						endpointLatch.countDown();
-						log.trace("EP {}: Created a new WebRtcEndpoint",
-								endpointName);
-						endpointSubscription =
-								registerElemErrListener(endpoint);
-					}
+		if (this.isWeb()) {
+			new WebRtcEndpoint.Builder(pipeline)
+					.buildAsync(new Continuation<WebRtcEndpoint>() {
+						@Override
+						public void onSuccess(WebRtcEndpoint result)
+								throws Exception {
+							webEndpoint = result;
+							endpointLatch.countDown();
+							log.trace("EP {}: Created a new WebRtcEndpoint",
+									endpointName);
+							endpointSubscription =
+									registerElemErrListener(webEndpoint);
+						}
 
-					@Override
-					public void onError(Throwable cause) throws Exception {
-						endpointLatch.countDown();
-						log.error(
-								"EP {}: Failed to create a new WebRtcEndpoint",
-								endpointName, cause);
-					}
-				});
+						@Override
+						public void onError(Throwable cause) throws Exception {
+							endpointLatch.countDown();
+							log.error(
+									"EP {}: Failed to create a new WebRtcEndpoint",
+									endpointName, cause);
+						}
+					});
+		} else {
+			new RtpEndpoint.Builder(pipeline)
+					.buildAsync(new Continuation<RtpEndpoint>() {
+						@Override
+						public void onSuccess(RtpEndpoint result)
+								throws Exception {
+							endpoint = result;
+							endpointLatch.countDown();
+							log.trace("EP {}: Created a new RtpEndpoint",
+									endpointName);
+							endpointSubscription =
+									registerElemErrListener(endpoint);
+						}
+
+						@Override
+						public void onError(Throwable cause) throws Exception {
+							endpointLatch.countDown();
+							log.error(
+									"EP {}: Failed to create a new RtpEndpoint",
+									endpointName, cause);
+						}
+					});
+		}
 	}
 
 	/**
-	 * Registers a listener for when the {@link WebRtcEndpoint} gathers a new
-	 * {@link IceCandidate} and sends it to the remote User Agent as a
-	 * notification using the messaging capabilities of the {@link Participant}.
+	 * Add a new {@link IceCandidate} received gathered by the remote peer of
+	 * this {@link WebRtcEndpoint}.
 	 * 
-	 * @see WebRtcEndpoint#addOnIceCandidateListener(org.kurento.client.EventListener)
-	 * @see Participant#sendIceCandidate(String, IceCandidate)
-	 * @throws RoomException if thrown, unable to register the listener
+	 * @param candidate the remote candidate
 	 */
-	protected void registerOnIceCandidateEventListener() throws RoomException {
-		if (endpoint == null)
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
-					"Can't register event listener for null WebRtcEndpoint (ep: "
-							+ endpointName + ")");
-		endpoint.addOnIceCandidateListener(new EventListener<OnIceCandidateEvent>() {
-			@Override
-			public void onEvent(OnIceCandidateEvent event) {
-				owner.sendIceCandidate(endpointName, event.getCandidate());
-			}
-		});
+	public synchronized void addIceCandidate(IceCandidate candidate)
+			throws RoomException {
+		if (!this.isWeb())
+			throw new RoomException(Code.NOT_WEB_ENDPOINT_ERROR_CODE,
+					"Operation not supported");
+		if (webEndpoint == null)
+			candidates.addLast(candidate);
+		else
+			internalAddIceCandidate(candidate);
 	}
 
 	/**
@@ -293,60 +322,116 @@ public abstract class IceWebRtcEndpoint {
 	}
 
 	/**
-	 * Orders the internal {@link WebRtcEndpoint} to process the offer String.
+	 * Orders the internal endpoint ({@link RtpEndpoint} or
+	 * {@link WebRtcEndpoint}) to process the offer String.
 	 * 
-	 * @see WebRtcEndpoint#processOffer(String)
+	 * @see SdpEndpoint#processOffer(String)
 	 * @param offer String with the Sdp offer
 	 * @return the Sdp answer
 	 */
-	protected String processOffer(String offer) {
-		if (endpoint == null)
-			throw new KurentoException(
-					"Can't process offer when WebRtcEndpoint is null (ep: "
-							+ endpointName + ")");
-		return endpoint.processOffer(offer);
+	protected String processOffer(String offer) throws RoomException {
+		if (this.isWeb()) {
+			if (webEndpoint == null)
+				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						"Can't process offer when WebRtcEndpoint is null (ep: "
+								+ endpointName + ")");
+			return webEndpoint.processOffer(offer);
+		} else {
+			if (endpoint == null)
+				throw new RoomException(Code.RTP_ENDPOINT_ERROR_CODE,
+						"Can't process offer when RtpEndpoint is null (ep: "
+								+ endpointName + ")");
+			return endpoint.processOffer(offer);
+		}
 	}
 
 	/**
-	 * Orders the internal {@link WebRtcEndpoint} to generate the offer String
-	 * that can be used to initiate a connection.
+	 * Orders the internal endpoint ({@link RtpEndpoint} or
+	 * {@link WebRtcEndpoint}) to generate the offer String that can be used to
+	 * initiate a connection.
 	 * 
-	 * @see WebRtcEndpoint#generateOffer()
+	 * @see SdpEndpoint#generateOffer()
 	 * @return the Sdp offer
 	 */
-	protected String generateOffer() {
-		if (endpoint == null)
-			throw new KurentoException(
-					"Can't generate offer when WebRtcEndpoint is null (ep: "
-							+ endpointName + ")");
-		return endpoint.generateOffer();
+	protected String generateOffer() throws RoomException {
+		if (this.isWeb()) {
+			if (webEndpoint == null)
+				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						"Can't generate offer when WebRtcEndpoint is null (ep: "
+								+ endpointName + ")");
+			return webEndpoint.generateOffer();
+		} else {
+			if (endpoint == null)
+				throw new RoomException(Code.RTP_ENDPOINT_ERROR_CODE,
+						"Can't generate offer when RtpEndpoint is null (ep: "
+								+ endpointName + ")");
+			return endpoint.generateOffer();
+		}
 	}
 
 	/**
-	 * Orders the internal {@link WebRtcEndpoint} to process the answer String.
+	 * Orders the internal endpoint ({@link RtpEndpoint} or
+	 * {@link WebRtcEndpoint}) to process the answer String.
 	 * 
-	 * @see WebRtcEndpoint#processAnswer(String)
+	 * @see SdpEndpoint#processAnswer(String)
 	 * @param answer String with the Sdp answer from remote
 	 * @return the updated Sdp offer, based on the received answer
 	 */
-	protected String processAnswer(String answer) {
-		if (endpoint == null)
-			throw new KurentoException(
-					"Can't process answer when WebRtcEndpoint is null (ep: "
-							+ endpointName + ")");
-		return endpoint.processAnswer(answer);
+	protected String processAnswer(String answer) throws RoomException {
+		if (this.isWeb()) {
+			if (webEndpoint == null)
+				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+						"Can't process answer when WebRtcEndpoint is null (ep: "
+								+ endpointName + ")");
+			return webEndpoint.processAnswer(answer);
+		} else {
+			if (endpoint == null)
+				throw new RoomException(Code.RTP_ENDPOINT_ERROR_CODE,
+						"Can't process answer when RtpEndpoint is null (ep: "
+								+ endpointName + ")");
+			return endpoint.processAnswer(answer);
+		}
 	}
 
 	/**
-	 * Instructs the internal {@link WebRtcEndpoint} to start gathering
+	 * If supported, it registers a listener for when a new {@link IceCandidate}
+	 * is gathered by the internal endpoint ({@link WebRtcEndpoint}) and sends
+	 * it to the remote User Agent as a notification using the messaging
+	 * capabilities of the {@link Participant}.
+	 * 
+	 * @see WebRtcEndpoint#addOnIceCandidateListener(org.kurento.client.EventListener)
+	 * @see Participant#sendIceCandidate(String, IceCandidate)
+	 * @throws RoomException if thrown, unable to register the listener
+	 */
+	protected void registerOnIceCandidateEventListener() throws RoomException {
+		if (!this.isWeb())
+			return;
+		if (webEndpoint == null)
+			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+					"Can't register event listener for null WebRtcEndpoint (ep: "
+							+ endpointName + ")");
+		webEndpoint
+				.addOnIceCandidateListener(new EventListener<OnIceCandidateEvent>() {
+					@Override
+					public void onEvent(OnIceCandidateEvent event) {
+						owner.sendIceCandidate(endpointName,
+								event.getCandidate());
+					}
+				});
+	}
+
+	/**
+	 * If supported, it instructs the internal endpoint to start gathering
 	 * {@link IceCandidate}s.
 	 */
-	protected void gatherCandidates() {
-		if (endpoint == null)
-			throw new KurentoException(
+	protected void gatherCandidates() throws RoomException {
+		if (!this.isWeb())
+			return;
+		if (webEndpoint == null)
+			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
 					"Can't start gathering ICE candidates on null WebRtcEndpoint (ep: "
 							+ endpointName + ")");
-		endpoint.gatherCandidates(new Continuation<Void>() {
+		webEndpoint.gatherCandidates(new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {
 				log.trace(
@@ -364,7 +449,7 @@ public abstract class IceWebRtcEndpoint {
 	}
 
 	private void internalAddIceCandidate(IceCandidate candidate) {
-		this.endpoint.addIceCandidate(candidate, new Continuation<Void>() {
+		this.webEndpoint.addIceCandidate(candidate, new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {
 				log.trace("Ice candidate added to the internal endpoint");

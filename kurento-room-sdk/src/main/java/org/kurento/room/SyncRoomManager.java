@@ -27,6 +27,8 @@ import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.MediaType;
+import org.kurento.client.RtpEndpoint;
+import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.api.KurentoClientProvider;
 import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.api.MutedMediaType;
@@ -81,6 +83,11 @@ public class SyncRoomManager {
 	 * @param userName name or identifier of the user in the room. Will be used
 	 *        to identify her WebRTC media peer (from the client-side).
 	 * @param roomName name or identifier of the room
+	 * @param webParticipant if <strong>true</strong>, the internal media
+	 *        endpoints will use the trickle ICE mechanism when establishing
+	 *        connections with external media peers ({@link WebRtcEndpoint}); if
+	 *        <strong>false</strong>, the media endpoints will be of type
+	 *        {@link RtpEndpoint}, with no ICE implementation
 	 * @param participantId identifier of the participant
 	 * @return set of existing peers of type {@link UserParticipant}, can be
 	 *         empty if first
@@ -88,9 +95,9 @@ public class SyncRoomManager {
 	 *         or is closing)
 	 */
 	public Set<UserParticipant> joinRoom(String userName, String roomName,
-			String participantId) throws AdminException {
-		log.debug("Request [JOIN_ROOM] user={}, room={} ({})", userName,
-				roomName, participantId);
+			boolean webParticipant, String participantId) throws AdminException {
+		log.debug("Request [JOIN_ROOM] user={}, room={}, web={} ({})", userName,
+				roomName, webParticipant, participantId);
 		Room room = rooms.get(roomName);
 		if (room == null) {
 			log.warn("Room '{}' not found");
@@ -107,7 +114,7 @@ public class SyncRoomManager {
 		}
 		Set<UserParticipant> existingParticipants = getParticipants(roomName);
 		try {
-			room.join(participantId, userName);
+			room.join(participantId, userName, webParticipant);
 			return existingParticipants;
 		} catch (RoomException e) {
 			log.warn("PARTICIPANT {}: Error joining/creating room {}",
