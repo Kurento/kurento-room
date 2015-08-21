@@ -96,8 +96,8 @@ public class SyncRoomManager {
 	 */
 	public Set<UserParticipant> joinRoom(String userName, String roomName,
 			boolean webParticipant, String participantId) throws AdminException {
-		log.debug("Request [JOIN_ROOM] user={}, room={}, web={} ({})", userName,
-				roomName, webParticipant, participantId);
+		log.debug("Request [JOIN_ROOM] user={}, room={}, web={} ({})",
+				userName, roomName, webParticipant, participantId);
 		Room room = rooms.get(roomName);
 		if (room == null) {
 			log.warn("Room '{}' not found");
@@ -851,6 +851,26 @@ public class SyncRoomManager {
 				userParts.add(new UserParticipant(p.getId(), p.getName()));
 		}
 		return userParts;
+	}
+
+	/**
+	 * Checks if a participant is currently streaming media.
+	 * 
+	 * @param participantId identifier of the participant
+	 * @return true if the participant is streaming media, false otherwise
+	 * @throws AdminException in case the participant doesn’t exist or has been
+	 *         closed
+	 */
+	public boolean isPublisherStreaming(String participantId)
+			throws AdminException {
+		Participant participant = getParticipant(participantId);
+		if (participant == null)
+			throw new AdminException("No participant with id '" + participantId
+					+ "' was found");
+		if (participant.isClosed())
+			throw new AdminException("Participant '" + participant.getName()
+					+ "' has been closed");
+		return participant.isStreaming();
 	}
 
 	/**
