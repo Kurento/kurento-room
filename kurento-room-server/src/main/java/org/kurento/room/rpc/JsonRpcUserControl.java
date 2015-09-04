@@ -23,7 +23,7 @@ import org.kurento.jsonrpc.message.Request;
 import org.kurento.room.RoomManager;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
-import org.kurento.room.exception.AdminException;
+import org.kurento.room.exception.RoomException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +59,7 @@ public class JsonRpcUserControl {
 		participantSession.setParticipantName(userName);
 		participantSession.setRoomName(roomName);
 
-		roomManager.joinRoom(userName, roomName, participantRequest);
+		roomManager.joinRoom(userName, roomName, true, participantRequest);
 	}
 
 	public void publishVideo(Transaction transaction,
@@ -110,14 +110,14 @@ public class JsonRpcUserControl {
 		try {
 			roomManager.evictParticipant(sessionId);
 			log.info("Evicted participant with sessionId {}", sessionId);
-		} catch (AdminException e) {
+		} catch (RoomException e) {
 			log.warn("Unable to evict: {}", e.getMessage());
 			log.trace("Unable to evict user", e);
 		}
 	}
 
 	public void leaveRoom(Transaction transaction, Request<JsonObject> request,
-			ParticipantRequest participantRequest) throws AdminException {
+			ParticipantRequest participantRequest) {
 		boolean exists = false;
 		String pid = participantRequest.getParticipantId();
 		// trying with room info from session

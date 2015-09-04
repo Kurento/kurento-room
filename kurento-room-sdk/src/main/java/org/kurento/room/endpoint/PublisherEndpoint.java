@@ -125,7 +125,7 @@ public class PublisherEndpoint extends MediaEndpoint {
 				sdpResponse = processOffer(sdpString);
 				break;
 			default:
-				throw new RoomException(Code.SDP_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_SDP_ERROR_CODE,
 						"Sdp type not supported: " + sdpType);
 		}
 		gatherCandidates();
@@ -187,10 +187,10 @@ public class PublisherEndpoint extends MediaEndpoint {
 			throws RoomException {
 		String id = shaper.getId();
 		if (id == null)
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
 					"Unable to connect media element with null id");
 		if (elements.containsKey(id))
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
 					"This endpoint already has a media element with id " + id);
 		MediaElement first = null;
 		if (!elementIds.isEmpty())

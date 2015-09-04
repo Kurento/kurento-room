@@ -57,16 +57,12 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 	}
 
 	@Override
-	public void onRoomCreated(ParticipantRequest request, String roomName) {
-		// nothing to do
-	}
-
-	@Override
-	public void onRoomClosed(String roomName, Set<String> participantIds) {
+	public void onRoomClosed(String roomName, Set<UserParticipant> participants) {
 		JsonObject notifParams = new JsonObject();
 		notifParams.addProperty("room", roomName);
-		for (String pid : participantIds)
-			notifService.sendNotification(pid, ROOM_CLOSED_METHOD, notifParams);
+		for (UserParticipant participant : participants)
+			notifService.sendNotification(participant.getParticipantId(),
+					ROOM_CLOSED_METHOD, notifParams);
 	}
 
 	@Override
@@ -100,9 +96,8 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 	}
 
 	@Override
-	public void onParticipantLeft(ParticipantRequest request, String roomName,
-			String userName, Set<String> remainingParticipantIds,
-			RoomException error) {
+	public void onParticipantLeft(ParticipantRequest request, String userName,
+			Set<UserParticipant> remainingParticipants, RoomException error) {
 		if (error != null) {
 			notifService.sendErrorResponse(request, null, error);
 			return;
@@ -110,8 +105,9 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 
 		JsonObject params = new JsonObject();
 		params.addProperty("name", userName);
-		for (String pid : remainingParticipantIds)
-			notifService.sendNotification(pid, PARTICIPANT_LEFT_METHOD, params);
+		for (UserParticipant participant : remainingParticipants)
+			notifService.sendNotification(participant.getParticipantId(),
+					PARTICIPANT_LEFT_METHOD, params);
 
 		notifService.sendResponse(request, new JsonObject());
 		notifService.closeSession(request);
@@ -119,8 +115,8 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 
 	@Override
 	public void onPublishMedia(ParticipantRequest request,
-			String publisherName, String sdpAnswer, Set<String> participantIds,
-			RoomException error) {
+			String publisherName, String sdpAnswer,
+			Set<UserParticipant> participants, RoomException error) {
 		if (error != null) {
 			notifService.sendErrorResponse(request, null, error);
 			return;
@@ -137,17 +133,18 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 		streamsArray.add(stream);
 		params.add("streams", streamsArray);
 
-		for (String pid : participantIds)
-			if (pid.equals(request.getParticipantId()))
+		for (UserParticipant participant : participants)
+			if (participant.getParticipantId().equals(
+					request.getParticipantId()))
 				continue;
 			else
-				notifService.sendNotification(pid,
+				notifService.sendNotification(participant.getParticipantId(),
 						PARTICIPANT_PUBLISHED_METHOD, params);
 	}
 
 	@Override
 	public void onUnpublishMedia(ParticipantRequest request,
-			String publisherName, Set<String> participantIds,
+			String publisherName, Set<UserParticipant> participants,
 			RoomException error) {
 		if (error != null) {
 			notifService.sendErrorResponse(request, null, error);
@@ -158,11 +155,12 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 		JsonObject params = new JsonObject();
 		params.addProperty("name", publisherName);
 
-		for (String pid : participantIds)
-			if (pid.equals(request.getParticipantId()))
+		for (UserParticipant participant : participants)
+			if (participant.getParticipantId().equals(
+					request.getParticipantId()))
 				continue;
 			else
-				notifService.sendNotification(pid,
+				notifService.sendNotification(participant.getParticipantId(),
 						PARTICIPANT_UNPUBLISHED_METHOD, params);
 	}
 
@@ -189,8 +187,8 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 
 	@Override
 	public void onSendMessage(ParticipantRequest request, String message,
-			String userName, String roomName, Set<String> participantIds,
-			RoomException error) {
+			String userName, String roomName,
+			Set<UserParticipant> participants, RoomException error) {
 		if (error != null) {
 			notifService.sendErrorResponse(request, null, error);
 			return;
@@ -202,9 +200,9 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 		params.addProperty("user", userName);
 		params.addProperty("message", message);
 
-		for (String pid : participantIds)
-			notifService.sendNotification(pid, PARTICIPANT_SEND_MESSAGE_METHOD,
-					params);
+		for (UserParticipant participant : participants)
+			notifService.sendNotification(participant.getParticipantId(),
+					PARTICIPANT_SEND_MESSAGE_METHOD, params);
 	}
 
 	@Override
@@ -217,6 +215,26 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 
 		notifService.sendResponse(request, new JsonObject());
 	}
+
+	@Override
+	public void onParticipantLeft(String userName,
+			Set<UserParticipant> remainingParticipants) {
+		JsonObject params = new JsonObject();
+		params.addProperty("name", userName);
+		for (UserParticipant participant : remainingParticipants)
+			notifService.sendNotification(participant.getParticipantId(),
+					PARTICIPANT_LEFT_METHOD, params);
+	}
+
+	@Override
+	public void onParticipantEvicted(UserParticipant participant) {
+		//trick the peer into thinking the room was closed
+		//TODO add specific method??
+		notifService.sendNotification(participant.getParticipantId(),
+				ROOM_CLOSED_METHOD, new JsonObject());
+	}
+
+	// ------------ EVENTS FROM ROOM HANDLER -----
 
 	@Override
 	public void onIceCandidate(String roomName, String participantId,

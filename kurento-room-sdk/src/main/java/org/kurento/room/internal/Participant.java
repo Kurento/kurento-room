@@ -297,7 +297,7 @@ public class Participant {
 
 	public void mutePublishedMedia(MutedMediaType muteType) {
 		if (muteType == null)
-			throw new RoomException(Code.MUTE_MEDIA_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_MUTE_ERROR_CODE,
 					"Mute type cannot be null");
 		this.getPublisher().mute(muteType);
 	}
@@ -312,7 +312,7 @@ public class Participant {
 
 	public void muteSubscribedMedia(Participant sender, MutedMediaType muteType) {
 		if (muteType == null)
-			throw new RoomException(Code.MUTE_MEDIA_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_MUTE_ERROR_CODE,
 					"Mute type cannot be null");
 		String senderName = sender.getName();
 		SubscriberEndpoint subscriberEndpoint = subscribers.get(senderName);

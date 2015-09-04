@@ -2,7 +2,7 @@ package org.kurento.room.demo;
 
 import org.kurento.commons.PropertiesManager;
 import org.kurento.room.RoomManager;
-import org.kurento.room.exception.AdminException;
+import org.kurento.room.exception.RoomException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +53,7 @@ public class DemoController {
 		}
 		try {
 			roomManager.closeRoom(room);
-		} catch (AdminException e) {
+		} catch (RoomException e) {
 			log.warn("Error closing room {}", room, e);
 			throw new ResourceNotFoundException(e.getMessage());
 		}

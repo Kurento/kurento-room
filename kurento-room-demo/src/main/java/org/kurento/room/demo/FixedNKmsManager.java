@@ -79,12 +79,12 @@ public class FixedNKmsManager extends KmsManager {
 		if (userName == null) {
 			log.warn("Unable to find user name in session {}", participantId);
 			throw new RoomException(
-					RoomException.Code.CANNOT_CREATE_ROOM_ERROR_CODE,
+					RoomException.Code.ROOM_CANNOT_BE_CREATED_ERROR_CODE,
 					"Not enough information");
 		}
 		if (!canCreateRoom(userName))
 			throw new RoomException(
-					RoomException.Code.CANNOT_CREATE_ROOM_ERROR_CODE,
+					RoomException.Code.ROOM_CANNOT_BE_CREATED_ERROR_CODE,
 					"User cannot create a new room");
 		Kms kms = null;
 		String type = "";
@@ -102,7 +102,7 @@ public class FixedNKmsManager extends KmsManager {
 			log.debug("Was trying Kms which has no resources left: highQ={}, "
 					+ "{}less loaded KMS, uri={}", hq, type, kms.getUri());
 			throw new RoomException(
-					RoomException.Code.CANNOT_CREATE_ROOM_ERROR_CODE,
+					RoomException.Code.ROOM_CANNOT_BE_CREATED_ERROR_CODE,
 					"No resources left to create new room");
 		}
 		log.debug("Offering Kms: highQ={}, {}less loaded KMS, uri={}", hq,

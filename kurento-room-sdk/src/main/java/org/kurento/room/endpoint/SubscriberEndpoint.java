@@ -71,7 +71,7 @@ public class SubscriberEndpoint extends MediaEndpoint {
 	@Override
 	public synchronized void mute(MutedMediaType muteType) {
 		if (this.publisher == null)
-			throw new RoomException(Code.MUTE_MEDIA_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_MUTE_ERROR_CODE,
 					"Publisher endpoint not found");
 		switch (muteType) {
 			case ALL:

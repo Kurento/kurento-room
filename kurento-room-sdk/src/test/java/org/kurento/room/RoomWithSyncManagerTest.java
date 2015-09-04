@@ -62,7 +62,6 @@ import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.api.MutedMediaType;
 import org.kurento.room.api.RoomHandler;
 import org.kurento.room.api.pojo.UserParticipant;
-import org.kurento.room.exception.AdminException;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
 import org.mockito.ArgumentCaptor;
@@ -441,7 +440,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void joinNewRoom() throws AdminException {
+	public void joinNewRoom() {
 		assertThat(manager.getRooms(), not(hasItem(roomx)));
 
 		assertTrue(userJoinRoom(roomx, userx, pidx, true).isEmpty());
@@ -452,10 +451,10 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void rtpJoinNewRoom() throws AdminException {
+	public void rtpJoinNewRoom() {
 		assertThat(manager.getRooms(), not(hasItem(roomx)));
 
-		assertTrue(userJoinRoom(roomx, userx, pidx, true, false).isEmpty());
+		assertTrue(userJoinRoom(roomx, userx, pidx, true).isEmpty());
 
 		assertThat(manager.getRooms(), hasItem(roomx));
 		assertThat(manager.getParticipants(roomx), hasItem(new UserParticipant(
@@ -463,10 +462,10 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void joinRoomFail() throws AdminException {
+	public void joinRoomFail() {
 		assertThat(manager.getRooms(), not(hasItem(roomx)));
 
-		exception.expect(AdminException.class);
+		exception.expect(RoomException.class);
 		exception.expectMessage(containsString("must be created before"));
 		userJoinRoom(roomx, userx, pidx, false);
 
@@ -474,7 +473,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void joinManyUsersOneRoom() throws AdminException {
+	public void joinManyUsersOneRoom() {
 		int count = 0;
 		for (Entry<String, String> userPid : usersParticipantIds.entrySet()) {
 			String user = userPid.getKey();
@@ -503,7 +502,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void joinManyWebUsersAndOneRTP() throws AdminException {
+	public void joinManyWebUsersAndOneRTP() {
 		joinManyUsersOneRoom();
 
 		assertFalse(userJoinRoom(roomx, userx, pidx, false, false).isEmpty());
@@ -514,7 +513,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void joinManyUsersManyRooms() throws AdminException {
+	public void joinManyUsersManyRooms() {
 		final Map<String, String> usersRooms = new HashMap<String, String>();
 		final Map<String, List<String>> roomsUsers =
 				new HashMap<String, List<String>>();
@@ -534,10 +533,15 @@ public class RoomWithSyncManagerTest {
 			});
 		for (Entry<String, String> userRoom : usersRooms.entrySet()) {
 			String user = userRoom.getKey();
-			String room = userRoom.getValue();
+			final String room = userRoom.getValue();
 			Set<UserParticipant> peers =
 					manager.joinRoom(user, room, true,
-							usersParticipantIds.get(user));
+							new KurentoClientSessionInfo() {
+								@Override
+								public String getRoomName() {
+									return room;
+								}
+							}, usersParticipantIds.get(user));
 			if (peers.isEmpty())
 				assertEquals("Expected one peer in room " + room + ": " + user,
 						1, manager.getParticipants(room).size());
@@ -548,7 +552,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void leaveRoom() throws AdminException {
+	public void leaveRoom() {
 		joinManyUsersOneRoom();
 		assertTrue(!userJoinRoom(roomx, userx, pidx, false).isEmpty());
 		UserParticipant userxParticipant = new UserParticipant(pidx, userx);
@@ -562,7 +566,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void rtpLeaveRoom() throws AdminException {
+	public void rtpLeaveRoom() {
 		joinManyWebUsersAndOneRTP();
 		UserParticipant userxParticipant = new UserParticipant(pidx, userx);
 		assertThat(manager.getParticipants(roomx), hasItem(userxParticipant));
@@ -575,7 +579,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void publisherLifecycle() throws AdminException {
+	public void publisherLifecycle() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
@@ -601,7 +605,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void rtpPublisherLifecycle() throws AdminException {
+	public void rtpPublisherLifecycle() {
 		joinManyWebUsersAndOneRTP();
 
 		assertEquals("SDP RTP answer doesn't match", SDP_RTP_ANSWER,
@@ -623,7 +627,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void invertedPublisherLifecycle() throws AdminException {
+	public void invertedPublisherLifecycle() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
@@ -653,7 +657,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void publishAndLeave() throws AdminException {
+	public void publishAndLeave() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
@@ -703,7 +707,7 @@ public class RoomWithSyncManagerTest {
 	 * @throws AdminException
 	 */
 	@Test
-	public void invertedPublishAndLeave() throws AdminException {
+	public void invertedPublishAndLeave() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
@@ -751,18 +755,18 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void publishWithLoopbackError() throws AdminException {
+	public void publishWithLoopbackError() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
 
 		doThrow(
-				new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+				new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
 						"Loopback connection error test")).when(passThru)
 				.connect(any(WebRtcEndpoint.class),
 						Matchers.<Continuation<Void>>any());
 
-		exception.expect(AdminException.class);
+		exception.expect(RoomException.class);
 		exception
 				.expectMessage(containsString("Loopback connection error test"));
 
@@ -774,7 +778,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void publishWithLoopback() throws AdminException {
+	public void publishWithLoopback() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
@@ -819,7 +823,7 @@ public class RoomWithSyncManagerTest {
 	 * @throws AdminException
 	 */
 	@Test
-	public void invertedPublishWithLoopback() throws AdminException {
+	public void invertedPublishWithLoopback() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
@@ -864,7 +868,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void publishWithAlternativeLoopbackSrc() throws AdminException {
+	public void publishWithAlternativeLoopbackSrc() {
 		joinManyUsersOneRoom();
 
 		Mixer m = new Mixer.Builder(pipeline).build();
@@ -918,8 +922,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void publishWithAlternativeLoopbackSrcAudioType()
-			throws AdminException {
+	public void publishWithAlternativeLoopbackSrcAudioType() {
 		joinManyUsersOneRoom();
 
 		Mixer m = new Mixer.Builder(pipeline).build();
@@ -976,7 +979,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void muteUnmutePublished() throws AdminException {
+	public void muteUnmutePublished() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
@@ -1030,7 +1033,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void muteUnmuteSubscribed() throws AdminException {
+	public void muteUnmuteSubscribed() {
 		joinManyUsersOneRoom();
 
 		String participantId0 = usersParticipantIds.get(users[0]);
@@ -1086,8 +1089,8 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void addMediaFilterInParallel() throws AdminException,
-			InterruptedException, ExecutionException {
+	public void addMediaFilterInParallel() throws InterruptedException,
+			ExecutionException {
 		joinManyUsersOneRoom();
 
 		final FaceOverlayFilter filter =
@@ -1156,8 +1159,8 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void addMediaFilterBeforePublishing() throws AdminException,
-			InterruptedException, ExecutionException {
+	public void addMediaFilterBeforePublishing() throws InterruptedException,
+			ExecutionException {
 		joinManyUsersOneRoom();
 
 		final FaceOverlayFilter filter =
@@ -1203,7 +1206,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void iceCandidate() throws AdminException {
+	public void iceCandidate() {
 		joinManyUsersOneRoom();
 
 		final String participantId0 = usersParticipantIds.get(users[0]);
@@ -1278,7 +1281,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void mediaError() throws AdminException {
+	public void mediaError() {
 		joinManyUsersOneRoom();
 
 		final String participantId0 = usersParticipantIds.get(users[0]);
@@ -1376,7 +1379,7 @@ public class RoomWithSyncManagerTest {
 	}
 
 	@Test
-	public void pipelineError() throws AdminException {
+	public void pipelineError() {
 		joinManyUsersOneRoom();
 
 		// verifies pipeline error listener is added to room
@@ -1427,23 +1430,25 @@ public class RoomWithSyncManagerTest {
 	}
 
 	private Set<UserParticipant> userJoinRoom(final String room, String user,
-			String pid, boolean createRoomBefore) throws AdminException {
-		return userJoinRoom(room, user, pid, createRoomBefore, true);
+			String pid, boolean joinMustSucceed) {
+		return userJoinRoom(room, user, pid, joinMustSucceed, true);
 	}
 
 	private Set<UserParticipant> userJoinRoom(final String room, String user,
-			String pid, boolean createRoomBefore, boolean webParticipant)
-			throws AdminException {
-		if (createRoomBefore)
-			manager.createRoom(new KurentoClientSessionInfo() {
+			String pid, boolean joinMustSucceed, boolean webParticipant) {
+		KurentoClientSessionInfo kcsi = null;
+
+		if (joinMustSucceed)
+			kcsi = new KurentoClientSessionInfo() {
 				@Override
 				public String getRoomName() {
 					return room;
 				}
-			});
-
+			};
+		
 		Set<UserParticipant> existingPeers =
-				manager.joinRoom(user, room, webParticipant, pid);
+				manager.joinRoom(user, room, webParticipant,
+						kcsi, pid);
 
 		// verifies create media pipeline was called once
 		verify(kurentoClient, times(1)).createMediaPipeline(

@@ -124,7 +124,7 @@ public class Room {
 				pipelineLatch.countDown();
 			}
 			if (getPipeline() == null)
-				throw new RoomException(Code.CANNOT_CREATE_ROOM_ERROR_CODE,
+				throw new RoomException(Code.ROOM_CANNOT_BE_CREATED_ERROR_CODE,
 						"Unable to create media pipeline for room '" + name
 								+ "'");
 

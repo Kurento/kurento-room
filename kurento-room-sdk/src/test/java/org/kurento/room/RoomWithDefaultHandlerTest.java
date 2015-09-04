@@ -14,23 +14,11 @@
 
 package org.kurento.room;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.doAnswer;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.util.ArrayList;
@@ -55,17 +43,18 @@ import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.OnIceCandidateEvent;
 import org.kurento.client.PassThrough;
+import org.kurento.client.ServerManager;
 import org.kurento.client.WebRtcEndpoint;
 import org.kurento.room.api.KurentoClientProvider;
 import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.api.UserNotificationService;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
-import org.kurento.room.exception.AdminException;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.internal.DefaultRoomEventHandler;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -100,6 +89,8 @@ public class RoomWithDefaultHandlerTest {
 
 	@Mock
 	private KurentoClient kurentoClient;
+	@Mock
+	private ServerManager serverManager;
 	@Captor
 	private ArgumentCaptor<Continuation<MediaPipeline>> kurentoClientCaptor;
 
@@ -149,8 +140,9 @@ public class RoomWithDefaultHandlerTest {
 					throws Throwable {
 				return kurentoClient;
 			}
-		}).when(kcProvider).getKurentoClient(any(KurentoClientSessionInfo.class));
-
+		}).when(kcProvider).getKurentoClient(
+				Matchers.any(KurentoClientSessionInfo.class));
+		when(kurentoClient.getServerManager()).thenReturn(serverManager);
 		// not used anymore, replaced by the Continuation version
 		// when(kurentoClient.createMediaPipeline()).thenAnswer(
 		// new Answer<MediaPipeline>() {
@@ -238,7 +230,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void joinNewRoom() throws AdminException {
+	public void joinNewRoom() {
 		final ParticipantRequest participantRequest =
 				new ParticipantRequest(userx, requestIdx);
 		Map<String, ParticipantRequest> participantsRequests =
@@ -258,7 +250,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void joinManyUsersOneRoom() throws AdminException {
+	public void joinManyUsersOneRoom() {
 		int responses = 0;
 		int joinedNotifications = 0;
 		for (Entry<String, ParticipantRequest> request : usersParticipantRequests
@@ -327,10 +319,10 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		for (Entry<String, String> userRoom : usersRooms.entrySet()) {
-			manager.joinRoom(userRoom.getKey(), userRoom.getValue(),
+			manager.joinRoom(userRoom.getKey(), userRoom.getValue(), true,
 					usersParticipantRequests.get(userRoom.getKey()));
 		}
 		// verifies create media pipeline was called once for each new room
@@ -347,7 +339,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void leaveRoom() throws AdminException {
+	public void leaveRoom() {
 		joinManyUsersOneRoom();
 
 		final ParticipantRequest participantRequestX =
@@ -383,7 +375,7 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.PARTICIPANT_LEFT_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
 			@Override
@@ -402,7 +394,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(eq(participantRequestX),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		manager.leaveRoom(participantRequestX);
 
@@ -414,7 +406,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void onePublisher() throws AdminException {
+	public void onePublisher() {
 		joinManyUsersOneRoom();
 
 		final ParticipantRequest participantRequest0 =
@@ -440,7 +432,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void joinAndPublish() throws AdminException {
+	public void joinAndPublish() {
 		int responses = 0;
 		int joinedNotifications = 0;
 		int published = 0;
@@ -480,7 +472,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void manyPublishers() throws AdminException {
+	public void manyPublishers() {
 		joinManyUsersOneRoom();
 
 		int published = 0;
@@ -538,7 +530,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void sendManyMessages() throws AdminException {
+	public void sendManyMessages() {
 		joinManyUsersOneRoom();
 		int responses = users.length;
 		int sentMessages = 0;
@@ -566,7 +558,7 @@ public class RoomWithDefaultHandlerTest {
 					return null;
 				}
 			}).when(notificationService).sendResponse(
-					isA(ParticipantRequest.class), isA(JsonObject.class));
+					Matchers.isA(ParticipantRequest.class), Matchers.isA(JsonObject.class));
 
 			doAnswer(new Answer<Void>() {
 				@Override
@@ -593,7 +585,7 @@ public class RoomWithDefaultHandlerTest {
 					.sendNotification(
 							anyString(),
 							eq(DefaultRoomEventHandler.PARTICIPANT_SEND_MESSAGE_METHOD),
-							isA(JsonObject.class));
+							Matchers.isA(JsonObject.class));
 
 			manager.sendMessage(message, sender.getParticipantId(), roomx,
 					sender);
@@ -605,7 +597,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void iceCandidate() throws AdminException {
+	public void iceCandidate() {
 
 		joinManyUsersOneRoom();
 
@@ -681,7 +673,7 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.ICE_CANDIDATE_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener
 		iceEventCaptor.getValue().onEvent(
@@ -702,7 +694,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void mediaError() throws AdminException {
+	public void mediaError() {
 
 		joinManyUsersOneRoom();
 
@@ -742,7 +734,7 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.MEDIA_ERROR_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		// triggers the captured listener
 		mediaErrorEventCaptor.getValue().onEvent(
@@ -783,7 +775,7 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.MEDIA_ERROR_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener (once again)
 		mediaErrorEventCaptor.getValue().onEvent(
@@ -805,7 +797,7 @@ public class RoomWithDefaultHandlerTest {
 	}
 
 	@Test
-	public void pipelineError() throws AdminException {
+	public void pipelineError() {
 		joinManyUsersOneRoom();
 
 		// verifies pipeline error listener is added to room
@@ -837,7 +829,7 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.MEDIA_ERROR_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener
 		pipelineErrorEventCaptor.getValue().onEvent(
@@ -875,7 +867,7 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
 			@Override
@@ -919,7 +911,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(
-				isA(ParticipantRequest.class), isA(JsonArray.class));
+				Matchers.isA(ParticipantRequest.class), Matchers.isA(JsonArray.class));
 
 
 		doAnswer(new Answer<Void>() {
@@ -934,9 +926,9 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendErrorResponse(
-				any(ParticipantRequest.class), any(), any(RoomException.class));
+				Matchers.any(ParticipantRequest.class), any(), Matchers.any(RoomException.class));
 
-		manager.joinRoom(user, room, participantRequest);
+		manager.joinRoom(user, room, true, participantRequest);
 
 		// verifies create media pipeline was called once
 		verify(kurentoClient, times(1)).createMediaPipeline(
@@ -967,7 +959,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(
-				isA(ParticipantRequest.class), isA(JsonObject.class));
+				Matchers.isA(ParticipantRequest.class), Matchers.isA(JsonObject.class));
 
 		for (ParticipantRequest subscriber : usersParticipantRequests.values())
 			if (!subscriber.equals(publisher))
@@ -996,7 +988,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(
-				isA(ParticipantRequest.class), isA(JsonObject.class));
+				Matchers.isA(ParticipantRequest.class), Matchers.isA(JsonObject.class));
 
 		for (ParticipantRequest subscriber : usersParticipantRequests.values())
 			if (!subscriber.equals(publisher))
@@ -1031,7 +1023,7 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.PARTICIPANT_PUBLISHED_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
 			@Override
@@ -1052,7 +1044,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(eq(participantRequest),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		manager.publishMedia(participantRequest, SDP_OFFER, false);
 	}
@@ -1082,7 +1074,7 @@ public class RoomWithDefaultHandlerTest {
 			}
 		}).when(notificationService).sendNotification(anyString(),
 				eq(DefaultRoomEventHandler.PARTICIPANT_UNPUBLISHED_METHOD),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
 			@Override
@@ -1100,7 +1092,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(eq(participantRequest),
-				isA(JsonObject.class));
+				Matchers.isA(JsonObject.class));
 
 		manager.unpublishMedia(participantRequest);
 	}
@@ -1109,16 +1101,16 @@ public class RoomWithDefaultHandlerTest {
 			int notifications, String notificationMethod) {
 		if (responses > -1)
 			verify(notificationService, times(responses)).sendResponse(
-					any(ParticipantRequest.class), isA(JsonElement.class));
+					Matchers.any(ParticipantRequest.class), Matchers.isA(JsonElement.class));
 
 		if (errorResponses > -1)
 			verify(notificationService, times(errorResponses))
-					.sendErrorResponse(any(ParticipantRequest.class), any(),
-							any(RoomException.class));
+					.sendErrorResponse(Matchers.any(ParticipantRequest.class), any(),
+							Matchers.any(RoomException.class));
 
 		if (notifications > -1)
 			verify(notificationService, times(notifications)).sendNotification(
-					anyString(), eq(notificationMethod), isA(JsonObject.class));
+					anyString(), eq(notificationMethod), Matchers.isA(JsonObject.class));
 	}
 
 }

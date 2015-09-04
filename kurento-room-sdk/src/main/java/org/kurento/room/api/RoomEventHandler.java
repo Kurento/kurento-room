@@ -33,18 +33,6 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#joinRoom(String, String, ParticipantRequest)} when the
-	 * specified room doesn't exist and it's successfully created. Normally this
-	 * event won't have to be notified to the user(s).
-	 * 
-	 * @param request instance of {@link ParticipantRequest} POJO to identify
-	 *        the user and the request
-	 * @param roomName the room's name
-	 */
-	void onRoomCreated(ParticipantRequest request, String roomName);
-
-	/**
-	 * Called as a result of
 	 * {@link RoomManager#joinRoom(String, String, ParticipantRequest)}. The new
 	 * participant should be responded with all the available information: the
 	 * existing peers and, for any publishers, their stream names. The current
@@ -55,7 +43,7 @@ public interface RoomEventHandler extends RoomHandler {
 	 * @param roomName the room's name
 	 * @param newUserName the new user
 	 * @param existingParticipants instances of {@link UserParticipant} POJO
-	 *        that represent the already existing peers
+	 *        representing the already existing peers
 	 * @param error instance of {@link RoomException} POJO, includes a code and
 	 *        error message. If not null, then the join was unsuccessful and the
 	 *        user should be responded accordingly.
@@ -66,24 +54,35 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#leaveRoom(String, String, ParticipantRequest)} or
-	 * {@link RoomManager#evictParticipant(String)} (admin action). The user
-	 * should receive an acknowledgement if the operation completed
+	 * {@link RoomManager#leaveRoom(String, String, ParticipantRequest)}. The
+	 * user should receive an acknowledgement if the operation completed
 	 * successfully, and the remaining peers should be notified of this event.
 	 * 
 	 * @param request instance of {@link ParticipantRequest} POJO to identify
 	 *        the user and the request
-	 * @param roomName the room's name
 	 * @param userName the departing user's name
-	 * @param remainingParticipantIds identifiers of the participants in the
-	 *        room
+	 * @param remainingParticipants instances of {@link UserParticipant}
+	 *        representing the remaining participants in the room
 	 * @param error instance of {@link RoomException} POJO, includes a code and
 	 *        error message. If not null, then the operation was unsuccessful
 	 *        and the user should be responded accordingly.
 	 */
-	void onParticipantLeft(ParticipantRequest request, String roomName,
-			String userName, Set<String> remainingParticipantIds,
-			RoomException error);
+	void onParticipantLeft(ParticipantRequest request, String userName,
+			Set<UserParticipant> remainingParticipants, RoomException error);
+
+	/**
+	 * Called as a result of {@link RoomManager#evictParticipant(String)}
+	 * (application-originated action). The remaining peers should be notified
+	 * of this event.
+	 * 
+	 * @param request instance of {@link ParticipantRequest} POJO to identify
+	 *        the user and the request
+	 * @param userName the departing user's name
+	 * @param remainingParticipants instances of {@link UserParticipant}
+	 *        representing the remaining participants in the room
+	 */
+	void onParticipantLeft(String userName,
+			Set<UserParticipant> remainingParticipants);
 
 	/**
 	 * Called as a result of
@@ -96,14 +95,15 @@ public interface RoomEventHandler extends RoomHandler {
 	 * @param publisherName the user name
 	 * @param sdpAnswer String with generated SPD answer from the local WebRTC
 	 *        endpoint
-	 * @param participantIds identifiers of ALL the participants in the room
-	 *        (includes the publisher)
+	 * @param participants instances of {@link UserParticipant} for ALL the
+	 *        participants in the room (includes the publisher)
 	 * @param error instance of {@link RoomException} POJO, includes a code and
 	 *        error message. If not null, then the operation was unsuccessful
 	 *        and the user should be responded accordingly.
 	 */
 	void onPublishMedia(ParticipantRequest request, String publisherName,
-			String sdpAnswer, Set<String> participantIds, RoomException error);
+			String sdpAnswer, Set<UserParticipant> participants,
+			RoomException error);
 
 	/**
 	 * Called as a result of
@@ -114,14 +114,14 @@ public interface RoomEventHandler extends RoomHandler {
 	 * @param request instance of {@link ParticipantRequest} POJO to identify
 	 *        the user and the request
 	 * @param publisherName the user name
-	 * @param participantIds identifiers of ALL the participants in the room
-	 *        (includes the publisher)
+	 * @param participants instances of {@link UserParticipant} for ALL the
+	 *        participants in the room (includes the publisher)
 	 * @param error instance of {@link RoomException} POJO, includes a code and
 	 *        error message. If not null, then the operation was unsuccessful
 	 *        and the user should be responded accordingly.
 	 */
 	void onUnpublishMedia(ParticipantRequest request, String publisherName,
-			Set<String> participantIds, RoomException error);
+			Set<UserParticipant> participants, RoomException error);
 
 	/**
 	 * Called as a result of
@@ -166,15 +166,15 @@ public interface RoomEventHandler extends RoomHandler {
 	 * @param message String with the message body
 	 * @param userName name of the peer that sent it
 	 * @param roomName the current room name
-	 * @param participantIds identifiers of ALL the participants in the room
-	 *        (includes the sender)
+	 * @param participants instances of {@link UserParticipant} for ALL the
+	 *        participants in the room (includes the sender)
 	 * @param error instance of {@link RoomException} POJO, includes a code and
 	 *        error message. If not null, then the operation was unsuccessful
 	 *        and the user should be responded accordingly.
 	 */
 	void onSendMessage(ParticipantRequest request, String message,
-			String userName, String roomName, Set<String> participantIds,
-			RoomException error);
+			String userName, String roomName,
+			Set<UserParticipant> participants, RoomException error);
 
 	/**
 	 * Called as a result of
@@ -191,15 +191,26 @@ public interface RoomEventHandler extends RoomHandler {
 	void onRecvIceCandidate(ParticipantRequest request, RoomException error);
 
 	/**
-	 * Called as a result of {@link RoomManager#closeRoom(String)} or
-	 * {@link RoomManager#evictParticipant(String)} - server domain methods, not
-	 * as a consequence of a room API request. All resources on the server,
-	 * associated with the room, have been released. The existing participants
-	 * in the room should be notified of this event so that the client-side
-	 * application acts accordingly.
+	 * Called as a result of {@link RoomManager#closeRoom(String)} -
+	 * application-originated method, not as a consequence of a client request.
+	 * All resources on the server, associated with the room, have been
+	 * released. The existing participants in the room should be notified of
+	 * this event so that the client-side application acts accordingly.
 	 * 
 	 * @param roomName the room that's just been closed
-	 * @param participantIds identifiers of the participants in the room
+	 * @param participants instances of {@link UserParticipant} POJO
+	 *        representing the peers of the closed room
 	 */
-	void onRoomClosed(String roomName, Set<String> participantIds);
+	void onRoomClosed(String roomName, Set<UserParticipant> participants);
+
+	/**
+	 * Called as a result of {@link RoomManager#evictParticipant(String)} -
+	 * application-originated method, not as a consequence of a client request.
+	 * The participant should be notified so that the client-side application
+	 * would terminate gracefully.
+	 * 
+	 * @param participant instance of {@link UserParticipant} POJO representing
+	 *        the evicted peer
+	 */
+	void onParticipantEvicted(UserParticipant participant);
 }

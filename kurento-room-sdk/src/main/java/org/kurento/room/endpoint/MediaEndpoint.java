@@ -282,7 +282,7 @@ public abstract class MediaEndpoint {
 	public synchronized void addIceCandidate(IceCandidate candidate)
 			throws RoomException {
 		if (!this.isWeb())
-			throw new RoomException(Code.NOT_WEB_ENDPOINT_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_NOT_A_WEB_ENDPOINT_ERROR_CODE,
 					"Operation not supported");
 		if (webEndpoint == null)
 			candidates.addLast(candidate);
@@ -332,13 +332,13 @@ public abstract class MediaEndpoint {
 	protected String processOffer(String offer) throws RoomException {
 		if (this.isWeb()) {
 			if (webEndpoint == null)
-				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
 						"Can't process offer when WebRtcEndpoint is null (ep: "
 								+ endpointName + ")");
 			return webEndpoint.processOffer(offer);
 		} else {
 			if (endpoint == null)
-				throw new RoomException(Code.RTP_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_RTP_ENDPOINT_ERROR_CODE,
 						"Can't process offer when RtpEndpoint is null (ep: "
 								+ endpointName + ")");
 			return endpoint.processOffer(offer);
@@ -356,13 +356,13 @@ public abstract class MediaEndpoint {
 	protected String generateOffer() throws RoomException {
 		if (this.isWeb()) {
 			if (webEndpoint == null)
-				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
 						"Can't generate offer when WebRtcEndpoint is null (ep: "
 								+ endpointName + ")");
 			return webEndpoint.generateOffer();
 		} else {
 			if (endpoint == null)
-				throw new RoomException(Code.RTP_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_RTP_ENDPOINT_ERROR_CODE,
 						"Can't generate offer when RtpEndpoint is null (ep: "
 								+ endpointName + ")");
 			return endpoint.generateOffer();
@@ -380,13 +380,13 @@ public abstract class MediaEndpoint {
 	protected String processAnswer(String answer) throws RoomException {
 		if (this.isWeb()) {
 			if (webEndpoint == null)
-				throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
 						"Can't process answer when WebRtcEndpoint is null (ep: "
 								+ endpointName + ")");
 			return webEndpoint.processAnswer(answer);
 		} else {
 			if (endpoint == null)
-				throw new RoomException(Code.RTP_ENDPOINT_ERROR_CODE,
+				throw new RoomException(Code.MEDIA_RTP_ENDPOINT_ERROR_CODE,
 						"Can't process answer when RtpEndpoint is null (ep: "
 								+ endpointName + ")");
 			return endpoint.processAnswer(answer);
@@ -407,7 +407,7 @@ public abstract class MediaEndpoint {
 		if (!this.isWeb())
 			return;
 		if (webEndpoint == null)
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
 					"Can't register event listener for null WebRtcEndpoint (ep: "
 							+ endpointName + ")");
 		webEndpoint
@@ -428,7 +428,7 @@ public abstract class MediaEndpoint {
 		if (!this.isWeb())
 			return;
 		if (webEndpoint == null)
-			throw new RoomException(Code.WEBRTC_ENDPOINT_ERROR_CODE,
+			throw new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
 					"Can't start gathering ICE candidates on null WebRtcEndpoint (ep: "
 							+ endpointName + ")");
 		webEndpoint.gatherCandidates(new Continuation<Void>() {
