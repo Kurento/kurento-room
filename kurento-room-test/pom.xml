@@ -72,6 +72,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-client-js</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
 			<artifactId>kurento-commons</artifactId>
 		</dependency>
 		<dependency>
@@ -108,26 +113,9 @@
 					<include>banner.txt</include>
 				</includes>
 			</resource>
-			<resource>
-				<directory>.</directory>
-				<filtering>true</filtering>
-				<includes>
-					<include>bower.json</include>
-				</includes>
-			</resource>
 		</resources>
 
 		<plugins>
-			<plugin>
-				<artifactId>maven-clean-plugin</artifactId>
-				<configuration>
-					<filesets>
-						<fileset>
-							<directory>src/test/resources/static/bower_components</directory>
-						</fileset>
-					</filesets>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -153,19 +141,6 @@
 							<goal>java</goal>
 						</goals>
 					</execution>
-					<execution>
-						<id>bower</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>bower</executable>
-							<arguments>
-								<argument>install</argument>
-							</arguments>
-						</configuration>
-					</execution>
 				</executions>
 				<configuration>
 					<mainClass>${start-class}</mainClass>
@@ -182,18 +157,17 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<configuration>
-					<!-- execute only IT tests from suites -->
+					<!-- execute IT tests only from suites -->
 					<!--
 						<excludes> 
 							<exclude>**/*Test.java</exclude> 
 						</excludes>
-					-->
-					<includes>
-						<!-- 
-							<include>**/RoomDemoSimpleTestSuite.java</include> 
-							<include>**/RoomDemoTestSuite.java</include> 
+						<includes>
 							<include>**/RoomBasicTestSuite.java</include> 
-						-->
+						</includes>
+					-->
+					<!-- execute IT tests directly from test classes -->
+					<includes>
 						<include>**/*Test.java</include>
 					</includes>
 				</configuration>

@@ -57,7 +57,7 @@ public class KurentoRoomDemoApp {
 			.getProperty("app.uri", "http://localhost:8080");
 
 	private final Integer DEMO_KMS_NODE_LIMIT = PropertiesManager.getProperty(
-			"demo.kmsLimit", 10);
+			"demo.kmsLimit", 1000);
 	private final String DEMO_AUTH_REGEX = PropertiesManager
 			.getProperty("demo.authRegex");
 	private final String DEMO_HAT_URL = PropertiesManager.getProperty(

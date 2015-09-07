@@ -60,6 +60,7 @@
 			<modules>
 				<module>kurento-room-sdk</module>
 				<module>kurento-room-server</module>
+				<module>kurento-room-client-js</module>
 				<module>kurento-room-demo</module>
 				<module>kurento-room-test</module>
 				<module>kurento-room-demo-test</module>
@@ -70,6 +71,7 @@
 			<modules>
 				<module>kurento-room-sdk</module>
 				<module>kurento-room-server</module>
+				<module>kurento-room-client-js</module>
 			</modules>
 		</profile>
 	</profiles>

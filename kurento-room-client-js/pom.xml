@@ -8,12 +8,12 @@
 		<version>6.1.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>kurento-room-server</artifactId>
+	<artifactId>kurento-room-client-js</artifactId>
 	<packaging>jar</packaging>
 
-	<name>Kurento Room Server</name>
+	<name>Kurento Room Client JS</name>
 	<description>
-        Kurento Room Server
+        Kurento Room JS library for the client-side
     </description>
 	<url>http://www.kurento.org/docs/${project.version}</url>
 
@@ -47,16 +47,49 @@
 	</developers>
 
 	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>bower</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>bower</executable>
+							<arguments>
+								<argument>install</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>src/main/resources/static/bower_components</directory>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+		</plugins>
+		
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>false</filtering>
 			</resource>
 			<resource>
-				<directory>src/main/resources</directory>
+				<directory>.</directory>
 				<filtering>true</filtering>
 				<includes>
-					<include>banner.txt</include>
+					<include>bower.json</include>
 				</includes>
 			</resource>
 		</resources>
@@ -65,11 +98,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-sdk</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.kurento</groupId>
-			<artifactId>kurento-jsonrpc-server</artifactId>
+			<artifactId>kurento-utils-js</artifactId>
 		</dependency>
 	</dependencies>
 

@@ -34,7 +34,7 @@ import org.kurento.room.exception.RoomException;
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public interface RoomEventHandler extends RoomHandler {
+public interface NotificationRoomHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of

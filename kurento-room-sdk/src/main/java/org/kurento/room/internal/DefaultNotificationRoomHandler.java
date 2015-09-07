@@ -17,7 +17,7 @@ package org.kurento.room.internal;
 import java.util.Set;
 
 import org.kurento.client.IceCandidate;
-import org.kurento.room.api.RoomEventHandler;
+import org.kurento.room.api.NotificationRoomHandler;
 import org.kurento.room.api.UserNotificationService;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
@@ -32,7 +32,7 @@ import com.google.gson.JsonObject;
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public class DefaultRoomEventHandler implements RoomEventHandler {
+public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
 
 	public static final String PARTICIPANT_LEFT_METHOD = "participantLeft";
 	public static final String PARTICIPANT_JOINED_METHOD = "participantJoined";
@@ -52,7 +52,7 @@ public class DefaultRoomEventHandler implements RoomEventHandler {
 
 	private UserNotificationService notifService;
 
-	public DefaultRoomEventHandler(UserNotificationService notifService) {
+	public DefaultNotificationRoomHandler(UserNotificationService notifService) {
 		this.notifService = notifService;
 	}
 

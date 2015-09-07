@@ -81,7 +81,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(fullyQualifiedNames = "org.kurento.*")
-public class RoomWithSyncManagerTest {
+public class RoomManagerTest {
 
 	private static final String SDP_WEB_OFFER = "peer sdp web offer";
 	private static final String SDP_WEB_ANSWER = "endpoint sdp web answer";

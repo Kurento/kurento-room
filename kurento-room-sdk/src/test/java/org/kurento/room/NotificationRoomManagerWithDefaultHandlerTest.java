@@ -51,7 +51,7 @@ import org.kurento.room.api.UserNotificationService;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.exception.RoomException;
-import org.kurento.room.internal.DefaultRoomEventHandler;
+import org.kurento.room.internal.DefaultNotificationRoomHandler;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Matchers;
@@ -66,14 +66,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
- * Tests for {@link NotificationRoomManager} when using {@link DefaultRoomEventHandler}
+ * Tests for {@link NotificationRoomManager} when using {@link DefaultNotificationRoomHandler}
  * (mocked {@link UserNotificationService} and {@link KurentoClient} resources).
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(fullyQualifiedNames = "org.kurento.*")
-public class RoomWithDefaultHandlerTest {
+public class NotificationRoomManagerWithDefaultHandlerTest {
 
 	private static final String SDP_OFFER = "peer sdp offer";
 	private static final String SDP_ANSWER = "endpoint sdp answer";
@@ -246,7 +246,7 @@ public class RoomWithDefaultHandlerTest {
 				userx, userx)));
 
 		verifyNotificationService(1, 0, 0,
-				DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
 	}
 
 	@Test
@@ -272,7 +272,7 @@ public class RoomWithDefaultHandlerTest {
 
 			verifyNotificationService(++responses, 0, joinedNotifications +=
 					(responses - 1),
-					DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD);
+					DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
 		}
 	}
 
@@ -318,7 +318,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD),
+				eq(DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		for (Entry<String, String> userRoom : usersRooms.entrySet()) {
@@ -335,7 +335,7 @@ public class RoomWithDefaultHandlerTest {
 					roomUser.getValue().size()
 							* (roomUser.getValue().size() - 1) / 2;
 		verifyNotificationService(users.length, 0, expectedNotifications,
-				DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
 	}
 
 	@Test
@@ -354,7 +354,7 @@ public class RoomWithDefaultHandlerTest {
 
 		verifyNotificationService(users.length + 1, 0, users.length
 				* (users.length + 1) / 2,
-				DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
 
 		doAnswer(new Answer<Void>() {
 			@Override
@@ -374,7 +374,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.PARTICIPANT_LEFT_METHOD),
+				eq(DefaultNotificationRoomHandler.PARTICIPANT_LEFT_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
@@ -402,7 +402,7 @@ public class RoomWithDefaultHandlerTest {
 				not(hasItem(new UserParticipant(userx, userx))));
 
 		verifyNotificationService(users.length + 2, 0, users.length,
-				DefaultRoomEventHandler.PARTICIPANT_LEFT_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_LEFT_METHOD);
 	}
 
 	@Test
@@ -415,7 +415,7 @@ public class RoomWithDefaultHandlerTest {
 		participantPublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 		verifyNotificationService(users.length + 1, 0, users.length - 1,
-				DefaultRoomEventHandler.PARTICIPANT_PUBLISHED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
 
 		participantsSubscribe(participantRequest0);
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
@@ -424,7 +424,7 @@ public class RoomWithDefaultHandlerTest {
 		participantUnpublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 		verifyNotificationService(2 * users.length + 1, 0, users.length - 1,
-				DefaultRoomEventHandler.PARTICIPANT_UNPUBLISHED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD);
 
 		participantsUnsubscribe(participantRequest0);
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
@@ -456,7 +456,7 @@ public class RoomWithDefaultHandlerTest {
 
 			verifyNotificationService(++responses, 0, joinedNotifications
 					* (joinedNotifications - 1) / 2,
-					DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD);
+					DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
 
 			assertThat(manager.getPublishers(roomx).size(), is(published));
 
@@ -467,7 +467,7 @@ public class RoomWithDefaultHandlerTest {
 
 			verifyNotificationService(++responses, 0, published
 					* (published - 1) / 2,
-					DefaultRoomEventHandler.PARTICIPANT_PUBLISHED_METHOD);
+					DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
 		}
 	}
 
@@ -482,7 +482,7 @@ public class RoomWithDefaultHandlerTest {
 			assertThat(manager.getPublishers(roomx).size(), is(++published));
 			verifyNotificationService(responses += 1, 0, published
 					* (users.length - 1),
-					DefaultRoomEventHandler.PARTICIPANT_PUBLISHED_METHOD);
+					DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
 
 			participantsSubscribe(publisher);
 			if (published == 1)
@@ -510,7 +510,7 @@ public class RoomWithDefaultHandlerTest {
 			assertThat(manager.getPublishers(roomx).size(), is(--published));
 			verifyNotificationService(responses += 1, 0,
 					(users.length - published) * (users.length - 1),
-					DefaultRoomEventHandler.PARTICIPANT_UNPUBLISHED_METHOD);
+					DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD);
 
 			participantsUnsubscribe(publisher);
 			int expectedSubscribers = users.length;
@@ -584,7 +584,7 @@ public class RoomWithDefaultHandlerTest {
 			}).when(notificationService)
 					.sendNotification(
 							anyString(),
-							eq(DefaultRoomEventHandler.PARTICIPANT_SEND_MESSAGE_METHOD),
+							eq(DefaultNotificationRoomHandler.PARTICIPANT_SEND_MESSAGE_METHOD),
 							Matchers.isA(JsonObject.class));
 
 			manager.sendMessage(message, sender.getParticipantId(), roomx,
@@ -592,7 +592,7 @@ public class RoomWithDefaultHandlerTest {
 
 			verifyNotificationService(responses += 1, 0, ++sentMessages
 					* users.length,
-					DefaultRoomEventHandler.PARTICIPANT_SEND_MESSAGE_METHOD);
+					DefaultNotificationRoomHandler.PARTICIPANT_SEND_MESSAGE_METHOD);
 		}
 	}
 
@@ -607,7 +607,7 @@ public class RoomWithDefaultHandlerTest {
 		participantPublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 		verifyNotificationService(users.length + 1, 0, users.length - 1,
-				DefaultRoomEventHandler.PARTICIPANT_PUBLISHED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
 
 		// verifies listener is added to publisher
 		verify(endpoint, times(1)).addOnIceCandidateListener(
@@ -640,39 +640,39 @@ public class RoomWithDefaultHandlerTest {
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = (JsonObject) args[2];
 				assertNotNull(params
-						.get(DefaultRoomEventHandler.ON_ICE_EP_NAME_PARAM));
+						.get(DefaultNotificationRoomHandler.ON_ICE_EP_NAME_PARAM));
 				String endpointName =
-						params.get(DefaultRoomEventHandler.ON_ICE_EP_NAME_PARAM)
+						params.get(DefaultNotificationRoomHandler.ON_ICE_EP_NAME_PARAM)
 								.getAsString();
 				assertThat(endpointName, is(users[0]));
 
 				assertNotNull(params
-						.get(DefaultRoomEventHandler.ON_ICE_SDP_M_LINE_INDEX_PARAM));
+						.get(DefaultNotificationRoomHandler.ON_ICE_SDP_M_LINE_INDEX_PARAM));
 				int index =
 						params.get(
-								DefaultRoomEventHandler.ON_ICE_SDP_M_LINE_INDEX_PARAM)
+								DefaultNotificationRoomHandler.ON_ICE_SDP_M_LINE_INDEX_PARAM)
 								.getAsInt();
 				assertThat(index, is(1));
 
 				assertNotNull(params
-						.get(DefaultRoomEventHandler.ON_ICE_SDP_MID_PARAM));
+						.get(DefaultNotificationRoomHandler.ON_ICE_SDP_MID_PARAM));
 				String sdpMid =
-						params.get(DefaultRoomEventHandler.ON_ICE_SDP_MID_PARAM)
+						params.get(DefaultNotificationRoomHandler.ON_ICE_SDP_MID_PARAM)
 								.getAsString();
 				assertThat(sdpMid, is("audio"));
 
 				assertNotNull(params
-						.get(DefaultRoomEventHandler.ON_ICE_CANDIDATE_PARAM));
+						.get(DefaultNotificationRoomHandler.ON_ICE_CANDIDATE_PARAM));
 				String candidate =
 						params.get(
-								DefaultRoomEventHandler.ON_ICE_CANDIDATE_PARAM)
+								DefaultNotificationRoomHandler.ON_ICE_CANDIDATE_PARAM)
 								.getAsString();
 				assertThat(candidate, is("1 candidate test"));
 
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.ICE_CANDIDATE_METHOD),
+				eq(DefaultNotificationRoomHandler.ICE_CANDIDATE_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener
@@ -681,12 +681,12 @@ public class RoomWithDefaultHandlerTest {
 						new IceCandidate("1 candidate test", "audio", 1)));
 
 		verifyNotificationService(2 * users.length, 0, 1,
-				DefaultRoomEventHandler.ICE_CANDIDATE_METHOD);
+				DefaultNotificationRoomHandler.ICE_CANDIDATE_METHOD);
 
 		participantUnpublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 		verifyNotificationService(2 * users.length + 1, 0, users.length - 1,
-				DefaultRoomEventHandler.PARTICIPANT_UNPUBLISHED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD);
 
 		participantsUnsubscribe(participantRequest0);
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
@@ -704,7 +704,7 @@ public class RoomWithDefaultHandlerTest {
 		participantPublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 		verifyNotificationService(users.length + 1, 0, users.length - 1,
-				DefaultRoomEventHandler.PARTICIPANT_PUBLISHED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
 
 		// verifies error listener is added to publisher
 		verify(endpoint, times(1)).addErrorListener(
@@ -733,7 +733,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.MEDIA_ERROR_METHOD),
+				eq(DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		// triggers the captured listener
@@ -774,7 +774,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.MEDIA_ERROR_METHOD),
+				eq(DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener (once again)
@@ -784,12 +784,12 @@ public class RoomWithDefaultHandlerTest {
 
 		// the error was "triggered" two times, thus 2 notifications
 		verifyNotificationService(2 * users.length, 0, 2,
-				DefaultRoomEventHandler.MEDIA_ERROR_METHOD);
+				DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD);
 
 		participantUnpublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 		verifyNotificationService(2 * users.length + 1, 0, users.length - 1,
-				DefaultRoomEventHandler.PARTICIPANT_UNPUBLISHED_METHOD);
+				DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD);
 
 		participantsUnsubscribe(participantRequest0);
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
@@ -828,7 +828,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.MEDIA_ERROR_METHOD),
+				eq(DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener
@@ -839,7 +839,7 @@ public class RoomWithDefaultHandlerTest {
 		// the error was "triggered" one time and all participants get notified
 		verifyNotificationService(users.length, 0,
 				usersParticipantRequests.size(),
-				DefaultRoomEventHandler.MEDIA_ERROR_METHOD);
+				DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD);
 	}
 
 	private void userJoinRoom(final String room, String user,
@@ -866,7 +866,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.PARTICIPANT_JOINED_METHOD),
+				eq(DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
@@ -1022,7 +1022,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.PARTICIPANT_PUBLISHED_METHOD),
+				eq(DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
@@ -1073,7 +1073,7 @@ public class RoomWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultRoomEventHandler.PARTICIPANT_UNPUBLISHED_METHOD),
+				eq(DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {

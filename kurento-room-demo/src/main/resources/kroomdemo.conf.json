@@ -33,6 +33,6 @@
          "andLocal": false
       },
       "authRegex": ".*",
-      "kmsLimit": 10
+      "kmsLimit": 1000
    }
 }
