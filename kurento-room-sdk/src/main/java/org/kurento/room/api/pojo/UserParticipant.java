@@ -1,20 +1,25 @@
 /*
  * (C) Copyright 2015 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 
 package org.kurento.room.api.pojo;
 
+/**
+ * This POJO holds information about a room participant.
+ * 
+ * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
+ *
+ */
 public class UserParticipant {
 	private String participantId;
 	private String userName;
@@ -62,11 +67,14 @@ public class UserParticipant {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result
-				+ ((participantId == null) ? 0 : participantId.hashCode());
+		result =
+				prime
+						* result
+						+ ((participantId == null) ? 0 : participantId
+								.hashCode());
 		result = prime * result + (streaming ? 1231 : 1237);
-		result = prime * result
-				+ ((userName == null) ? 0 : userName.hashCode());
+		result =
+				prime * result + ((userName == null) ? 0 : userName.hashCode());
 		return result;
 	}
 

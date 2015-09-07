@@ -23,13 +23,15 @@ import org.kurento.room.internal.DefaultRoomEventHandler;
  * notifications or responses back to the remote peers whilst remaining isolated
  * from the transport or communications layers. The notification API will be
  * used by the default implementation of {@link RoomEventHandler} (provided by
- * the room SDK - {@link DefaultRoomEventHandler}). JSON-RPC messages
- * specification was used to define the following primitives.It is expected but
- * not required for the client-server communications to use this protocol. It is
- * left for the integrator to provide an implementation for this API. If the
- * developer chooses another mechanism to communicate with the client, they will
- * have to use their own implementation of RoomEventHandler which will completly
- * decouple the communication details from the room API.
+ * the room SDK - {@link DefaultRoomEventHandler}).
+ * <p/>
+ * JSON-RPC messages specification was used to define the following
+ * primitives.It is expected but not required for the client-server
+ * communications to use this protocol. It is left for the integrator to provide
+ * an implementation for this API. If the developer chooses another mechanism to
+ * communicate with the client, they will have to use their own implementation
+ * of RoomEventHandler which will completly decouple the communication details
+ * from the room API.
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */

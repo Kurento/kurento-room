@@ -73,8 +73,8 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 	}
 
 	@Bean
-	public RoomManager roomManager() {
-		return new RoomManager(userNotificationService, kmsManager());
+	public NotificationRoomManager roomManager() {
+		return new NotificationRoomManager(userNotificationService, kmsManager());
 	}
 
 	@Bean

@@ -66,7 +66,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
- * Tests for {@link RoomManager} when using {@link DefaultRoomEventHandler}
+ * Tests for {@link NotificationRoomManager} when using {@link DefaultRoomEventHandler}
  * (mocked {@link UserNotificationService} and {@link KurentoClient} resources).
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
@@ -80,7 +80,7 @@ public class RoomWithDefaultHandlerTest {
 	private static final int USERS = 10;
 	private static final int ROOMS = 3;
 
-	private RoomManager manager;
+	private NotificationRoomManager manager;
 
 	@Mock
 	private UserNotificationService notificationService;
@@ -132,7 +132,7 @@ public class RoomWithDefaultHandlerTest {
 
 	@Before
 	public void setup() {
-		manager = new RoomManager(notificationService, kcProvider);
+		manager = new NotificationRoomManager(notificationService, kcProvider);
 
 		doAnswer(new Answer<KurentoClient>() {
 			@Override

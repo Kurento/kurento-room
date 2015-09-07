@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
 import org.kurento.jsonrpc.Session;
 import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
-import org.kurento.room.RoomManager;
+import org.kurento.room.NotificationRoomManager;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.exception.RoomException;
@@ -42,7 +42,7 @@ public class JsonRpcUserControl {
 			.getLogger(JsonRpcUserControl.class);
 
 	@Autowired
-	protected RoomManager roomManager;
+	protected NotificationRoomManager roomManager;
 
 	public void joinRoom(Transaction transaction, Request<JsonObject> request,
 			ParticipantRequest participantRequest) throws IOException,

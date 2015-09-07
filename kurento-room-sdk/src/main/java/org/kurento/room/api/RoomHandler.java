@@ -19,7 +19,7 @@ import java.util.Set;
 import org.kurento.client.IceCandidate;
 
 /**
- * Handler for events occurring triggered from media objects.
+ * Handler for events triggered from media objects.
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */

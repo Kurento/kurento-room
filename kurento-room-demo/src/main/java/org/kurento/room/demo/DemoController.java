@@ -1,7 +1,7 @@
 package org.kurento.room.demo;
 
 import org.kurento.commons.PropertiesManager;
-import org.kurento.room.RoomManager;
+import org.kurento.room.NotificationRoomManager;
 import org.kurento.room.exception.RoomException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ public class DemoController {
 	}
 
 	@Autowired
-	private RoomManager roomManager;
+	private NotificationRoomManager roomManager;
 
 	@ResponseStatus(value = HttpStatus.NOT_FOUND)
 	public class ResourceNotFoundException extends RuntimeException {

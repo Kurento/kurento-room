@@ -74,7 +74,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Tests for {@link SyncRoomManager} when using mocked {@link KurentoClient}
+ * Tests for {@link RoomManager} when using mocked {@link KurentoClient}
  * resources.
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
@@ -100,7 +100,7 @@ public class RoomWithSyncManagerTest {
 	private static final int USERS = 10;
 	private static final int ROOMS = 3;
 
-	private SyncRoomManager manager;
+	private RoomManager manager;
 
 	@Mock
 	private KurentoClientProvider kcProvider;
@@ -195,7 +195,7 @@ public class RoomWithSyncManagerTest {
 
 	@Before
 	public void setup() {
-		manager = new SyncRoomManager(roomHandler, kcProvider);
+		manager = new RoomManager(roomHandler, kcProvider);
 
 		when(kcProvider.getKurentoClient(any(KurentoClientSessionInfo.class)))
 				.thenReturn(kurentoClient);

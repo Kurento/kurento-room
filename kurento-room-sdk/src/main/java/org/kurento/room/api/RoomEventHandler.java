@@ -17,15 +17,20 @@ package org.kurento.room.api;
 import java.util.Set;
 
 import org.kurento.client.MediaElement;
-import org.kurento.room.RoomManager;
+import org.kurento.room.NotificationRoomManager;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.exception.RoomException;
 
 /**
- * Through this interface, the room API passes the execution result of client
- * primitives to the application and from there to the clients. It’s the
- * application’s duty to respect this contract.
+ * Through this interface, the room API passes the execution result of
+ * client-originated requests to the application and from there to the clients.
+ * It’s the application’s duty to respect this contract.
+ * <p/>
+ * Extends {@link RoomHandler} interface so that the clients are also notified
+ * of spontaneous media events.
+ * 
+ * @see RoomHandler
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
@@ -33,10 +38,10 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#joinRoom(String, String, ParticipantRequest)}. The new
-	 * participant should be responded with all the available information: the
-	 * existing peers and, for any publishers, their stream names. The current
-	 * peers should receive a notification of the join event.
+	 * {@link NotificationRoomManager#joinRoom(String, String, ParticipantRequest)}
+	 * . The new participant should be responded with all the available
+	 * information: the existing peers and, for any publishers, their stream
+	 * names. The current peers should receive a notification of the join event.
 	 * 
 	 * @param request instance of {@link ParticipantRequest} POJO to identify
 	 *        the user and the request
@@ -54,8 +59,8 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#leaveRoom(String, String, ParticipantRequest)}. The
-	 * user should receive an acknowledgement if the operation completed
+	 * {@link NotificationRoomManager#leaveRoom(String, String, ParticipantRequest)}
+	 * . The user should receive an acknowledgement if the operation completed
 	 * successfully, and the remaining peers should be notified of this event.
 	 * 
 	 * @param request instance of {@link ParticipantRequest} POJO to identify
@@ -71,7 +76,8 @@ public interface RoomEventHandler extends RoomHandler {
 			Set<UserParticipant> remainingParticipants, RoomException error);
 
 	/**
-	 * Called as a result of {@link RoomManager#evictParticipant(String)}
+	 * Called as a result of
+	 * {@link NotificationRoomManager#evictParticipant(String)}
 	 * (application-originated action). The remaining peers should be notified
 	 * of this event.
 	 * 
@@ -86,7 +92,7 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#publishMedia(String, ParticipantRequest, MediaElement...)}
+	 * {@link NotificationRoomManager#publishMedia(String, ParticipantRequest, MediaElement...)}
 	 * . The user should receive the generated SPD answer from the local WebRTC
 	 * endpoint, and the other peers should be notified of this event.
 	 * 
@@ -107,9 +113,10 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#unpublishMedia(ParticipantRequest)}. The user should
-	 * receive an acknowledgement if the operation completed successfully, and
-	 * all other peers in the room should be notified of this event.
+	 * {@link NotificationRoomManager#unpublishMedia(ParticipantRequest)}. The
+	 * user should receive an acknowledgement if the operation completed
+	 * successfully, and all other peers in the room should be notified of this
+	 * event.
 	 * 
 	 * @param request instance of {@link ParticipantRequest} POJO to identify
 	 *        the user and the request
@@ -125,9 +132,9 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#subscribe(String, String, ParticipantRequest)}. The
-	 * user should be responded with generated SPD answer from the local WebRTC
-	 * endpoint.
+	 * {@link NotificationRoomManager#subscribe(String, String, ParticipantRequest)}
+	 * . The user should be responded with generated SPD answer from the local
+	 * WebRTC endpoint.
 	 * 
 	 * @param request instance of {@link ParticipantRequest} POJO to identify
 	 *        the user and the request
@@ -142,9 +149,9 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#unsubscribe(String, ParticipantRequest)}. The user
-	 * should receive an acknowledgement if the operation completed successfully
-	 * (no error).
+	 * {@link NotificationRoomManager#unsubscribe(String, ParticipantRequest)}.
+	 * The user should receive an acknowledgement if the operation completed
+	 * successfully (no error).
 	 * 
 	 * @param request instance of {@link ParticipantRequest} POJO to identify
 	 *        the user and the request
@@ -156,7 +163,7 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#sendMessage(String, String, String, ParticipantRequest)}
+	 * {@link NotificationRoomManager#sendMessage(String, String, String, ParticipantRequest)}
 	 * . The user should receive an acknowledgement if the operation completed
 	 * successfully, and all the peers in the room should be notified with the
 	 * message contents and its origin.
@@ -178,7 +185,7 @@ public interface RoomEventHandler extends RoomHandler {
 
 	/**
 	 * Called as a result of
-	 * {@link RoomManager#onIceCandidate(String, String, int, String, ParticipantRequest)}
+	 * {@link NotificationRoomManager#onIceCandidate(String, String, int, String, ParticipantRequest)}
 	 * . The user should receive an acknowledgement if the operation completed
 	 * successfully (no error).
 	 * 
@@ -191,7 +198,7 @@ public interface RoomEventHandler extends RoomHandler {
 	void onRecvIceCandidate(ParticipantRequest request, RoomException error);
 
 	/**
-	 * Called as a result of {@link RoomManager#closeRoom(String)} -
+	 * Called as a result of {@link NotificationRoomManager#closeRoom(String)} -
 	 * application-originated method, not as a consequence of a client request.
 	 * All resources on the server, associated with the room, have been
 	 * released. The existing participants in the room should be notified of
@@ -204,7 +211,8 @@ public interface RoomEventHandler extends RoomHandler {
 	void onRoomClosed(String roomName, Set<UserParticipant> participants);
 
 	/**
-	 * Called as a result of {@link RoomManager#evictParticipant(String)} -
+	 * Called as a result of
+	 * {@link NotificationRoomManager#evictParticipant(String)} -
 	 * application-originated method, not as a consequence of a client request.
 	 * The participant should be notified so that the client-side application
 	 * would terminate gracefully.
