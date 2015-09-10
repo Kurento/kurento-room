@@ -24,6 +24,7 @@ import org.kurento.room.NotificationRoomManager;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.exception.RoomException;
+import org.kurento.room.internal.ProtocolElements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,10 +50,10 @@ public class JsonRpcUserControl {
 			InterruptedException, ExecutionException {
 		String roomName =
 				getStringParam(request,
-						JsonRpcProtocolElements.JOIN_ROOM_ROOM_PARAM);
+						ProtocolElements.JOINROOM_ROOM_PARAM);
 		String userName =
 				getStringParam(request,
-						JsonRpcProtocolElements.JOIN_ROOM_USER_PARAM);
+						ProtocolElements.JOINROOM_USER_PARAM);
 
 		ParticipantSession participantSession =
 				getParticipantSession(transaction);
@@ -66,10 +67,10 @@ public class JsonRpcUserControl {
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
 		String sdpOffer =
 				getStringParam(request,
-						JsonRpcProtocolElements.PUBLISH_VIDEO_SDPOFFER_PARAM);
+						ProtocolElements.PUBLISHVIDEO_SDPOFFER_PARAM);
 		boolean doLoopback =
 				getBooleanParam(request,
-						JsonRpcProtocolElements.PUBLISH_VIDEO_DOLOOPBACK_PARAM);
+						ProtocolElements.PUBLISHVIDEO_DOLOOPBACK_PARAM);
 
 		roomManager.publishMedia(participantRequest, sdpOffer, doLoopback);
 	}
@@ -85,12 +86,12 @@ public class JsonRpcUserControl {
 
 		String senderName =
 				getStringParam(request,
-						JsonRpcProtocolElements.RECEIVE_VIDEO_SENDER_PARAM);
+						ProtocolElements.RECEIVEVIDEO_SENDER_PARAM);
 		senderName = senderName.substring(0, senderName.indexOf("_"));
 
 		String sdpOffer =
 				getStringParam(request,
-						JsonRpcProtocolElements.RECEIVE_VIDEO_SDPOFFER_PARAM);
+						ProtocolElements.RECEIVEVIDEO_SDPOFFER_PARAM);
 
 		roomManager.subscribe(senderName, sdpOffer, participantRequest);
 	}
@@ -100,7 +101,7 @@ public class JsonRpcUserControl {
 
 		String senderName =
 				getStringParam(request,
-						JsonRpcProtocolElements.RECEIVE_VIDEO_SENDER_PARAM);
+						ProtocolElements.UNSUBSCRIBEFROMVIDEO_SENDER_PARAM);
 		senderName = senderName.substring(0, senderName.indexOf("_"));
 
 		roomManager.unsubscribe(senderName, participantRequest);
@@ -157,16 +158,16 @@ public class JsonRpcUserControl {
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
 		String endpointName =
 				getStringParam(request,
-						JsonRpcProtocolElements.ON_ICE_EP_NAME_PARAM);
+						ProtocolElements.ONICECANDIDATE_EPNAME_PARAM);
 		String candidate =
 				getStringParam(request,
-						JsonRpcProtocolElements.ON_ICE_CANDIDATE_PARAM);
+						ProtocolElements.ONICECANDIDATE_CANDIDATE_PARAM);
 		String sdpMid =
 				getStringParam(request,
-						JsonRpcProtocolElements.ON_ICE_SDP_MID_PARAM);
+						ProtocolElements.ONICECANDIDATE_SDPMIDPARAM);
 		int sdpMLineIndex =
 				getIntParam(request,
-						JsonRpcProtocolElements.ON_ICE_SDP_M_LINE_INDEX_PARAM);
+						ProtocolElements.ONICECANDIDATE_SDPMLINEINDEX_PARAM);
 
 		roomManager.onIceCandidate(endpointName, candidate, sdpMLineIndex,
 				sdpMid, participantRequest);
@@ -176,13 +177,13 @@ public class JsonRpcUserControl {
 			Request<JsonObject> request, ParticipantRequest participantRequest) {
 		String userName =
 				getStringParam(request,
-						JsonRpcProtocolElements.SENDMESSAGE_USER_PARAM);
+						ProtocolElements.SENDMESSAGE_USER_PARAM);
 		String roomName =
 				getStringParam(request,
-						JsonRpcProtocolElements.SENDMESSAGE_ROOM_PARAM);
+						ProtocolElements.SENDMESSAGE_ROOM_PARAM);
 		String message =
 				getStringParam(request,
-						JsonRpcProtocolElements.SENDMESSAGE_MESSAGE_PARAM);
+						ProtocolElements.SENDMESSAGE_MESSAGE_PARAM);
 
 		log.debug("Message from {} in room {}: '{}'", userName, roomName,
 				message);

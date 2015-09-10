@@ -52,6 +52,7 @@ import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.internal.DefaultNotificationRoomHandler;
+import org.kurento.room.internal.ProtocolElements;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Matchers;
@@ -66,8 +67,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
- * Tests for {@link NotificationRoomManager} when using {@link DefaultNotificationRoomHandler}
- * (mocked {@link UserNotificationService} and {@link KurentoClient} resources).
+ * Tests for {@link NotificationRoomManager} when using
+ * {@link DefaultNotificationRoomHandler} (mocked
+ * {@link UserNotificationService} and {@link KurentoClient} resources).
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
@@ -246,7 +248,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				userx, userx)));
 
 		verifyNotificationService(1, 0, 0,
-				DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
+				ProtocolElements.PARTICIPANTJOINED_METHOD);
 	}
 
 	@Test
@@ -271,8 +273,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 					hasItem(usersParticipants.get(user)));
 
 			verifyNotificationService(++responses, 0, joinedNotifications +=
-					(responses - 1),
-					DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
+					(responses - 1), ProtocolElements.PARTICIPANTJOINED_METHOD);
 		}
 	}
 
@@ -318,7 +319,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD),
+				eq(ProtocolElements.PARTICIPANTJOINED_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		for (Entry<String, String> userRoom : usersRooms.entrySet()) {
@@ -335,7 +336,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 					roomUser.getValue().size()
 							* (roomUser.getValue().size() - 1) / 2;
 		verifyNotificationService(users.length, 0, expectedNotifications,
-				DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
+				ProtocolElements.PARTICIPANTJOINED_METHOD);
 	}
 
 	@Test
@@ -354,7 +355,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 		verifyNotificationService(users.length + 1, 0, users.length
 				* (users.length + 1) / 2,
-				DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
+				ProtocolElements.PARTICIPANTJOINED_METHOD);
 
 		doAnswer(new Answer<Void>() {
 			@Override
@@ -374,7 +375,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.PARTICIPANT_LEFT_METHOD),
+				eq(ProtocolElements.PARTICIPANTLEFT_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
@@ -402,7 +403,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				not(hasItem(new UserParticipant(userx, userx))));
 
 		verifyNotificationService(users.length + 2, 0, users.length,
-				DefaultNotificationRoomHandler.PARTICIPANT_LEFT_METHOD);
+				ProtocolElements.PARTICIPANTLEFT_METHOD);
 	}
 
 	@Test
@@ -415,7 +416,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 		participantPublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 		verifyNotificationService(users.length + 1, 0, users.length - 1,
-				DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
+				ProtocolElements.PARTICIPANTPUBLISHED_METHOD);
 
 		participantsSubscribe(participantRequest0);
 		assertThat(manager.getSubscribers(roomx).size(), is(users.length - 1));
@@ -424,7 +425,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 		participantUnpublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 		verifyNotificationService(2 * users.length + 1, 0, users.length - 1,
-				DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD);
+				ProtocolElements.PARTICIPANTUNPUBLISHED_METHOD);
 
 		participantsUnsubscribe(participantRequest0);
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
@@ -456,7 +457,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 			verifyNotificationService(++responses, 0, joinedNotifications
 					* (joinedNotifications - 1) / 2,
-					DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD);
+					ProtocolElements.PARTICIPANTJOINED_METHOD);
 
 			assertThat(manager.getPublishers(roomx).size(), is(published));
 
@@ -467,7 +468,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 			verifyNotificationService(++responses, 0, published
 					* (published - 1) / 2,
-					DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
+					ProtocolElements.PARTICIPANTPUBLISHED_METHOD);
 		}
 	}
 
@@ -482,7 +483,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 			assertThat(manager.getPublishers(roomx).size(), is(++published));
 			verifyNotificationService(responses += 1, 0, published
 					* (users.length - 1),
-					DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
+					ProtocolElements.PARTICIPANTPUBLISHED_METHOD);
 
 			participantsSubscribe(publisher);
 			if (published == 1)
@@ -510,7 +511,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 			assertThat(manager.getPublishers(roomx).size(), is(--published));
 			verifyNotificationService(responses += 1, 0,
 					(users.length - published) * (users.length - 1),
-					DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD);
+					ProtocolElements.PARTICIPANTUNPUBLISHED_METHOD);
 
 			participantsUnsubscribe(publisher);
 			int expectedSubscribers = users.length;
@@ -558,7 +559,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 					return null;
 				}
 			}).when(notificationService).sendResponse(
-					Matchers.isA(ParticipantRequest.class), Matchers.isA(JsonObject.class));
+					Matchers.isA(ParticipantRequest.class),
+					Matchers.isA(JsonObject.class));
 
 			doAnswer(new Answer<Void>() {
 				@Override
@@ -574,25 +576,30 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 					assertThat(args[2], instanceOf(JsonObject.class));
 					JsonObject params = new JsonObject();
-					params.addProperty("room", roomx);
-					params.addProperty("user", sender.getParticipantId());
-					params.addProperty("message", message);
+					params.addProperty(
+							ProtocolElements.PARTICIPANTSENDMESSAGE_ROOM_PARAM,
+							roomx);
+					params.addProperty(
+							ProtocolElements.PARTICIPANTSENDMESSAGE_USER_PARAM,
+							sender.getParticipantId());
+					params.addProperty(
+							ProtocolElements.PARTICIPANTSENDMESSAGE_MESSAGE_PARAM,
+							message);
+
 					assertThat((JsonObject) args[2], is(params));
 
 					return null;
 				}
-			}).when(notificationService)
-					.sendNotification(
-							anyString(),
-							eq(DefaultNotificationRoomHandler.PARTICIPANT_SEND_MESSAGE_METHOD),
-							Matchers.isA(JsonObject.class));
+			}).when(notificationService).sendNotification(anyString(),
+					eq(ProtocolElements.PARTICIPANTSENDMESSAGE_METHOD),
+					Matchers.isA(JsonObject.class));
 
 			manager.sendMessage(message, sender.getParticipantId(), roomx,
 					sender);
 
 			verifyNotificationService(responses += 1, 0, ++sentMessages
 					* users.length,
-					DefaultNotificationRoomHandler.PARTICIPANT_SEND_MESSAGE_METHOD);
+					ProtocolElements.PARTICIPANTSENDMESSAGE_METHOD);
 		}
 	}
 
@@ -607,7 +614,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 		participantPublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 		verifyNotificationService(users.length + 1, 0, users.length - 1,
-				DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
+				ProtocolElements.PARTICIPANTPUBLISHED_METHOD);
 
 		// verifies listener is added to publisher
 		verify(endpoint, times(1)).addOnIceCandidateListener(
@@ -622,7 +629,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 		verify(endpoint, times(usersParticipantRequests.size()))
 				.addOnIceCandidateListener(iceEventCaptor.capture());
 
-		// stub sendNotification of type ICE_CANDIDATE_METHOD
+		// stub sendNotification of type ICECANDIDATE_METHOD
 		doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -639,40 +646,37 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = (JsonObject) args[2];
-				assertNotNull(params
-						.get(DefaultNotificationRoomHandler.ON_ICE_EP_NAME_PARAM));
+				assertNotNull(params.get(ProtocolElements.ICECANDIDATE_EPNAME_PARAM));
 				String endpointName =
-						params.get(DefaultNotificationRoomHandler.ON_ICE_EP_NAME_PARAM)
+						params.get(ProtocolElements.ICECANDIDATE_EPNAME_PARAM)
 								.getAsString();
 				assertThat(endpointName, is(users[0]));
 
 				assertNotNull(params
-						.get(DefaultNotificationRoomHandler.ON_ICE_SDP_M_LINE_INDEX_PARAM));
+						.get(ProtocolElements.ICECANDIDATE_SDPMLINEINDEX_PARAM));
 				int index =
 						params.get(
-								DefaultNotificationRoomHandler.ON_ICE_SDP_M_LINE_INDEX_PARAM)
+								ProtocolElements.ICECANDIDATE_SDPMLINEINDEX_PARAM)
 								.getAsInt();
 				assertThat(index, is(1));
 
-				assertNotNull(params
-						.get(DefaultNotificationRoomHandler.ON_ICE_SDP_MID_PARAM));
+				assertNotNull(params.get(ProtocolElements.ICECANDIDATE_SDPMID_PARAM));
 				String sdpMid =
-						params.get(DefaultNotificationRoomHandler.ON_ICE_SDP_MID_PARAM)
+						params.get(ProtocolElements.ICECANDIDATE_SDPMID_PARAM)
 								.getAsString();
 				assertThat(sdpMid, is("audio"));
 
 				assertNotNull(params
-						.get(DefaultNotificationRoomHandler.ON_ICE_CANDIDATE_PARAM));
+						.get(ProtocolElements.ICECANDIDATE_CANDIDATE_PARAM));
 				String candidate =
-						params.get(
-								DefaultNotificationRoomHandler.ON_ICE_CANDIDATE_PARAM)
+						params.get(ProtocolElements.ICECANDIDATE_CANDIDATE_PARAM)
 								.getAsString();
 				assertThat(candidate, is("1 candidate test"));
 
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.ICE_CANDIDATE_METHOD),
+				eq(ProtocolElements.ICECANDIDATE_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener
@@ -681,12 +685,12 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 						new IceCandidate("1 candidate test", "audio", 1)));
 
 		verifyNotificationService(2 * users.length, 0, 1,
-				DefaultNotificationRoomHandler.ICE_CANDIDATE_METHOD);
+				ProtocolElements.ICECANDIDATE_METHOD);
 
 		participantUnpublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 		verifyNotificationService(2 * users.length + 1, 0, users.length - 1,
-				DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD);
+				ProtocolElements.PARTICIPANTUNPUBLISHED_METHOD);
 
 		participantsUnsubscribe(participantRequest0);
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
@@ -704,13 +708,13 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 		participantPublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(1));
 		verifyNotificationService(users.length + 1, 0, users.length - 1,
-				DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD);
+				ProtocolElements.PARTICIPANTPUBLISHED_METHOD);
 
 		// verifies error listener is added to publisher
 		verify(endpoint, times(1)).addErrorListener(
 				mediaErrorEventCaptor.capture());
 
-		// stub sendNotification of type MEDIA_ERROR_METHOD
+		// stub sendNotification of type MEDIAERROR_METHOD
 		final String expectedErrorMessage =
 				"TEST_ERR: Fake media error(errCode=101)";
 		doAnswer(new Answer<Void>() {
@@ -726,14 +730,17 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = (JsonObject) args[2];
-				assertNotNull(params.get("error"));
-				String error = params.get("error").getAsString();
+				assertNotNull(params
+						.get(ProtocolElements.MEDIAERROR_ERROR_PARAM));
+				String error =
+						params.get(ProtocolElements.MEDIAERROR_ERROR_PARAM)
+								.getAsString();
 				assertThat(error, is(expectedErrorMessage));
 
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD),
+				eq(ProtocolElements.MEDIAERROR_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		// triggers the captured listener
@@ -750,7 +757,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 		verify(endpoint, times(usersParticipantRequests.size()))
 				.addErrorListener(mediaErrorEventCaptor.capture());
 
-		// stub sendNotification of type MEDIA_ERROR_METHOD
+		// stub sendNotification of type MEDIAERROR_METHOD
 		doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -767,14 +774,17 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = (JsonObject) args[2];
-				assertNotNull(params.get("error"));
-				String error = params.get("error").getAsString();
+				assertNotNull(params
+						.get(ProtocolElements.MEDIAERROR_ERROR_PARAM));
+				String error =
+						params.get(ProtocolElements.MEDIAERROR_ERROR_PARAM)
+								.getAsString();
 				assertThat(error, is(expectedErrorMessage));
 
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD),
+				eq(ProtocolElements.MEDIAERROR_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener (once again)
@@ -784,12 +794,12 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 		// the error was "triggered" two times, thus 2 notifications
 		verifyNotificationService(2 * users.length, 0, 2,
-				DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD);
+				ProtocolElements.MEDIAERROR_METHOD);
 
 		participantUnpublish(participantRequest0);
 		assertThat(manager.getPublishers(roomx).size(), is(0));
 		verifyNotificationService(2 * users.length + 1, 0, users.length - 1,
-				DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD);
+				ProtocolElements.PARTICIPANTUNPUBLISHED_METHOD);
 
 		participantsUnsubscribe(participantRequest0);
 		assertThat(manager.getSubscribers(roomx).size(), is(0));
@@ -804,7 +814,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 		verify(pipeline, times(1)).addErrorListener(
 				pipelineErrorEventCaptor.capture());
 
-		// stub sendNotification of type MEDIA_ERROR_METHOD
+		// stub sendNotification of type MEDIAERROR_METHOD
 		final String expectedErrorMessage =
 				"TEST_PP_ERR: Fake pipeline error(errCode=505)";
 		doAnswer(new Answer<Void>() {
@@ -821,14 +831,17 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = (JsonObject) args[2];
-				assertNotNull(params.get("error"));
-				String error = params.get("error").getAsString();
+				assertNotNull(params
+						.get(ProtocolElements.MEDIAERROR_ERROR_PARAM));
+				String error =
+						params.get(ProtocolElements.MEDIAERROR_ERROR_PARAM)
+								.getAsString();
 				assertThat(error, is(expectedErrorMessage));
 
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD),
+				eq(ProtocolElements.MEDIAERROR_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		// triggers the last captured listener
@@ -839,7 +852,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 		// the error was "triggered" one time and all participants get notified
 		verifyNotificationService(users.length, 0,
 				usersParticipantRequests.size(),
-				DefaultNotificationRoomHandler.MEDIA_ERROR_METHOD);
+				ProtocolElements.MEDIAERROR_METHOD);
 	}
 
 	private void userJoinRoom(final String room, String user,
@@ -866,7 +879,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.PARTICIPANT_JOINED_METHOD),
+				eq(ProtocolElements.PARTICIPANTJOINED_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
@@ -911,7 +924,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(
-				Matchers.isA(ParticipantRequest.class), Matchers.isA(JsonArray.class));
+				Matchers.isA(ParticipantRequest.class),
+				Matchers.isA(JsonArray.class));
 
 
 		doAnswer(new Answer<Void>() {
@@ -926,7 +940,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendErrorResponse(
-				Matchers.any(ParticipantRequest.class), any(), Matchers.any(RoomException.class));
+				Matchers.any(ParticipantRequest.class), any(),
+				Matchers.any(RoomException.class));
 
 		manager.joinRoom(user, room, true, participantRequest);
 
@@ -959,7 +974,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(
-				Matchers.isA(ParticipantRequest.class), Matchers.isA(JsonObject.class));
+				Matchers.isA(ParticipantRequest.class),
+				Matchers.isA(JsonObject.class));
 
 		for (ParticipantRequest subscriber : usersParticipantRequests.values())
 			if (!subscriber.equals(publisher))
@@ -988,7 +1004,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendResponse(
-				Matchers.isA(ParticipantRequest.class), Matchers.isA(JsonObject.class));
+				Matchers.isA(ParticipantRequest.class),
+				Matchers.isA(JsonObject.class));
 
 		for (ParticipantRequest subscriber : usersParticipantRequests.values())
 			if (!subscriber.equals(publisher))
@@ -1022,7 +1039,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.PARTICIPANT_PUBLISHED_METHOD),
+				eq(ProtocolElements.PARTICIPANTPUBLISHED_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
@@ -1073,7 +1090,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				return null;
 			}
 		}).when(notificationService).sendNotification(anyString(),
-				eq(DefaultNotificationRoomHandler.PARTICIPANT_UNPUBLISHED_METHOD),
+				eq(ProtocolElements.PARTICIPANTUNPUBLISHED_METHOD),
 				Matchers.isA(JsonObject.class));
 
 		doAnswer(new Answer<Void>() {
@@ -1101,16 +1118,18 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 			int notifications, String notificationMethod) {
 		if (responses > -1)
 			verify(notificationService, times(responses)).sendResponse(
-					Matchers.any(ParticipantRequest.class), Matchers.isA(JsonElement.class));
+					Matchers.any(ParticipantRequest.class),
+					Matchers.isA(JsonElement.class));
 
 		if (errorResponses > -1)
 			verify(notificationService, times(errorResponses))
-					.sendErrorResponse(Matchers.any(ParticipantRequest.class), any(),
-							Matchers.any(RoomException.class));
+					.sendErrorResponse(Matchers.any(ParticipantRequest.class),
+							any(), Matchers.any(RoomException.class));
 
 		if (notifications > -1)
 			verify(notificationService, times(notifications)).sendNotification(
-					anyString(), eq(notificationMethod), Matchers.isA(JsonObject.class));
+					anyString(), eq(notificationMethod),
+					Matchers.isA(JsonObject.class));
 	}
 
 }

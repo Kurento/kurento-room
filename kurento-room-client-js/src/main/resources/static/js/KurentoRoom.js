@@ -157,6 +157,12 @@ function Room(kurento, options) {
         }
     };
 
+    this.onParticipantEvicted = function (msg) {
+    	ee.emitEvent('participant-evicted', [{
+    		localParticipant: localParticipant
+    	}]);
+    };
+    
     this.onNewMessage = function (msg) {
         console.log("New message: " + JSON.stringify(msg));
         var room = msg.room;
@@ -767,6 +773,9 @@ function KurentoRoom(wsUri, callback) {
             case 'participantLeft':
                 onParticipantLeft(request.params);
                 break;
+            case 'participantEvicted':
+                onParticipantEvicted(request.params);
+                break;
             case 'sendMessage':  //CHAT
                 onNewMessage(request.params);
                 break;
@@ -796,37 +805,43 @@ function KurentoRoom(wsUri, callback) {
             room.onParticipantPublished(msg);
         }
     }
-    
+
     function onParticipantLeft(msg) {
         if (room !== undefined) {
             room.onParticipantLeft(msg);
         }
     }
-    
+
+    function onParticipantEvicted(msg) {
+        if (room !== undefined) {
+            room.onParticipantEvicted(msg);
+        }
+    }
+
     function onNewMessage(msg) {
         if (room !== undefined) {
             room.onNewMessage(msg);
         }
     }
-    
+
     function iceCandidateEvent(msg) {
         if (room !== undefined) {
             room.recvIceCandidate(msg);
         }
     }
- 
+
     function onRoomClosed(msg) {
         if (room !== undefined) {
             room.onRoomClosed(msg);
         }
     }
-    
+
     function onMediaError(params) {
         if (room !== undefined) {
             room.onMediaError(params);
         }
     }
-    
+
     var rpcParams;
 
     this.setRpcParams = function (params) {

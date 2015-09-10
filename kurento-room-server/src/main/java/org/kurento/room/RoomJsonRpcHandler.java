@@ -18,8 +18,8 @@ import org.kurento.jsonrpc.Session;
 import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
 import org.kurento.room.api.pojo.ParticipantRequest;
+import org.kurento.room.internal.ProtocolElements;
 import org.kurento.room.rpc.JsonRpcNotificationService;
-import org.kurento.room.rpc.JsonRpcProtocolElements;
 import org.kurento.room.rpc.JsonRpcUserControl;
 import org.kurento.room.rpc.ParticipantSession;
 import org.slf4j.Logger;
@@ -72,37 +72,37 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 		transaction.startAsync();
 
 		switch (request.getMethod()) {
-			case JsonRpcProtocolElements.JOIN_ROOM_METHOD:
+			case ProtocolElements.JOINROOM_METHOD:
 				userControl.joinRoom(transaction, request, participantRequest);
 				break;
-			case JsonRpcProtocolElements.PUBLISH_VIDEO_METHOD:
+			case ProtocolElements.PUBLISHVIDEO_METHOD:
 				userControl.publishVideo(transaction, request,
 						participantRequest);
 				break;
-			case JsonRpcProtocolElements.UNPUBLISH_VIDEO_METHOD:
+			case ProtocolElements.UNPUBLISHVIDEO_METHOD:
 				userControl.unpublishVideo(transaction, request,
 						participantRequest);
 				break;
-			case JsonRpcProtocolElements.RECEIVE_VIDEO_METHOD:
+			case ProtocolElements.RECEIVEVIDEO_METHOD:
 				userControl.receiveVideoFrom(transaction, request,
 						participantRequest);
 				break;
-			case JsonRpcProtocolElements.UNSUBSCRIBE_VIDEO_METHOD:
+			case ProtocolElements.UNSUBSCRIBEFROMVIDEO_METHOD:
 				userControl.unsubscribeFromVideo(transaction, request,
 						participantRequest);
 				break;
-			case JsonRpcProtocolElements.ON_ICE_CANDIDATE_METHOD:
+			case ProtocolElements.ONICECANDIDATE_METHOD:
 				userControl.onIceCandidate(transaction, request,
 						participantRequest);
 				break;
-			case JsonRpcProtocolElements.LEAVE_ROOM_METHOD:
+			case ProtocolElements.LEAVEROOM_METHOD:
 				userControl.leaveRoom(transaction, request, participantRequest);
 				break;
-			case JsonRpcProtocolElements.SENDMESSAGE_ROOM_METHOD:
+			case ProtocolElements.SENDMESSAGE_ROOM_METHOD:
 				userControl.sendMessage(transaction, request,
 						participantRequest);
 				break;
-			case JsonRpcProtocolElements.CUSTOM_REQUEST_METHOD:
+			case ProtocolElements.CUSTOMREQUEST_METHOD:
 				userControl.customRequest(transaction, request,
 						participantRequest);
 				break;
