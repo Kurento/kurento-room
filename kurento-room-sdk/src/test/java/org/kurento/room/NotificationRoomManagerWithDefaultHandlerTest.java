@@ -303,8 +303,12 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject notifParams = (JsonObject) args[2];
-				assertNotNull(notifParams.get("id"));
-				String joinedId = notifParams.get("id").getAsString();
+				assertNotNull(notifParams
+						.get(ProtocolElements.PARTICIPANTJOINED_USER_PARAM));
+				String joinedId =
+						notifParams.get(
+								ProtocolElements.PARTICIPANTJOINED_USER_PARAM)
+								.getAsString();
 				assertThat(joinedId, is(not(participantId)));
 				assertThat(usersRooms.keySet(), hasItem(joinedId));
 
@@ -369,7 +373,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = new JsonObject();
-				params.addProperty("name", userx);
+				params.addProperty(ProtocolElements.PARTICIPANTLEFT_NAME_PARAM,
+						userx);
 				assertThat((JsonObject) args[2], is(params));
 
 				return null;
@@ -646,7 +651,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = (JsonObject) args[2];
-				assertNotNull(params.get(ProtocolElements.ICECANDIDATE_EPNAME_PARAM));
+				assertNotNull(params
+						.get(ProtocolElements.ICECANDIDATE_EPNAME_PARAM));
 				String endpointName =
 						params.get(ProtocolElements.ICECANDIDATE_EPNAME_PARAM)
 								.getAsString();
@@ -660,7 +666,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 								.getAsInt();
 				assertThat(index, is(1));
 
-				assertNotNull(params.get(ProtocolElements.ICECANDIDATE_SDPMID_PARAM));
+				assertNotNull(params
+						.get(ProtocolElements.ICECANDIDATE_SDPMID_PARAM));
 				String sdpMid =
 						params.get(ProtocolElements.ICECANDIDATE_SDPMID_PARAM)
 								.getAsString();
@@ -669,7 +676,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 				assertNotNull(params
 						.get(ProtocolElements.ICECANDIDATE_CANDIDATE_PARAM));
 				String candidate =
-						params.get(ProtocolElements.ICECANDIDATE_CANDIDATE_PARAM)
+						params.get(
+								ProtocolElements.ICECANDIDATE_CANDIDATE_PARAM)
 								.getAsString();
 				assertThat(candidate, is("1 candidate test"));
 
@@ -870,8 +878,12 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject notifParams = (JsonObject) args[2];
-				assertNotNull(notifParams.get("id"));
-				String joinedId = notifParams.get("id").getAsString();
+				assertNotNull(notifParams
+						.get(ProtocolElements.PARTICIPANTJOINED_USER_PARAM));
+				String joinedId =
+						notifParams.get(
+								ProtocolElements.PARTICIPANTJOINED_USER_PARAM)
+								.getAsString();
 				assertThat(joinedId, is(not(participantId)));
 				assertThat(joinedId, is(participantRequest.getParticipantId()));
 				assertThat(participants.keySet(), hasItem(joinedId));
@@ -903,20 +915,27 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 					JsonElement elem = resultIt.next();
 					assertThat(elem, instanceOf(JsonObject.class));
 					JsonObject peerJson = (JsonObject) elem;
-					assertNotNull(peerJson.get("id"));
-					String peerName = peerJson.get("id").getAsString();
+					assertNotNull(peerJson
+							.get(ProtocolElements.JOINROOM_PEERID_PARAM));
+					String peerName =
+							peerJson.get(ProtocolElements.JOINROOM_PEERID_PARAM)
+									.getAsString();
 					assertThat(peerName, is(not(responseParticipantRequest
 							.getParticipantId())));
 					assertThat(participants.keySet(), hasItem(peerName));
 
-					if (peerJson.get("streams") != null) {
+					if (peerJson
+							.get(ProtocolElements.JOINROOM_PEERSTREAMS_PARAM) != null) {
 						assertThat(manager.getPublishers(room),
 								hasItem(usersParticipants.get(peerName)));
-						JsonElement streamsElem = peerJson.get("streams");
+						JsonElement streamsElem =
+								peerJson.get(ProtocolElements.JOINROOM_PEERSTREAMS_PARAM);
 						assertThat(streamsElem, instanceOf(JsonArray.class));
 						JsonArray streamsArray = (JsonArray) streamsElem;
 						JsonObject stream = new JsonObject();
-						stream.addProperty("id", "webcam");
+						stream.addProperty(
+								ProtocolElements.JOINROOM_PEERSTREAMID_PARAM,
+								"webcam");
 						assertThat(streamsArray, hasItem(stream));
 					}
 				}
@@ -967,8 +986,12 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[1], instanceOf(JsonObject.class));
 				JsonObject result = (JsonObject) args[1];
-				assertNotNull(result.get("sdpAnswer"));
-				String sdpAnswer = result.get("sdpAnswer").getAsString();
+				assertNotNull(result
+						.get(ProtocolElements.RECEIVEVIDEO_SDPANSWER_PARAM));
+				String sdpAnswer =
+						result.get(
+								ProtocolElements.RECEIVEVIDEO_SDPANSWER_PARAM)
+								.getAsString();
 				assertThat(sdpAnswer, containsString(SDP_ANSWER));
 
 				return null;
@@ -1028,12 +1051,17 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = new JsonObject();
-				params.addProperty("id", participantRequest.getParticipantId());
+				params.addProperty(
+						ProtocolElements.PARTICIPANTPUBLISHED_USER_PARAM,
+						participantRequest.getParticipantId());
 				JsonObject stream = new JsonObject();
-				stream.addProperty("id", "webcam");
+				stream.addProperty(
+						ProtocolElements.PARTICIPANTPUBLISHED_STREAMID_PARAM,
+						"webcam");
 				JsonArray streamsArray = new JsonArray();
 				streamsArray.add(stream);
-				params.add("streams", streamsArray);
+				params.add(ProtocolElements.PARTICIPANTPUBLISHED_STREAMS_PARAM,
+						streamsArray);
 				assertThat((JsonObject) args[2], is(params));
 
 				return null;
@@ -1054,8 +1082,12 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[1], instanceOf(JsonObject.class));
 				JsonObject result = (JsonObject) args[1];
-				assertNotNull(result.get("sdpAnswer"));
-				String sdpAnswer = result.get("sdpAnswer").getAsString();
+				assertNotNull(result
+						.get(ProtocolElements.PUBLISHVIDEO_SDPANSWER_PARAM));
+				String sdpAnswer =
+						result.get(
+								ProtocolElements.PUBLISHVIDEO_SDPANSWER_PARAM)
+								.getAsString();
 				assertThat(sdpAnswer, containsString(SDP_ANSWER));
 
 				return null;
@@ -1083,7 +1115,8 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
 
 				assertThat(args[2], instanceOf(JsonObject.class));
 				JsonObject params = new JsonObject();
-				params.addProperty("name",
+				params.addProperty(
+						ProtocolElements.PARTICIPANTUNPUBLISHED_NAME_PARAM,
 						participantRequest.getParticipantId());
 				assertThat((JsonObject) args[2], is(params));
 

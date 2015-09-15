@@ -102,9 +102,10 @@ public class RoomManager {
 	public Set<UserParticipant> joinRoom(String userName, String roomName,
 			boolean webParticipant, KurentoClientSessionInfo kcSessionInfo,
 			String participantId) throws RoomException {
-		log.debug(
-				"Request [JOIN_ROOM] user={}, room={}, web={} kcSessionInfo={} ({})",
-				userName, roomName, webParticipant, kcSessionInfo,
+		log.debug("Request [JOIN_ROOM] user={}, room={}, web={} "
+				+ "kcSessionInfo.room={} ({})", userName, roomName,
+				webParticipant,
+				(kcSessionInfo != null ? kcSessionInfo.getRoomName() : null),
 				participantId);
 		Room room = rooms.get(roomName);
 		if (room == null && kcSessionInfo != null)
@@ -820,12 +821,14 @@ public class RoomManager {
 		room = new Room(roomName, kurentoClient, roomHandler);
 		Room oldRoom = rooms.putIfAbsent(roomName, room);
 		if (oldRoom != null) {
-			log.info("Room '{}' has just been created by another thread");
-			throw new RoomException(
-					Code.ROOM_CANNOT_BE_CREATED_ERROR_CODE,
-					"Room '"
-							+ roomName
-							+ "' already exists (has just been created by another thread)");
+			log.warn("Room '{}' has just been created by another thread",
+					roomName);
+			return;
+			// throw new RoomException(
+			// Code.ROOM_CANNOT_BE_CREATED_ERROR_CODE,
+			// "Room '"
+			// + roomName
+			// + "' already exists (has just been created by another thread)");
 		}
 		String kcName = "[NAME NOT AVAILABLE]";
 		if (kurentoClient.getServerManager() != null)

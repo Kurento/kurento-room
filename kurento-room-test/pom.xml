@@ -62,6 +62,7 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-room-server</artifactId>
+			<version>${project.version}</version>
 			<optional>true</optional>
 			<exclusions>
 				<exclusion>
@@ -73,7 +74,13 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-room-client-js</artifactId>
+			<version>${project.version}</version>
 			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-client</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.kurento</groupId>

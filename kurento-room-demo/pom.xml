@@ -135,6 +135,7 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-room-server</artifactId>
+			<version>${project.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.springframework.boot</groupId>
@@ -149,6 +150,7 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-room-client-js</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

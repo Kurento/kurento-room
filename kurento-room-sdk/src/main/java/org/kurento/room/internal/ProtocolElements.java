@@ -34,17 +34,23 @@ public class ProtocolElements {
 	public static final String JOINROOM_METHOD = "joinRoom";
 	public static final String JOINROOM_USER_PARAM = "user";
 	public static final String JOINROOM_ROOM_PARAM = "room";
-
+	public static final String JOINROOM_PEERID_PARAM = "id";
+	public static final String JOINROOM_PEERSTREAMS_PARAM = "streams";
+	public static final String JOINROOM_PEERSTREAMID_PARAM = "id";
+	
 	public static final String PUBLISHVIDEO_METHOD = "publishVideo";
 	public static final String PUBLISHVIDEO_SDPOFFER_PARAM = "sdpOffer";
 	public static final String PUBLISHVIDEO_DOLOOPBACK_PARAM = "doLoopback";
-
+	public static final String PUBLISHVIDEO_SDPANSWER_PARAM =
+			"sdpAnswer";
+	
 	public static final String UNPUBLISHVIDEO_METHOD = "unpublishVideo";
 
 	public static final String RECEIVEVIDEO_METHOD = "receiveVideoFrom";
 	public static final String RECEIVEVIDEO_SDPOFFER_PARAM = "sdpOffer";
 	public static final String RECEIVEVIDEO_SENDER_PARAM = "sender";
-
+	public static final String RECEIVEVIDEO_SDPANSWER_PARAM = "sdpAnswer";
+	
 	public static final String UNSUBSCRIBEFROMVIDEO_METHOD =
 			"unsubscribeFromVideo";
 	public static final String UNSUBSCRIBEFROMVIDEO_SENDER_PARAM = "sender";
@@ -57,14 +63,11 @@ public class ProtocolElements {
 			"sdpMLineIndex";
 
 	public static final String CUSTOMREQUEST_METHOD = "customRequest";
-	public static final String CUSTOMREQUEST_PARAM = "custom";
 
-	// ---------------------------- SERVER EVENTS --------------------------
+	// ---------------------------- SERVER RESPONSES & EVENTS -----------------
 
 	public static final String PARTICIPANTJOINED_METHOD = "participantJoined";
 	public static final String PARTICIPANTJOINED_USER_PARAM = "id";
-	public static final String PARTICIPANTJOINED_STREAMS_PARAM = "streams";
-	public static final String PARTICIPANTJOINED_STREAMID_PARAM = "id";
 
 	public static final String PARTICIPANTLEFT_METHOD = "participantLeft";
 	public static final String PARTICIPANTLEFT_NAME_PARAM = "name";
@@ -73,8 +76,6 @@ public class ProtocolElements {
 
 	public static final String PARTICIPANTPUBLISHED_METHOD =
 			"participantPublished";
-	public static final String PARTICIPANTPUBLISHED_SDPANSWER_PARAM =
-			"sdpAnswer";
 	public static final String PARTICIPANTPUBLISHED_USER_PARAM = "id";
 	public static final String PARTICIPANTPUBLISHED_STREAMS_PARAM = "streams";
 	public static final String PARTICIPANTPUBLISHED_STREAMID_PARAM = "id";
@@ -82,8 +83,6 @@ public class ProtocolElements {
 	public static final String PARTICIPANTUNPUBLISHED_METHOD =
 			"participantUnpublished";
 	public static final String PARTICIPANTUNPUBLISHED_NAME_PARAM = "name";
-
-	public static final String RESPONSE_SUBSCRIBE_SDPANSWER_PARAM = "sdpAnswer";
 
 	public static final String PARTICIPANTSENDMESSAGE_METHOD = "sendMessage";
 	public static final String PARTICIPANTSENDMESSAGE_USER_PARAM = "user";

@@ -43,7 +43,8 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
 	@Override
 	public void onRoomClosed(String roomName, Set<UserParticipant> participants) {
 		JsonObject notifParams = new JsonObject();
-		notifParams.addProperty(ProtocolElements.ROOMCLOSED_ROOM_PARAM, roomName);
+		notifParams.addProperty(ProtocolElements.ROOMCLOSED_ROOM_PARAM,
+				roomName);
 		for (UserParticipant participant : participants)
 			notifService.sendNotification(participant.getParticipantId(),
 					ProtocolElements.ROOMCLOSED_METHOD, notifParams);
@@ -61,24 +62,23 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
 		JsonArray result = new JsonArray();
 		for (UserParticipant participant : existingParticipants) {
 			JsonObject participantJson = new JsonObject();
-			participantJson.addProperty(
-					ProtocolElements.PARTICIPANTJOINED_USER_PARAM,
+			participantJson.addProperty(ProtocolElements.JOINROOM_PEERID_PARAM,
 					participant.getUserName());
 			if (participant.isStreaming()) {
 				JsonObject stream = new JsonObject();
 				stream.addProperty(
-						ProtocolElements.PARTICIPANTJOINED_STREAMID_PARAM,
-						"webcam");
+						ProtocolElements.JOINROOM_PEERSTREAMID_PARAM, "webcam");
 				JsonArray streamsArray = new JsonArray();
 				streamsArray.add(stream);
 				participantJson.add(
-						ProtocolElements.PARTICIPANTJOINED_STREAMS_PARAM,
+						ProtocolElements.JOINROOM_PEERSTREAMS_PARAM,
 						streamsArray);
 			}
 			result.add(participantJson);
 
 			JsonObject notifParams = new JsonObject();
-			notifParams.addProperty("id", newUserName);
+			notifParams.addProperty(
+					ProtocolElements.PARTICIPANTJOINED_USER_PARAM, newUserName);
 			notifService.sendNotification(participant.getParticipantId(),
 					ProtocolElements.PARTICIPANTJOINED_METHOD, notifParams);
 		}
@@ -113,8 +113,7 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
 			return;
 		}
 		JsonObject result = new JsonObject();
-		result.addProperty(
-				ProtocolElements.PARTICIPANTPUBLISHED_SDPANSWER_PARAM,
+		result.addProperty(ProtocolElements.PUBLISHVIDEO_SDPANSWER_PARAM,
 				sdpAnswer);
 		notifService.sendResponse(request, result);
 
@@ -169,7 +168,7 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
 			return;
 		}
 		JsonObject result = new JsonObject();
-		result.addProperty(ProtocolElements.RESPONSE_SUBSCRIBE_SDPANSWER_PARAM,
+		result.addProperty(ProtocolElements.RECEIVEVIDEO_SDPANSWER_PARAM,
 				sdpAnswer);
 		notifService.sendResponse(request, result);
 	}
@@ -240,7 +239,8 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
 	public void onIceCandidate(String roomName, String participantId,
 			String endpointName, IceCandidate candidate) {
 		JsonObject params = new JsonObject();
-		params.addProperty(ProtocolElements.ICECANDIDATE_EPNAME_PARAM, endpointName);
+		params.addProperty(ProtocolElements.ICECANDIDATE_EPNAME_PARAM,
+				endpointName);
 		params.addProperty(ProtocolElements.ICECANDIDATE_SDPMLINEINDEX_PARAM,
 				candidate.getSdpMLineIndex());
 		params.addProperty(ProtocolElements.ICECANDIDATE_SDPMID_PARAM,
@@ -255,7 +255,8 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
 	public void onPipelineError(String roomName, Set<String> participantIds,
 			String description) {
 		JsonObject notifParams = new JsonObject();
-		notifParams.addProperty(ProtocolElements.MEDIAERROR_ERROR_PARAM, description);
+		notifParams.addProperty(ProtocolElements.MEDIAERROR_ERROR_PARAM,
+				description);
 		for (String pid : participantIds)
 			notifService.sendNotification(pid,
 					ProtocolElements.MEDIAERROR_METHOD, notifParams);
@@ -265,7 +266,8 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
 	public void onMediaElementError(String roomName, String participantId,
 			String description) {
 		JsonObject notifParams = new JsonObject();
-		notifParams.addProperty(ProtocolElements.MEDIAERROR_ERROR_PARAM, description);
+		notifParams.addProperty(ProtocolElements.MEDIAERROR_ERROR_PARAM,
+				description);
 		notifService.sendNotification(participantId,
 				ProtocolElements.MEDIAERROR_METHOD, notifParams);
 	}
