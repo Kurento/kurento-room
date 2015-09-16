@@ -59,8 +59,14 @@ The demo allows web clients accessing the application’s URI to:
 - mute their video and/or audio
 - enter fullscreen
 - automatically subscribe to any stream published in the room and play it on
-  the screen (video) and through the system speakers (audio) unsubscribe from a
-  stream unpublish their media send messages to the other peers apply or remove
-  a media filter over their published video stream (using a face overlay filter
-  that adds a hat on top of a recognized human face) select which video source
-  to display in the larger area of the browser from the available thumbnails
+  the screen (video) and through the system speakers (audio)
+- unsubscribe from a stream
+- unpublish their media
+- send messages to the other peers
+- apply or remove a media filter over their published video stream (using a
+  face overlay filter that adds a hat on top of a recognized human face)
+- select which video source to display in the larger area of the browser from
+  the available thumbnails
+
+
+
