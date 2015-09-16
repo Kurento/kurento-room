@@ -73,10 +73,50 @@
 			<modules>
 				<module>kurento-room-sdk</module>
 				<module>kurento-room-server</module>
-                                <module>kurento-room-client</module>
+                <module>kurento-room-client</module>
 				<module>kurento-room-client-js</module>
 			</modules>
 		</profile>
 	</profiles>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-sdk</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-server</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-client-js</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-demo</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-test</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-demo-test</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-doc</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 </project>
