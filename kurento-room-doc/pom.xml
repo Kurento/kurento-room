@@ -54,7 +54,7 @@
 				<executions>
 					<execution>
 						<id>sphinx</id>
-						<phase>site</phase>
+						<phase>install</phase>
 						<goals>
 							<goal>exec</goal>
 						</goals>
@@ -77,14 +77,7 @@
 					<skip>true</skip>
 				</configuration>
 			</plugin>
-
 		</plugins>
-
-
-
-		<!-- <resources> <resource> <directory>src/main/resources</directory> <filtering>false</filtering> 
-			</resource> <resource> <directory>.</directory> <filtering>true</filtering> 
-			<includes> <include>bower.json</include> </includes> </resource> </resources> -->
 	</build>
 
 </project>

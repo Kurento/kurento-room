@@ -43,7 +43,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Kurento'
+project = u'Kurento Room'
 copyright = u'2015, kurento.org'
 release = u'6.1.1'
 
@@ -194,7 +194,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('pdfindex', 'Kurento.tex', u'Kurento Documentation',
+  ('pdfindex', 'KurentoRoom.tex', u'Kurento Room Documentation',
    u'kurento.org', 'manual'),
 ]
 
@@ -225,7 +225,7 @@ latex_use_parts = True
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'kurento', u'Kurento Documentation',
+    ('index', 'kurento', u'Kurento Room Documentation',
      [u'kurento.org'], 1),
     ('components/servers/kmf-media-connector', u'kmf-media-connector',
 		u'Kurento Media Proxy', [u'kurento.org'], 1),
@@ -241,8 +241,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Kurento', u'Kurento Documentation',
-   u'kurento.org', 'Kurento', 'One line description of project.',
+  ('index', 'KurentoRoom', u'Kurento Room Documentation',
+   u'kurento.org', 'Kurento Room', 
+   'Kurento Room is a framework for group communications applications based on WebRTC',
    'Miscellaneous'),
 ]
 
@@ -259,7 +260,7 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'Kurento'
+epub_title = u'Kurento Room'
 epub_author = u'Kurento'
 epub_publisher = u'Kurento'
 epub_copyright = u'2015, Kurento'

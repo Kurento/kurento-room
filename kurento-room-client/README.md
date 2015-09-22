@@ -1,6 +1,6 @@
 [![][KurentoImage]][website]
 
-Copyright © 2013 Kurento. Licensed under [LGPL License].
+Copyright © 2015 Kurento. Licensed under [LGPL License].
 
 kurento-room-client
 ======================

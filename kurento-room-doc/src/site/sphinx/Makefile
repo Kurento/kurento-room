@@ -24,6 +24,8 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) src/site/sphinx
 
+DOCLINT = $(shell ./doclint.sh)
+
 .PHONY: help clean html dirhtml singlehtml pickle json htmlhelp langdoc qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext dist
 
 help:
@@ -31,7 +33,7 @@ help:
 	@echo "  langdoc    to make javadocs and jsdocs of the Kurento Clients"
 	@echo "  html       to make standalone HTML files"
 	@echo "  dist       to make langdoc html epub latexpdf and then copy"
-	@echo "             Kurento.{pdf,epub} in build/html and make a tgz"
+	@echo "             Kurento.{pdf,epub} in $(BUILDDIR)/html and make a tgz"
 	@echo "             as kurento-docs-$(DOC_VERSION).tgz"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
@@ -58,7 +60,12 @@ clean:
 	-rm -rf source/langdocs
 
 html:
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html	
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	find $(BUILDDIR)/html -name "*.html" -exec sed -i -e "s@|DOC_VERSION|@$(DOC_VERSION)@" {} \;
+	find $(BUILDDIR)/html -name "*.html" -exec sed -i -e "s@|CLIENT_JAVA_VERSION|@$(CLIENT_JAVA_VERSION)@" {} \;
+	find $(BUILDDIR)/html -name "*.html" -exec sed -i -e "s@|CLIENT_JS_VERSION|@$(CLIENT_JS_VERSION)@" {} \;
+	find $(BUILDDIR)/html -name "*.html" -exec sed -i -e "s@|UTILS_JS_VERSION|@$(UTILS_JS_VERSION)@" {} \;
+	./fixlinks.sh
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
@@ -89,29 +96,31 @@ htmlhelp:
 	      ".hhp project file in $(BUILDDIR)/htmlhelp."
 
 langdoc:
+	  @echo "Doclint arg for javadoc (if java version >= 1.8): $(DOCLINT)"
+	  
 	  mkdir -p $(BUILDDIR)/langdoc
-	  rm -rf $(BUILDDIR)/langdoc/kurento-java
-	  mkdir -p $(BUILDDIR)/html/langdoc/jsdoc && mkdir -p $(BUILDDIR)/html/langdoc/javadoc
+	  rm -rf $(BUILDDIR)/langdoc/kurento-room && rm -rf $(BUILDDIR)/langdoc/kurento-java
+	  mkdir -p $(BUILDDIR)/html/langdoc/javadoc
 
+	  # kurento-room-sdk javadoc
+	  rm -rf $(BUILDDIR)/langdoc/kurento-room-sdk
+	  rsync -av --exclude 'target' ../../../../kurento-room-sdk/* $(BUILDDIR)/langdoc/kurento-room-sdk
+	  cd $(BUILDDIR)/langdoc/kurento-room-sdk && mvn clean package -DskipTests
+	  
 	  # kurento-client javadoc
 	  rm -rf $(BUILDDIR)/langdoc/kurento-client
-	  cd  $(BUILDDIR)/langdoc && git clone https://github.com/Kurento/kurento-java.git && cd kurento-java && git checkout kurento-java-$(CLIENT_JAVA_VERSION) || git checkout $(CLIENT_JAVA_VERSION) || echo "Using master branch"
+	  cd  $(BUILDDIR)/langdoc && git clone https://github.com/Kurento/kurento-java.git && \
+	    cd kurento-java && git checkout kurento-java-$(CLIENT_JAVA_VERSION) || \
+	    git checkout $(CLIENT_JAVA_VERSION) || echo "Using master branch"
 	  mv $(BUILDDIR)/langdoc/kurento-java/kurento-client $(BUILDDIR)/langdoc
 	  cd $(BUILDDIR)/langdoc/kurento-client && mvn clean package -DskipTests
 	  rsync -av $(BUILDDIR)/langdoc/kurento-client/target/generated-sources/kmd/* $(BUILDDIR)/langdoc/kurento-client/src/main/java/
-	  javadoc -d $(BUILDDIR)/html/langdoc/javadoc -sourcepath $(BUILDDIR)/langdoc/*/src/main/java/ org.kurento.client
-
-	  # kurento-client-js jsdoc
-	  rm -rf $(BUILDDIR)/langdoc/kurento-client-js
-	  cd $(BUILDDIR)/langdoc && git clone https://github.com/Kurento/kurento-client-js.git
-	  cd $(BUILDDIR)/langdoc/kurento-client-js && git checkout kurento-client-js-$(CLIENT_JS_VERSION) || git checkout $(CLIENT_JS_VERSION) || echo "Using master branch" && npm install && node_modules/.bin/grunt --force jsdoc
-	  cp -r $(BUILDDIR)/langdoc/kurento-client-js/doc/jsdoc $(BUILDDIR)/html/langdoc/jsdoc/kurento-client-js
-
-	  # kurento-utils-js jsdoc
-	  rm -rf $(BUILDDIR)/langdoc/kurento-utils-js
-	  cd $(BUILDDIR)/langdoc && git clone https://github.com/Kurento/kurento-utils-js.git
-	  cd $(BUILDDIR)/langdoc/kurento-utils-js && git checkout kurento-utils-js-$(UTILS_JS_VERSION) || git checkout $(UTILS_JS_VERSION) || echo "Using master branch" && npm install && node_modules/.bin/grunt --force jsdoc
-	  cp -r $(BUILDDIR)/langdoc/kurento-utils-js/doc/jsdoc/kurento-utils/$(UTILS_JS_VERSION) $(BUILDDIR)/html/langdoc/jsdoc/kurento-utils-js
+	   
+	  javadoc -Xdoclint:none -windowtitle "Kurento Room SDK Javadoc" \
+	    -d $(BUILDDIR)/html/langdoc/javadoc \
+	    -sourcepath $(BUILDDIR)/langdoc/kurento-room-sdk/src/main/java/:$(BUILDDIR)/langdoc/kurento-client/src/main/java/ \
+	    -subpackages org.kurento.room:org.kurento.client \
+	    -exclude org.kurento.room.endpoint:org.kurento.room.internal:org.kurento.client.internal
 
 qthelp:
 	$(SPHINXBUILD) -b qthelp $(ALLSPHINXOPTS) $(BUILDDIR)/qthelp
@@ -133,11 +142,10 @@ devhelp:
 
 epub:
 	$(SPHINXBUILD) -b epub $(ALLSPHINXOPTS) $(BUILDDIR)/epub
-	find build/epub -name "*.html" -exec sed -i -e "s@|DOC_VERSION|@$(DOC_VERSION)@" {} \;
-	find build/epub -name "*.html" -exec sed -i -e "s@|CLIENT_JAVA_VERSION|@$(CLIENT_JAVA_VERSION)@" {} \;
-	find build/epub -name "*.html" -exec sed -i -e "s@|CLIENT_JS_VERSION|@$(CLIENT_JS_VERSION)@" {} \;
-	find build/epub -name "*.html" -exec sed -i -e "s@|UTILS_JS_VERSION|@$(UTILS_JS_VERSION)@" {} \;
-	touch source/pdfindex.rst
+	find $(BUILDDIR)/epub -name "*.html" -exec sed -i -e "s@|DOC_VERSION|@$(DOC_VERSION)@" {} \;
+	find $(BUILDDIR)/epub -name "*.html" -exec sed -i -e "s@|CLIENT_JAVA_VERSION|@$(CLIENT_JAVA_VERSION)@" {} \;
+	find $(BUILDDIR)/epub -name "*.html" -exec sed -i -e "s@|CLIENT_JS_VERSION|@$(CLIENT_JS_VERSION)@" {} \;
+	find $(BUILDDIR)/epub -name "*.html" -exec sed -i -e "s@|UTILS_JS_VERSION|@$(UTILS_JS_VERSION)@" {} \;
 	$(SPHINXBUILD) -b epub $(ALLSPHINXOPTS) $(BUILDDIR)/epub
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
@@ -152,10 +160,10 @@ latex:
 latexpdf:
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo "Running LaTeX files through pdflatex..."
-	find build/latex -name "*.tex" -exec sed -i -e "s@.textbar..DOC_VERSION.textbar..@$(DOC_VERSION)@" {} \;
-	find build/latex -name "*.tex" -exec sed -i -e "s@.textbar..CLIENT_JAVA_VERSION.textbar..@$(CLIENT_JAVA_VERSION)@" {} \;
-	find build/latex -name "*.tex" -exec sed -i -e "s@.textbar..CLIENT_JS_VERSION.textbar..@$(CLIENT_JS_VERSION)@" {} \;
-	find build/latex -name "*.tex" -exec sed -i -e "s@.textbar..UTILS_JS_VERSION.textbar..@$(UTILS_JS_VERSION)@" {} \;
+	find $(BUILDDIR)/latex -name "*.tex" -exec sed -i -e "s@.textbar..DOC_VERSION.textbar..@$(DOC_VERSION)@" {} \;
+	find $(BUILDDIR)/latex -name "*.tex" -exec sed -i -e "s@.textbar..CLIENT_JAVA_VERSION.textbar..@$(CLIENT_JAVA_VERSION)@" {} \;
+	find $(BUILDDIR)/latex -name "*.tex" -exec sed -i -e "s@.textbar..CLIENT_JS_VERSION.textbar..@$(CLIENT_JS_VERSION)@" {} \;
+	find $(BUILDDIR)/latex -name "*.tex" -exec sed -i -e "s@.textbar..UTILS_JS_VERSION.textbar..@$(UTILS_JS_VERSION)@" {} \;
 	$(MAKE) -C $(BUILDDIR)/latex all-pdf
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
@@ -208,5 +216,5 @@ dist: langdoc html epub latexpdf
 	@echo
 	@echo "Packaging documentation"
 	@echo
-	cp $(BUILDDIR)/epub/Kurento.epub $(BUILDDIR)/latex/Kurento.pdf $(BUILDDIR)/html &&\
-	tar zcvf $(BUILDDIR)/dist/kurento-docs-$(DOC_VERSION).tgz -C $(BUILDDIR)/html .
+	cp $(BUILDDIR)/epub/KurentoRoom.epub $(BUILDDIR)/latex/KurentoRoom.pdf $(BUILDDIR)/html &&\
+	tar zcvf $(BUILDDIR)/dist/kurento-room-docs-$(DOC_VERSION).tgz -C $(BUILDDIR)/html .

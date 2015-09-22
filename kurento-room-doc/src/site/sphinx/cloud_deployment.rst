@@ -5,7 +5,7 @@ Cloud deployment
 How to install, configure and deploy to cloud the Rooms app and how to publish
 the API. On a cloud instance which meets the following requirements, one can
 install Kurento Rooms applications as a system service (e.g.
-``kurento-room-demo``). There’s also the possibility to run the demo manually
+``kurento-room-demo``). There's also the possibility to run the demo manually
 using the provided script.
 
 System requirements:
@@ -27,18 +27,18 @@ Running the application
 After having built and unzipped the installation files, there are two options
 for running the demo application server:
 
-- **user-level execution** - doesn’t need additional installation steps, can
+- **user-level execution** - doesn't need additional installation steps, can
   be done right away after uncompressing the installer
 - **system-level execution** - requires installation of the demo application
   as a system service, which enables automatic startup after system reboots
 
 In both cases, the application uses Spring Boot framework to run inside an
-embedded Tomcat container server, so there’s no need for deployment inside an
+embedded Tomcat container server, so there's no need for deployment inside an
 existing servlet container. If this is a requirement, modifications will have
-to be made to the project’s build configuration (Maven) so that instead of a
+to be made to the project's build configuration (Maven) so that instead of a
 JAR with dependencies, the build process would generate a WAR file.
 
-To update to a newer version, it’s suffices to follow once again the
+To update to a newer version, it's suffices to follow once again the
 installation procedures.
 
 Configuration file
@@ -92,12 +92,12 @@ With the following key meanings:
   the default configuration, for the same KMS the application will create two
   KurentoClient objects. The KurentoClientProvider implementation for this demo
   (org.kurento.room.demo.FixedNKmsManager) will return KurentoClient instances
-  on a round-robin base or, if the user’s name follows a certain pattern, will
+  on a round-robin base or, if the user's name follows a certain pattern, will
   return the less loaded instance. The pattern check is hardcoded and SLA users
   are considered those whose name starts with the string special (e.g.
   specialUser).
 
-- **app.uri** is the demo application’s URL and is mainly used for building
+- **app.uri** is the demo application's URL and is mainly used for building
   URLs of images used in media filters (such as the hat filter). This URL must
   be accessible from any KMS defined in kms.uris.
 
@@ -114,13 +114,13 @@ With the following key meanings:
     images, mario-wings.png and wizard.png.
   - **loopback.remote** if true, the users will see their own video using
     the loopbacked stream from the server. Thus, if the user enables the hat
-    filter on her video stream, she’ll be able to visualize the end result
+    filter on her video stream, she'll be able to visualize the end result
     after having applied the filter.
   - **loopback.andLocal** if true, besides displaying the loopback media,
     the client interface will also provide the original (and local) media stream
   - **authRegex** is the username pattern that allows the creation of a room
-    only when the requester’s name matches the pattern. This is done during the
+    only when the requester's name matches the pattern. This is done during the
     call to obtain an instance of KurentoClient, the provider will throw an
-    exception if the pattern has been specified and it doesn’t match the name.
+    exception if the pattern has been specified and it doesn't match the name.
   - **kmsLimit** is the maximum number of pipelines that can be created in a
     KurentoClient.

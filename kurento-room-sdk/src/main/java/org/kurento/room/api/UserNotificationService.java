@@ -42,7 +42,7 @@ public interface UserNotificationService {
 	 * 
 	 * @param participantRequest instance of {@link ParticipantRequest} POJO
 	 * @param result Object containing information that depends on the invoked
-	 *        method. It’d normally be a JSON element-type object.
+	 *        method. It'd normally be a JSON element-type object.
 	 */
 	void sendResponse(ParticipantRequest participantRequest, Object result);
 
@@ -61,14 +61,14 @@ public interface UserNotificationService {
 
 	/**
 	 * Sends a notification to a remote peer. This falls outside the normal
-	 * exchange of messages (client requests - server answers) so there’s no
+	 * exchange of messages (client requests - server answers) so there's no
 	 * need for a request identifier.
 	 * 
 	 * @param participantId identifier of the targeted participant
 	 * @param method String with the name of the method or event to be invoked
 	 *        on the client
 	 * @param params Object containing information that depends on the invoked
-	 *        method. It’d normally be a JSON element-type object.
+	 *        method. It'd normally be a JSON element-type object.
 	 */
 	void sendNotification(String participantId, String method, Object params);
 

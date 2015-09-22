@@ -25,7 +25,7 @@ import org.kurento.room.exception.RoomException;
 /**
  * Through this interface, the room API passes the execution result of
  * client-originated requests to the application and from there to the clients.
- * It’s the application’s duty to respect this contract.
+ * It's the application's duty to respect this contract.
  * <p/>
  * Extends {@link RoomHandler} interface so that the clients are also notified
  * of spontaneous media events.

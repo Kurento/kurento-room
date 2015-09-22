@@ -11,7 +11,7 @@ available rooms.
 1 - Get all rooms
 -----------------
 
-Returns a list with all the available rooms’ names.
+Returns a list with all the available rooms' names.
 
 - **Request method and URL**: ``GET /getAllRooms``
 - **Request Content-Type**: NONE

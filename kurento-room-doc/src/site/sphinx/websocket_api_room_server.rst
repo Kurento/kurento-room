@@ -9,8 +9,8 @@ happen.
 
 The exchanged messages between server and clients are
 `JSON-RPC 2.0 <http://www.jsonrpc.org/specification>`_ requests and responses.
-The events are sent from the server in the same way as a server’s request, but
-without requiring a response and they don’t include an identifier.
+The events are sent from the server in the same way as a server's request, but
+without requiring a response and they don't include an identifier.
 
 WebSocket messages
 ==================
@@ -18,7 +18,7 @@ WebSocket messages
 1 - Join room
 -------------
 
-Represents a client’s request to join a room. If the room
+Represents a client's request to join a room. If the room
 does not exist, it is created. To obtain the available rooms, the client should
 previously use the REST method getAllRooms.
 
@@ -26,8 +26,8 @@ previously use the REST method getAllRooms.
 
 - **Parameters**:
 
-  - **user** - user’s name
-  - **room** -  room’s name
+  - **user** - user's name
+  - **room** -  room's name
 
 - **Example request**::
 
@@ -41,7 +41,7 @@ previously use the REST method getAllRooms.
    - **value** - list of existing users in this room, empty when the room
      is a fresh one:
 
-     - **id** - an already existing user’s name
+     - **id** - an already existing user's name
      - **streams** - list of stream identifiers that the other
        participant has opened to connect with the room. As only webcam is
        supported, will always be ``[{"id":"webcam"}]``.
@@ -62,7 +62,7 @@ user joining in.
 
 - **Parameters**:
 
-  - **id:** the new participant’s id (username)
+  - **id:** the new participant's id (username)
 
 - **Example message**::
 
@@ -71,9 +71,9 @@ user joining in.
 3 - Publish video
 -----------------
 
-Represents a client’s request to start streaming her local media to anyone
+Represents a client's request to start streaming her local media to anyone
 inside  the room. The user can use the SDP answer from the response to display
-her local media after having passed through the KMs server (as opposed or
+her local media after having passed through the KMS server (as opposed or
 besides using just the local stream), and thus check what other users in the
 room are receiving from her stream. The loopback can be enabled using the
 corresponding parameter.
@@ -93,7 +93,7 @@ corresponding parameter.
 - **Server response (result)**
 
   - **sessionId:** id of the WebSocket session
-  - **sdpAnswer:** SDP answer build by the the user’s server WebRTC endpoint
+  - **sdpAnswer:** SDP answer build by the the user's server WebRTC endpoint
 
 - **Example response**::
 
@@ -110,10 +110,10 @@ publishing her local media stream.
 
 - **Parameters**:
 
-  - **id**: publisher’s username
+  - **id**: publisher's username
   - **streams**: list of stream identifiers that the participant has opened
     to connect with the room. As only webcam is supported, will always be
-    [{"id":"webcam"}].
+    ``[{"id":"webcam"}]``.
 
 - **Example message**::
 
@@ -123,7 +123,7 @@ publishing her local media stream.
 5 - Unpublish video
 -------------------
 
-Represents a client’s request to stop streaming her local media to her room peers.
+Represents a client's request to stop streaming her local media to her room peers.
 
 - **Method**: unpublishVideo
 
@@ -151,7 +151,7 @@ having stopped publishing her local media stream.
 
 - **Parameters**:
 
-  - **name** - publisher’s username
+  - **name** - publisher's username
 
 - **Example message**
 
@@ -160,7 +160,7 @@ having stopped publishing her local media stream.
 7 - Receive video
 -----------------
 
-Represents a client’s request to receive media from participants in the room
+Represents a client's request to receive media from participants in the room
 that  published their media. This method can also be used for loopback
 connections.
 
@@ -168,8 +168,8 @@ connections.
 
 - **Parameters**:
 
-   - **sender**: id of the publisher’s endpoint, build by appending the
-     publisher’s  name and her currently opened stream (usually webcam)
+   - **sender**: id of the publisher's endpoint, build by appending the
+     publisher's  name and her currently opened stream (usually webcam)
    - **sdpOffer**: SDP offer sent by this client
 
 - **Example request**::
@@ -180,7 +180,7 @@ connections.
 - **Server response (result)**
 
    - **sessionId**: id of the WebSocket session
-   - **sdpAnswer**: SDP answer build by the other participant’s WebRTC
+   - **sdpAnswer**: SDP answer build by the other participant's WebRTC
      endpoint
 
 - **Example response**
@@ -190,14 +190,14 @@ connections.
 8 - Unsubscribe from video
 --------------------------
 
-Represents a client’s request to stop receiving media from a given publisher.
+Represents a client's request to stop receiving media from a given publisher.
 
 - **Method**: unsubscribeFromVideo
 
 - **Parameters**:
 
-   - **sender**: id of the publisher’s endpoint, build by appending the
-     publisher’s name and her currently opened stream (usually webcam)
+   - **sender**: id of the publisher's endpoint, build by appending the
+     publisher's name and her currently opened stream (usually webcam)
 
 - **Example request**::
 
@@ -277,7 +277,7 @@ peer on the server.
 11 - Leave room
 ---------------
 
-Represents a client’s notification that she’s leaving the room.
+Represents a client's notification that she's leaving the room.
 
 - **Method**: leaveRoom
 
@@ -391,7 +391,7 @@ on a pipeline or media element.
 
 Provides a custom envelope for requests not directly implemented by the Room
 server. The default server implementation of handling this call is to throw a
-RuntimeException. There is one implementation of this request, and it’s used by
+RuntimeException. There is one implementation of this request, and it's used by
 the demo application to toggle the hat filter overlay.
 
 - **Method**: customRequest

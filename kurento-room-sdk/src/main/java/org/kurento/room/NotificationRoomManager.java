@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The Kurento room manager represents an SDK for any developer that wants to
  * implement the Room server-side application. They can build their application
- * on top of the manager’s Java API and implement their desired business logic
+ * on top of the manager's Java API and implement their desired business logic
  * without having to consider room or media-specific details.
  * <p/>
  * It will trigger events which when handled, should notify the client side with
@@ -95,7 +95,7 @@ public class NotificationRoomManager {
 	 * the {@link KurentoClientSessionInfo}.
 	 * 
 	 * @param request instance of {@link ParticipantRequest} POJO containing the
-	 *        participant’s id and a request id (optional identifier of the
+	 *        participant's id and a request id (optional identifier of the
 	 *        request at the communications level, included when responding back
 	 *        to the client)
 	 * 
@@ -281,13 +281,13 @@ public class NotificationRoomManager {
 	 * Used by clients to send written messages to all other participants in the
 	 * room.<br/>
 	 * <strong>Side effects:</strong> The room event handler should acknowledge
-	 * the client’s request by sending an empty message. Should also send
+	 * the client's request by sending an empty message. Should also send
 	 * notifications to the all participants in the room with the message and
 	 * its sender.
 	 * 
 	 * @param message message contents
 	 * @param userName name or identifier of the user in the room
-	 * @param roomName room’s name
+	 * @param roomName room's name
 	 * @param request instance of {@link ParticipantRequest} POJO
 	 */
 	public void sendMessage(String message, String userName, String roomName,

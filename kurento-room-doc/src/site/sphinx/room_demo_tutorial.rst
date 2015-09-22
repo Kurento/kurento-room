@@ -10,17 +10,17 @@ Server-side code
 ================
 
 The main class of the room server library project is a Spring Boot application
-class, ``KurentoRoomServerApp``. In this class we’ll be instantiating Spring
+class, ``KurentoRoomServerApp``. In this class we'll be instantiating Spring
 beans for the different components that make up the server-side.
 
 Furthermore, this class with all its configuration can then be imported into
-application classes of other Spring projects (using Spring’s ``@Import``
+application classes of other Spring projects (using Spring's ``@Import``
 annotation).
 
 Room management (w/ notifications)
 ----------------------------------
 
-For managing rooms and their users, the server uses the Room SDK library.  We’ve
+For managing rooms and their users, the server uses the Room SDK library.  We've
 chosen the notification-flavored API, namely the class
 ``NotificationRoomManager``. We have to define the manager as a Spring bean
 that will be injected as a dependency when needed (``@Autowired`` annotation).
@@ -29,7 +29,7 @@ But first, we need a UserNotificationService implementation to provide to the
 ``NotificationRoomManager`` constructor, this will be an object of type
 ``JsonRpcNotificationService`` that will store JSON-RPC sessions in order to
 support sending responses and notifications back to the clients. We also
-require a ``KurentoClientProvider`` instance that we’ve named ``KMSManager``::
+require a ``KurentoClientProvider`` instance that we've named ``KMSManager``::
 
    @Bean
    public NotificationRoomManager roomManager() {
@@ -162,8 +162,8 @@ transaction). Same thing happens when sending an error response::
       }
    }
 
-To send a notification (or server event), we’ll be using the session object.
-This mustn’t be removed until the close session method is invoked (from the
+To send a notification (or server event), we'll be using the session object.
+This mustn't be removed until the close session method is invoked (from the
 room handler, as a consequence of an user departure, or directly from the
 WebSocket handler, in case of connection timeouts or errors)::
  
@@ -223,9 +223,9 @@ original application class of the server::
 Custom KurentoClientProvider
 ----------------------------
 
-As substitute for the default implementation of the provider interface we’ve
-created the class ``FixedNKmsManager``, which’ll allow maintaining a series of
-``KurentoClient``, each created from an URI specified in the demo’s
+As substitute for the default implementation of the provider interface we've
+created the class ``FixedNKmsManager``, which'll allow maintaining a series of
+``KurentoClient``, each created from an URI specified in the demo's
 configuration.
 
 Custom user control
@@ -235,9 +235,9 @@ extended version of ``JsonRpcUserControl`` was created,
 ``DemoJsonRpcUserControl``.
 
 This class overrides the method ``customRequest(...)`` to allow toggling the
-``FaceOverlayFilter`` which adds or removes the hat from the publisher’s head.
+``FaceOverlayFilter`` which adds or removes the hat from the publisher's head.
 It stores the filter object as an attribute in the WebSocket session so that
-it’d be easier to remove it::
+it'd be easier to remove it::
 
     @Override
     public void customRequest(Transaction transaction,
@@ -338,8 +338,8 @@ Client-side code
 ================
 
 This section describes the code from the AngularJS application
-contained by kurento-room-demo. The Angular-specific code won’t be explained,
-as our goal is to understand the room mechanism (the reader shouldn’t worry as
+contained by kurento-room-demo. The Angular-specific code won't be explained,
+as our goal is to understand the room mechanism (the reader shouldn't worry as
 the indications below will also serve for a client app developed with plain or
 conventional Javascript).
 
@@ -362,7 +362,7 @@ Include the required Javascript files::
 
 * **EventEmitter**: implements an events library for the browser.
 
-* **kurento-jsonrpc**: is a small RPC library that we’ll be using for the
+* **kurento-jsonrpc**: is a small RPC library that we'll be using for the
   signaling plane of this application.
 
 * **kurento-utils**: is a Kurento utility library aimed to simplify the WebRTC
@@ -375,9 +375,9 @@ Init resources
 --------------
 
 In order to join a room, call the initialization function from
-``KurentoRoom``, providing the server’s URI for listening JSON-RPC requests. In
+``KurentoRoom``, providing the server's URI for listening JSON-RPC requests. In
 this case, the room server listens for WebSocket connections on the request
-path /room::
+path ``/room``::
 
    var wsUri = 'ws://' + location.host + '/room';
 
@@ -385,10 +385,12 @@ You must also provide the room and username::
 
    var kurento = KurentoRoom(wsUri, function (error, kurento) {...}
 
-If the WebSocket initialization failed, the error object will not be null and
-we should check the server’s configuration or status.
+The callback parameter is where we'll subscribe to the events emitted by the room.
 
-Otherwise, we’re good to go and we can create a Room and the local Stream
+If the WebSocket initialization failed, the ``error`` object will not be null and
+we should check the server's configuration or status.
+
+Otherwise, we're good to go and we can create a Room and the local Stream
 objects.  Please observe that the constraints from the options passed to the
 local stream (audio, video, data) are being ignored at the moment::
 
@@ -413,8 +415,8 @@ the join method. This is done by calling the init method on the local stream::
 
 During its execution, the user will be prompted to grant access to the media
 resources on her system. Depending on her response, the stream object will emit
-the access-accepted or the access-denied event. The application has to register
-for these events in order to continue with the join operation::
+the ``access-accepted`` or the ``access-denied`` event. The application has to register
+for these events in order to continue with the *join* operation::
 
 	localStream.addEventListener("access-denied", function () {
 	  //alert of error and go back to login page
@@ -445,7 +447,7 @@ the room, room-connected event will be used.
 
 The next code excerpts will contain references to the objects ``ServiceRoom``
 and ``ServiceParticipant`` which are Angular services defined by the demo
-application. And it’s worth mentioning that the ``ServiceParticipant`` uses
+application. And it's worth mentioning that the ``ServiceParticipant`` uses
 streams as room participants::
 
 	room.addEventListener("room-connected", function (roomEvent) {
@@ -467,9 +469,9 @@ streams as room participants::
 	  }
 	}
 
-As we’ve just instructed our local stream to be published in the room,  we
+As we've just instructed our local stream to be published in the room,  we
 should listen for the corresponding event and register our local stream as the
-local participant in the room. Furthermore, we’ve added an option to the demo
+local participant in the room. Furthermore, we've added an option to the demo
 to display our unchanged local video besides the video that was passed through
 the media server (when configured as such)::
 
@@ -495,8 +497,8 @@ stream being added to the room::
 	  ServiceParticipant.addParticipant(streamEvent.stream);
 	});
 
-The reverse mechanism must be employed when the stream is removed (on unpublish
-or on unsubscribe)::
+The reverse mechanism must be employed when the stream is removed (when
+the participant leaves the room)::
 
 	room.addEventListener("stream-removed", function (streamEvent) {
 	  ServiceParticipant.removeParticipantByStream(streamEvent.stream);
@@ -531,23 +533,27 @@ these two methods from the stream interface.
 **stream.playOnlyVideo(parentElement, thumbnailId)**:
 
 This method will append a ``video`` HTML tag to an existing element specified by
-the parentElement parameter (which can be either an identifier or directly the
+the **parentElement** parameter (which can be either an identifier or directly the
 HTML tag). The video element will have autoplay on and no play controls. If the
 stream is local, the video will be muted.
 
-It’s expected that an element with the identifier ``thumbnailId`` to exist and
+It's expected that an element with the identifier ``thumbnailId`` to exist and
 to be selectable. This element will be displayed (jQuery .show() method) when a
 WebRTC stream can be assigned to the src attribute of the video element.
 
 **stream.playThumbnail(thumbnailId)**:
 
-Creates a video element inside the element with identifier ``thumbnailId``. Will
-display a name tag onto the video element (text inside a div element), using
-the global ID of the stream. The style of the name tag is specified by the CSS
-class ``name``.
+Creates a ``div`` element (class name *participant*) inside the element whose 
+identifier is ``thumbnailId``. The video from the stream is going to be 
+played inside this ``div`` (*participant*) by calling 
+``playOnlyVideo(parentElement, thumbnailId)`` with it as the *parentElement*. 
+
+Using the global ID of the stream, a name tag will also be displayed onto 
+the *participant* element as a string of text inside a div element. 
+The style of the name tag is specified by the CSS class ``name``.
 
 The size of the thumbnail must be defined by the application. In
-the demo, thumbnails start with a width of 14% which will be used until there
+the room demo, thumbnails start with a width of 14% which will be used until there
 are more than 7 publishers in the room (7 x 14% = 98%). From this point on,
 another formula will be used for calculating the width, 98% divided by the
 number of publishers.

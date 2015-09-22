@@ -29,7 +29,7 @@ public interface KurentoClientProvider {
 
 	/**
 	 * Obtains a {@link KurentoClient} instance given the custom session bean.
-	 * Normally, it’d be called during a room’s instantiation.
+	 * Normally, it'd be called during a room's instantiation.
 	 * 
 	 * @param sessionInfo custom information object required by the implementors
 	 *        of this interface

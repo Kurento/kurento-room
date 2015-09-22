@@ -2,13 +2,10 @@
 
 Copyright © 2015 Kurento. Licensed under [LGPL License].
 
-kurento-room-sdk
+kurento-room-doc
 ======================
 
-Kurento Room SDK offers the Java API for developing room-enabled
-applications. It can be used for managing the rooms and their participants 
-whilst abstracting from the media plane.
-
+Kurento Room framework documentation. Made with [Sphinx] and [Read-the-docs] theme.
 
 What is Kurento
 ---------------
@@ -47,3 +44,5 @@ Follow us on Twitter @[kurentoms].
 [GitHub Kurento Group]: https://github.com/kurento
 [website]: http://kurento.org
 [kurentoms]: http://twitter.com/kurentoms
+[Read-the-docs]: http://read-the-docs.readthedocs.org/
+[Sphinx]: http://sphinx-doc.org/

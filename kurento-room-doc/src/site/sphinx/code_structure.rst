@@ -7,7 +7,7 @@ Project modules:
 - **kurento-room** - reactor project
 - **kurento-room/kurento-room-sdk** - module that provides an interface for
   Java developers of room-type applications
-- **kurento-room/kurento-room-server** - Kurento’s own implementation of a
+- **kurento-room/kurento-room-server** - Kurento's own implementation of a
   room API, it provides the WebSockets API for the communications between room
   clients and the server.
 - **kurento-room/kurento-room-client-js** - Javascript library that acts as
@@ -30,7 +30,7 @@ willing to provide the room functionality to their users. The server-side code
 employs the Room SDK for managing the rooms and uses a Kurento library
 (**kurento-jsonrpc-server**, a JSON-RPC protocol over WebSockets) to connect
 with the clients. The API provided by the server has a limitation concerning an
-user’s name, and is that it cannot contain lower dashes.
+user's name, and is that it cannot contain lower dashes.
 
 
 JavaScript client library
@@ -48,12 +48,12 @@ server to provide the functionality required for group communications (the
 so-called rooms). Upon launch and using the SpringBoot framework, it starts the
 main application of the module kurento-room-server which exposes the rooms API
 through an WebSocket interface. The client part has been implemented using
-Angular JS and lumX and it’s using the room’s  JS library for the client-side
+Angular JS and lumX and it's using the room's  JS library for the client-side
 (``KurentoRoom.js``).
 
-The demo allows web clients accessing the application’s URI to:
+The demo allows web clients accessing the application's URI to:
 
-- login inside a room (creating the room if it doesn’t exist)
+- login inside a room (creating the room if it doesn't exist)
 - leave the room
 - publish their media stream
 - mute their video and/or audio
