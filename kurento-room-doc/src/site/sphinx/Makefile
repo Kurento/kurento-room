@@ -34,7 +34,7 @@ help:
 	@echo "  html       to make standalone HTML files"
 	@echo "  dist       to make langdoc html epub latexpdf and then copy"
 	@echo "             Kurento.{pdf,epub} in $(BUILDDIR)/html and make a tgz"
-	@echo "             as kurento-docs-$(DOC_VERSION).tgz"
+	@echo "             as kurento-room-docs-$(DOC_VERSION).tgz"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
 	@echo "  pickle     to make pickle files"

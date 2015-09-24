@@ -78,7 +78,8 @@ public class NotificationRoomManager {
 	 * @param notificationRoomHandler the room event handler implementation
 	 * @param kcProvider enables the manager to obtain Kurento Client instances
 	 */
-	public NotificationRoomManager(NotificationRoomHandler notificationRoomHandler,
+	public NotificationRoomManager(
+			NotificationRoomHandler notificationRoomHandler,
 			KurentoClientProvider kcProvider) {
 		super();
 		this.notificationRoomHandler = notificationRoomHandler;
@@ -116,12 +117,12 @@ public class NotificationRoomManager {
 		} catch (RoomException e) {
 			log.warn("PARTICIPANT {}: Error joining/creating room {}",
 					userName, roomName, e);
-			notificationRoomHandler.onParticipantJoined(request, roomName, userName,
-					null, e);
+			notificationRoomHandler.onParticipantJoined(request, roomName,
+					userName, null, e);
 		}
 		if (existingParticipants != null)
-			notificationRoomHandler.onParticipantJoined(request, roomName, userName,
-					existingParticipants, null);
+			notificationRoomHandler.onParticipantJoined(request, roomName,
+					userName, existingParticipants, null);
 	}
 
 	/**
@@ -173,18 +174,18 @@ public class NotificationRoomManager {
 							loopbackConnectionType, doLoopback, mediaElements);
 		} catch (RoomException e) {
 			log.warn("PARTICIPANT {}: Error publishing media", userName, e);
-			notificationRoomHandler.onPublishMedia(request, null, null, null, e);
+			notificationRoomHandler
+					.onPublishMedia(request, null, null, null, e);
 		}
 		if (sdpAnswer != null)
-			notificationRoomHandler.onPublishMedia(request, userName, sdpAnswer,
-					participants, null);
+			notificationRoomHandler.onPublishMedia(request, userName,
+					sdpAnswer, participants, null);
 	}
 
 	/**
 	 * @param request instance of {@link ParticipantRequest} POJO
 	 * 
-	 * @see RoomManager#publishMedia(String, String, boolean,
-	 *      MediaElement...)
+	 * @see RoomManager#publishMedia(String, String, boolean, MediaElement...)
 	 */
 	public void publishMedia(ParticipantRequest request, String sdpOffer,
 			boolean doLoopback, MediaElement... mediaElements) {
@@ -214,8 +215,8 @@ public class NotificationRoomManager {
 			notificationRoomHandler.onUnpublishMedia(request, null, null, e);
 		}
 		if (unpublished)
-			notificationRoomHandler.onUnpublishMedia(request, userName, participants,
-					null);
+			notificationRoomHandler.onUnpublishMedia(request, userName,
+					participants, null);
 	}
 
 	/**
@@ -254,7 +255,7 @@ public class NotificationRoomManager {
 			internalManager.unsubscribe(remoteName, pid);
 			unsubscribed = true;
 		} catch (RoomException e) {
-			log.warn("PARTICIPANT {}: unsubscribing from {}", userName,
+			log.warn("PARTICIPANT {}: Error unsubscribing from {}", userName,
 					remoteName, e);
 			notificationRoomHandler.onUnsubscribe(request, e);
 		}
@@ -267,12 +268,17 @@ public class NotificationRoomManager {
 	 */
 	public void onIceCandidate(String endpointName, String candidate,
 			int sdpMLineIndex, String sdpMid, ParticipantRequest request) {
+		String pid = request.getParticipantId();
+		String userName = null;
 		try {
+			userName = internalManager.getParticipantName(pid);
 			internalManager.onIceCandidate(endpointName, candidate,
 					sdpMLineIndex, sdpMid, request.getParticipantId());
 			notificationRoomHandler.onRecvIceCandidate(request, null);
 		} catch (RoomException e) {
-			log.warn("Error receiving ICE candidate", e);
+			log.warn("PARTICIPANT {}: Error receiving ICE "
+					+ "candidate (epName={}, candidate={})", userName,
+					endpointName, candidate, e);
 			notificationRoomHandler.onRecvIceCandidate(request, e);
 		}
 	}
@@ -308,7 +314,8 @@ public class NotificationRoomManager {
 					roomName, internalManager.getParticipants(roomName), null);
 		} catch (RoomException e) {
 			log.warn("PARTICIPANT {}: Error sending message", userName, e);
-			notificationRoomHandler.onSendMessage(request, null, null, null, null, e);
+			notificationRoomHandler.onSendMessage(request, null, null, null,
+					null, e);
 		}
 	}
 

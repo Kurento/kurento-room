@@ -1,0 +1,484 @@
+/*
+ * (C) Copyright 2015 Kurento (http://kurento.org/)
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+package org.kurento.room.test.fake.util;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.Assert;
+import org.kurento.client.ErrorEvent;
+import org.kurento.client.EventListener;
+import org.kurento.client.MediaPipeline;
+import org.kurento.client.MediaState;
+import org.kurento.client.MediaStateChangedEvent;
+import org.kurento.client.OnIceCandidateEvent;
+import org.kurento.client.PlayerEndpoint;
+import org.kurento.client.WebRtcEndpoint;
+import org.kurento.room.client.KurentoRoomClient;
+import org.kurento.room.client.internal.IceCandidateInfo;
+import org.kurento.room.client.internal.Notification;
+import org.kurento.room.client.internal.ParticipantLeftInfo;
+import org.kurento.room.client.internal.ParticipantPublishedInfo;
+import org.kurento.room.client.internal.ParticipantUnpublishedInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
+ *
+ */
+public class FakeParticipant implements Closeable {
+	private static final long WAIT_ACTIVE_LIVE_BY_PEER_TIMEOUT = 7; // seconds
+
+	private static final String PLAY_SRC_FILENAME = "smpte-1min.webm";
+	// private static final String PLAY_SRC_FILENAME = "elephants-2min.webm";
+
+	private static Logger log = LoggerFactory.getLogger(FakeParticipant.class);
+
+	private KurentoRoomClient jsonRpcClient;
+
+	private MediaPipeline pipeline;
+	private WebRtcEndpoint webRtc;
+	private CountDownLatch ownLatch = new CountDownLatch(1);
+	private PlayerEndpoint player;
+
+	private String name;
+	private String room;
+
+	private boolean autoMedia = false;
+
+	private Map<String, String> peerStreams =
+			new ConcurrentSkipListMap<String, String>();
+	private Map<String, WebRtcEndpoint> peerEndpoints =
+			new ConcurrentSkipListMap<String, WebRtcEndpoint>();
+	private Map<String, CountDownLatch> peerLatches =
+			new ConcurrentSkipListMap<String, CountDownLatch>();
+
+	private Thread notifThread;
+
+	public FakeParticipant(String serviceUrl, String name, String room,
+			MediaPipeline pipeline, boolean autoMedia) {
+		this.name = name;
+		this.room = room;
+		this.autoMedia = autoMedia;
+		this.pipeline = pipeline;
+		this.jsonRpcClient = new KurentoRoomClient(serviceUrl + "/room");
+		this.notifThread = new Thread(name + "-notif") {
+			@Override
+			public void run() {
+				try {
+					internalGetNotification();
+				} catch (InterruptedException e) {
+					log.debug("Interrupted while running notification polling");
+					return;
+				}
+			}
+		};
+		this.notifThread.start();
+	}
+
+	private void internalGetNotification() throws InterruptedException {
+		log.info("Starting receiving notifications by polling blocking queue");
+		while (true) {
+			Notification notif = jsonRpcClient.getServerNotification();
+			if (notif == null)
+				return;
+			log.debug("Polled notif {}", notif);
+			switch (notif.getMethod()) {
+				case ICECANDIDATE_METHOD:
+					onIceCandidate(notif);
+					break;
+				case MEDIAERROR_METHOD:
+					// TODO
+					break;
+				case PARTICIPANTEVICTED_METHOD:
+					// TODO
+					break;
+				case PARTICIPANTJOINED_METHOD:
+					// TODO
+					break;
+				case PARTICIPANTLEFT_METHOD:
+					onParticipantLeft(notif);
+					break;
+				case PARTICIPANTPUBLISHED_METHOD:
+					onParticipantPublished(notif);
+					break;
+				case PARTICIPANTSENDMESSAGE_METHOD:
+					break;
+				case PARTICIPANTUNPUBLISHED_METHOD:
+					onParticipantUnpublish(notif);
+					break;
+				case ROOMCLOSED_METHOD:
+					// TODO
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	private void onParticipantUnpublish(Notification notif) {
+		ParticipantUnpublishedInfo info = (ParticipantUnpublishedInfo) notif;
+		log.debug("Notif details {}: {}", info.getClass().getSimpleName(), info);
+		releaseRemote(info.getName());
+	}
+
+	private void onParticipantLeft(Notification notif) {
+		ParticipantLeftInfo info = (ParticipantLeftInfo) notif;
+		log.debug("Notif details {}: {}", info.getClass().getSimpleName(), info);
+		releaseRemote(info.getName());
+	}
+
+	private void releaseRemote(String remote) {
+		WebRtcEndpoint peer = peerEndpoints.get(remote);
+		if (peer != null)
+			peer.release();
+		peerEndpoints.remove(remote);
+	}
+
+	private void onParticipantPublished(Notification notif) {
+		ParticipantPublishedInfo info = (ParticipantPublishedInfo) notif;
+		log.debug("Notif details {}: {}", info.getClass().getSimpleName(), info);
+		String remote = info.getId();
+		addPeerStream(remote, info.getStreams());
+		if (autoMedia) {
+			if (peerEndpoints.containsKey(remote)) {
+				log.info(
+						"(autosubscribe on) Already subscribed to {}. No actions required.",
+						remote);
+				return;
+			}
+			subscribe(remote);
+		}
+	}
+
+	private void onIceCandidate(Notification notif) {
+		IceCandidateInfo info = (IceCandidateInfo) notif;
+		log.debug("Notif details {}: {}", info.getClass().getSimpleName(), info);
+		String epname = info.getEndpointName();
+		if (name.equals(epname)) {
+			if (webRtc != null)
+				webRtc.addIceCandidate(info.getIceCandidate());
+		} else {
+			WebRtcEndpoint peer = peerEndpoints.get(epname);
+			if (peer != null)
+				peer.addIceCandidate(info.getIceCandidate());
+		}
+	}
+
+	public void joinRoom() {
+		try {
+			addPeers(jsonRpcClient.joinRoom(room, name));
+			log.info("Joined room {}: {} peers", room, peerStreams);
+			if (autoMedia) {
+				log.debug(
+						"Automedia on, publishing and subscribing to as many as {} publishers",
+						peerStreams.size());
+				publish();
+				if (!peerStreams.isEmpty()) {
+					for (Entry<String, String> e : peerStreams.entrySet()) {
+						String stream = e.getValue();
+						String remote = e.getKey();
+						if (stream != null)
+							subscribe(remote);
+					}
+					log.debug("Finished subscribing to existing publishers");
+				}
+			}
+		} catch (IOException e) {
+			log.warn("Unable to join room '{}'", room, e);
+			Assert.fail("Unable to join: " + e.getMessage());
+		}
+	}
+
+	public void leaveRoom() {
+		try {
+			jsonRpcClient.leaveRoom();
+			log.info("Left room '{}'", room);
+		} catch (IOException e) {
+			log.warn("Unable to leave room '{}'", room, e);
+			Assert.fail("Unable to leave room: " + e.getMessage());
+		}
+	}
+
+	public void publish() {
+		try {
+			String sdpOffer = createWebRtcForParticipant();
+			String sdpAnswer = jsonRpcClient.publishVideo(sdpOffer, false);
+			this.webRtc.processAnswer(sdpAnswer);
+			this.webRtc.gatherCandidates();
+			player.play();
+			log.debug("Published media in room '{}'", room);
+			log.trace(
+					"Published media in room '{}'- SDP OFFER:\n{}\nSDP ANSWER:\n{}",
+					room, sdpOffer, sdpAnswer);
+		} catch (IOException | URISyntaxException e) {
+			log.warn("Unable to publish in room '{}'", room, e);
+			Assert.fail("Unable to publish: " + e.getMessage());
+		}
+	}
+
+	public void unpublish() {
+		try {
+			jsonRpcClient.unpublishVideo();
+			log.debug("Unpublished media");
+		} catch (IOException e) {
+			log.warn("Unable to unpublish in room '{}'", room, e);
+			Assert.fail("Unable to unpublish: " + e.getMessage());
+		} finally {
+			if (webRtc != null)
+				webRtc.release();
+			ownLatch = null;
+		}
+	}
+
+	public synchronized void subscribe(String remoteName) {
+		try {
+			if (peerEndpoints.containsKey(remoteName)) {
+				log.warn("Already subscribed to {}", remoteName);
+				return;
+			}
+			String sdpOffer = createWebRtcForPeer(remoteName);
+			String sdpAnswer =
+					jsonRpcClient.receiveVideoFrom(peerStreams.get(remoteName),
+							sdpOffer);
+			WebRtcEndpoint peer = peerEndpoints.get(remoteName);
+			if (peer == null)
+				throw new Exception("Receiving endpoint not found for peer "
+						+ remoteName);
+			peer.processAnswer(sdpAnswer);
+			peer.gatherCandidates();
+			log.debug("Subscribed to '{}' in room '{}'",
+					peerStreams.get(remoteName), room);
+			log.trace(
+					"Subscribed to '{}' in room '{}' - SDP OFFER:\n{}\nSDP ANSWER:\n{}",
+					peerStreams.get(remoteName), room, sdpOffer, sdpAnswer);
+		} catch (Exception e) {
+			log.warn("Unable to subscribe in room '{}' to '{}'", room,
+					remoteName, e);
+			Assert.fail("Unable to subscribe: " + e.getMessage());
+		}
+	}
+
+	public synchronized void unsubscribe(String remoteName) {
+		WebRtcEndpoint peer = null;
+		try {
+			peer = peerEndpoints.get(remoteName);
+			if (peer == null)
+				log.warn("No local peer found for remote {}", remoteName);
+			jsonRpcClient.unsubscribeFromVideo(peerStreams.get(remoteName));
+			log.debug("Unsubscribed from {}", peerStreams.get(remoteName));
+		} catch (IOException e) {
+			log.warn("Unable to unsubscribe in room '{}' from '{}'", room,
+					remoteName, e);
+			Assert.fail("Unable to unsubscribe: " + e.getMessage());
+		} finally {
+			if (peer != null)
+				peer.release();
+			peerEndpoints.remove(remoteName);
+			peerLatches.remove(remoteName);
+		}
+	}
+
+	private String createWebRtcForParticipant() throws URISyntaxException {
+
+		webRtc = new WebRtcEndpoint.Builder(pipeline).build();
+		ownLatch = new CountDownLatch(1);
+
+		webRtc.addOnIceCandidateListener(new EventListener<OnIceCandidateEvent>() {
+			@Override
+			public void onEvent(OnIceCandidateEvent event) {
+				try {
+					log.debug("New ICE candidate: {}, {}, {}", event
+							.getCandidate().getCandidate(), event
+							.getCandidate().getSdpMid(), event.getCandidate()
+							.getSdpMLineIndex());
+					jsonRpcClient.onIceCandidate(name, event.getCandidate()
+							.getCandidate(), event.getCandidate().getSdpMid(),
+							event.getCandidate().getSdpMLineIndex());
+				} catch (Exception e) {
+					log.warn("Exception sending iceCanditate. Exception {}:{}",
+							e.getClass().getName(), e.getMessage());
+				}
+			}
+		});
+
+		webRtc.addMediaStateChangedListener(new EventListener<MediaStateChangedEvent>() {
+			@Override
+			public void onEvent(MediaStateChangedEvent event) {
+				log.info("Media state changed: {}", event.getNewState());
+				if (event.getNewState() == MediaState.CONNECTED)
+					ownLatch.countDown();
+			}
+		});
+
+		String path = System.getProperty("kurento.test.files", "/tmp/");
+		String filePath = PLAY_SRC_FILENAME;
+		if (!path.endsWith("/"))
+			filePath = "/" + filePath;
+		URI playerUri = new URI("file://" + path + filePath);
+		log.debug("Player source: {}", playerUri.toString());
+
+		player =
+				new PlayerEndpoint.Builder(pipeline, playerUri.toString())
+						.build();
+		player.addErrorListener(new EventListener<ErrorEvent>() {
+			@Override
+			public void onEvent(ErrorEvent event) {
+				log.warn("ErrorEvent for player of '{}': {}", name,
+						event.getDescription());
+			}
+		});
+		player.connect(webRtc);
+
+		return webRtc.generateOffer();
+	}
+
+	private String createWebRtcForPeer(final String remoteName)
+			throws Exception {
+		if (peerEndpoints.containsKey(remoteName))
+			throw new Exception("Already subscribed to " + remoteName);
+
+		WebRtcEndpoint peer = new WebRtcEndpoint.Builder(pipeline).build();
+		final CountDownLatch peerLatch = new CountDownLatch(1);
+
+		peer.addOnIceCandidateListener(new EventListener<OnIceCandidateEvent>() {
+			@Override
+			public void onEvent(OnIceCandidateEvent event) {
+				try {
+					jsonRpcClient.onIceCandidate(remoteName, event
+							.getCandidate().getCandidate(), event
+							.getCandidate().getSdpMid(), event.getCandidate()
+							.getSdpMLineIndex());
+				} catch (Exception e) {
+					log.warn("Exception sending iceCanditate. Exception {}:{}",
+							e.getClass().getName(), e.getMessage());
+				}
+			}
+		});
+
+		peer.addMediaStateChangedListener(new EventListener<MediaStateChangedEvent>() {
+			@Override
+			public void onEvent(MediaStateChangedEvent event) {
+				log.info("{}: Media state changed for remote {}: {}", name,
+						remoteName, event.getNewState());
+				if (event.getNewState() == MediaState.CONNECTED)
+					peerLatch.countDown();
+			}
+		});
+
+		peerEndpoints.put(remoteName, peer);
+		peerLatches.put(remoteName, peerLatch);
+
+		return peer.generateOffer();
+	}
+
+	@Override
+	public void close() {
+		log.debug("Closing {}", name);
+		try {
+			if (jsonRpcClient != null)
+				jsonRpcClient.close();
+		} catch (Exception e) {
+			log.error("Exception closing jsonRpcClient", e);
+		}
+		notifThread.interrupt();
+	}
+
+	// TODO concurrency problems
+	public void waitForActiveLive(CountDownLatch waitForLatch) {
+		try {
+			boolean allPeersConnected = true;
+			for (WebRtcEndpoint peer : peerEndpoints.values())
+				if (peer.getMediaState() != MediaState.CONNECTED)
+					allPeersConnected = false;
+
+			boolean ownConnected =
+					webRtc.getMediaState() == MediaState.CONNECTED;
+
+			if (ownConnected && allPeersConnected)
+				return;
+
+			long remaining =
+					WAIT_ACTIVE_LIVE_BY_PEER_TIMEOUT * peerEndpoints.size();
+			log.debug(
+					"{}: Start waiting for ACTIVE_LIVE in session '{}' - max {}s",
+					name, room, remaining);
+			remaining = remaining * 1000L;
+
+			if (!ownConnected)
+				remaining = waitForLatch(remaining, ownLatch, name);
+
+			if (!allPeersConnected)
+				for (Entry<String, WebRtcEndpoint> e : peerEndpoints.entrySet()) {
+					String remoteName = e.getKey();
+					if (e.getValue().getMediaState() != MediaState.CONNECTED)
+						remaining =
+								waitForLatch(remaining,
+										peerLatches.get(remoteName), remoteName);
+				}
+		} catch (Exception e) {
+			log.warn("{}: WaitForActiveLive error", name, e);
+			throw e;
+		} finally {
+			waitForLatch.countDown();
+		}
+	}
+
+	private long waitForLatch(long remaining, CountDownLatch latch,
+			String epname) {
+		long start = System.currentTimeMillis();
+		try {
+			if (!latch.await(remaining, TimeUnit.MILLISECONDS))
+				throw new RuntimeException(
+						"Timeout waiting for ACTIVE_LIVE in participant '"
+								+ name + "' of session '" + room
+								+ "' for endpoint '" + epname + "'");
+			remaining -= (System.currentTimeMillis() - start);
+			log.trace("ACTIVE_LIVE - remaining {} ms", remaining);
+		} catch (InterruptedException e) {
+			log.warn(
+					"InterruptedException when waiting for ACTIVE_LIVE in participant '{}' "
+							+ "of session '{}' for endpoint '{}'", name, room,
+					epname);
+		}
+		return remaining;
+	}
+
+	private void addPeers(Map<String, List<String>> newPeers) {
+		for (String name : newPeers.keySet())
+			addPeerStream(name, newPeers.get(name));
+	}
+
+	private synchronized void addPeerStream(String name, List<String> streams) {
+		if (streams == null || streams.isEmpty()) {
+			log.warn("Wrong streams info for {}: {}", name, streams);
+			return;
+		}
+		if (this.peerStreams.containsKey(name))
+			log.warn("Overriding peer {}: {} - new: {}", name,
+					this.peerStreams.get(name), streams);
+		this.peerStreams.put(name, name + "_" + streams.get(0));
+		log.debug("Added first remote stream for {}: {}", name,
+				this.peerStreams.get(name));
+	}
+}

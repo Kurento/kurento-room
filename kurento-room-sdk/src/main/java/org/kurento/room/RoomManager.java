@@ -15,6 +15,7 @@
 package org.kurento.room;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,7 +157,13 @@ public class RoomManager {
 					+ "' but it is closing");
 		}
 		room.leave(participantId);
-		Set<UserParticipant> remainingParticipants = getParticipants(roomName);
+		Set<UserParticipant> remainingParticipants = null;
+		try {
+			remainingParticipants = getParticipants(roomName);
+		} catch (RoomException e) {
+			log.debug("Possible collision when closing the room '{}' (not found)");
+			remainingParticipants = Collections.emptySet();
+		}
 		if (remainingParticipants.isEmpty()) {
 			log.debug(
 					"No more participants in room '{}', removing it and closing it",
