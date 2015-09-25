@@ -54,7 +54,7 @@
 				<executions>
 					<execution>
 						<id>sphinx</id>
-						<phase>install</phase>
+						<phase>package</phase>
 						<goals>
 							<goal>exec</goal>
 						</goals>

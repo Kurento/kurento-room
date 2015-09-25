@@ -5,11 +5,14 @@ Code structure
 Project modules:
 
 - **kurento-room** - reactor project
-- **kurento-room/kurento-room-sdk** - module that provides an interface for
-  Java developers of room-type applications
+- **kurento-room/kurento-room-sdk** - module that provides a management 
+  interface for developers of multimedia conferences (rooms) applications in Java 
 - **kurento-room/kurento-room-server** - Kurento's own implementation of a
   room API, it provides the WebSockets API for the communications between room
   clients and the server.
+- **kurento-room/kurento-room-client** - Java library that uses WebSockets and 
+  JSON-RPC to interact with the server-side of the Room API. Can be used
+  to implement the client-side of a room application.
 - **kurento-room/kurento-room-client-js** - Javascript library that acts as
   wrapper for several JS APIs (WebRTC, WebSockets, Kurento Utils). Can be used
   to implement the client-side of a room application.
@@ -31,7 +34,6 @@ employs the Room SDK for managing the rooms and uses a Kurento library
 (**kurento-jsonrpc-server**, a JSON-RPC protocol over WebSockets) to connect
 with the clients. The API provided by the server has a limitation concerning an
 user's name, and is that it cannot contain lower dashes.
-
 
 JavaScript client library
 =========================

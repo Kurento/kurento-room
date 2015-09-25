@@ -6,9 +6,154 @@ kurento-room
 ============
 
 Kurento Room is composed by several modules to offer group communications by
-means of WebRTC. The modules are: kurento-room-sdk, kurento-room-server,
-kurento-room-client, kurento-room-demo and kurento-room-test.
+means of WebRTC. These modules are:
 
+  * `kurento-room-sdk` - module that provides a management interface for 
+    developers of multimedia conferences (rooms) applications in Java 
+  * `kurento-room-server` - Kurento’s own implementation of a room API, it 
+    provides the WebSockets API for the communications between room clients and 
+    the server.
+  * `kurento-room-client` - Java library that uses WebSockets and JSON-RPC to 
+    interact with the server-side of the Room API. Can be used to implement the 
+    client-side of a room application.
+  * `kurento-room-client-js` - Javascript library that acts as wrapper for several 
+    JS APIs (WebRTC, WebSockets, Kurento Utils). Can be used to implement the 
+    client-side of a room application.
+  * `kurento-room-demo` - demonstration project, contains the client-side 
+    implementation (HTML, Javascript, graphic resources) and embeds the room 
+    server to provide the functionality required for group communications
+  * `kurento-room-test` - integration and functionality tests for the basic room 
+    server application
+  * `kurento-room-demo-test` - integration and functionality tests for the demo 
+    application.
+
+There is extensive documentation on each of these components together with a
+tutorial based on the Room demo. This documentation can be easily generated in 
+HTML format from the [kurento-room-doc](./kurento-room-doc/README.md) project.
+
+Dependencies
+------------
+
+These are some of the design and architecture requirements that an application 
+has to fulfill in order to integrate the Room API:
+
+  * include the SDK module to its dependencies list
+  * create one of the two `RoomManager` types as a singleton instance by 
+    providing implementations for the following interfaces: 
+    * `RoomEventHandler`
+    * `KurentoClientProvider`
+  * develop the client-side of the application for devices that support WebRTC
+    (*hint:* or use our *client-js* library and take a look at the demo's client 
+    implementation)
+  * design a room signaling protocol that will be used between the clients and
+    the server (*hint:* or use the WebSockets API from `kurento-room-server`) 
+  * implement a handler for clients' requests on the server-side, that will
+    use the `RoomManager` to process these requests (*hint:* JSON-RPC handler
+    from `kurento-room-server`)
+  * choose a response and notification mechanism for the communication with the
+    clients (*hint:* JSON-RPC notification service from `kurento-room-server`)
+
+About the technology stacks that can or should be used to implement a Rooms 
+application: 
+
+  * WebSockets for the communications between the server and the clients
+  * Spring and Spring Boot for the easy configuration and integration with some 
+    of Kurento's modules. It also provides a WebSockets library.
+
+And of course, the main requirement is at least one installation of the Kurento
+Media Server, accessible to the room application.
+
+Running the demo
+----------------
+
+For a quick initial contact with the framework, we recommend running the demo
+application and observing the exchange of Websocket messages between the clients
+and the server. 
+
+Currently, the demo is only supported for Ubuntu 14.04 LTS 64bits.
+
+After cloning the tutorial, it can be executed directly from the terminal by 
+using Maven's `exec` plugin (`[...]` are optional). To make sure the demo's 
+build and execution work smoothly, a stable release (or tag) is checked out 
+before proceeding with the build (prevents missing dependencies, given that in 
+Kurento *master* is the development branch):
+
+```
+$ git clone git@github.com:Kurento/kurento-room.git
+$ cd kurento-room
+$ git checkout 6.1.0
+$ mvn compile exec:java
+```
+
+Now open the following URL in a WebRTC-compatible browser and connect to a new
+room by providing the desired user and room names:
+
+```
+http://localhost:8080   
+```
+
+Configuring the demo
+--------------------
+
+There are a couple of interesting options or properties that might have to be
+modified for the demo to function properly.
+
+The properties file, **kroomdemo.conf.json**, used in the demo's execution as 
+described above, is located in the folder `src/main/resources` and its 
+contents are the following:
+
+    {
+       "kms": {
+          "uris": ["ws://localhost:8888/kurento","ws://127.0.0.1:8888/kurento"]
+       },
+       "app": {
+          "uri": "http://localhost:8080/"
+       },
+       "kurento": {
+          "client": {
+             //milliseconds
+             "requestTimeout": 20000
+          }
+       },
+       "demo": {
+          //mario-wings.png or wizard.png
+          "hatUrl": "mario-wings.png"
+          "hatCoords": {
+             // mario-wings hat
+             "offsetXPercent": -0.35F,
+             "offsetYPercent": -1.2F,
+             "widthPercent": 1.6F,
+             "heightPercent": 1.6F
+
+             //wizard hat
+             //"offsetXPercent": -0.2F,
+             //"offsetYPercent": -1.35F,
+             //"widthPercent": 1.5F,
+             //"heightPercent": 1.5F
+          },
+          "loopback" : {
+             "remote": false,
+             //matters only when remote is true
+             "andLocal": false
+          },
+          "authRegex": ".*",
+          "kmsLimit": 10
+       }
+    } 
+
+All of theese properties can be overwritten on the command-line when starting 
+the demo server:
+
+```
+$ mvn compile exec:java -Dkms.uris=[\"ws://192.168.1.99:9001/kurento\"]
+```
+
+In this example, we've instructed the demo to use a different URI of a running 
+KMS instance when creating the `KurentoClient` required by the Room API.
+
+More details on the demo's configuration and execution can be found in the demo's 
+[README page](./kurento-room-demo/README.md) or in the Room API 
+[documentation](./kurento-room-doc/README.md) .
 
 What is Kurento
 ---------------
