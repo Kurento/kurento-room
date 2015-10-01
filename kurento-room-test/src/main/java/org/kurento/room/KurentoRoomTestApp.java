@@ -3,6 +3,7 @@ package org.kurento.room;
 import java.io.IOException;
 
 import org.kurento.commons.ConfigFileFinder;
+import org.kurento.commons.ConfigFileManager;
 import org.kurento.room.test.RoomTest;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Import;
@@ -18,6 +19,8 @@ public class KurentoRoomTestApp {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		ConfigFileManager.loadConfigFile(RoomTest.CONFIG_TEST_FILENAME);
 	}
 
 	public static void main(String[] args) {

@@ -134,7 +134,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 	@Override
 	public void handleTransportError(Session session, Throwable exception)
 			throws Exception {
-		log.warn("Transport error for session id {}",
+		log.debug("Transport error for session id {}",
 				session != null ? session.getSessionId() : "NULL_SESSION",
 				exception);
 	}

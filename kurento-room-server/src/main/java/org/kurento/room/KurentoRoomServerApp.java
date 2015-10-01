@@ -1,16 +1,15 @@
 /*
  * (C) Copyright 2014 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * 
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
+ * 
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  */
 package org.kurento.room;
 
@@ -46,18 +45,21 @@ import com.google.gson.JsonArray;
 public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	public static final String KMSS_URIS_PROPERTY = "kms.uris";
-	public static final String KMSS_URIS_DEFAULT = "[ \"ws://localhost:8888/kurento\" ]";
+	public static final String KMSS_URIS_DEFAULT =
+			"[ \"ws://localhost:8888/kurento\" ]";
 
 	private static final Logger log = LoggerFactory
 			.getLogger(KurentoRoomServerApp.class);
 
-	private static JsonRpcNotificationService userNotificationService = new JsonRpcNotificationService();
+	private static JsonRpcNotificationService userNotificationService =
+			new JsonRpcNotificationService();
 
 	@Bean
 	@ConditionalOnMissingBean
 	public KmsManager kmsManager() {
-		JsonArray kmsUris = getPropertyJson(KMSS_URIS_PROPERTY,
-				KMSS_URIS_DEFAULT, JsonArray.class);
+		JsonArray kmsUris =
+				getPropertyJson(KMSS_URIS_PROPERTY, KMSS_URIS_DEFAULT,
+						JsonArray.class);
 		List<String> kmsWsUris = JsonUtils.toStringList(kmsUris);
 
 		log.info("Configuring Kurento Room Server to use first of the following kmss: "
@@ -74,7 +76,8 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	@Bean
 	public NotificationRoomManager roomManager() {
-		return new NotificationRoomManager(userNotificationService, kmsManager());
+		return new NotificationRoomManager(userNotificationService,
+				kmsManager());
 	}
 
 	@Bean

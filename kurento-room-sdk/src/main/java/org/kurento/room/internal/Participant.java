@@ -361,7 +361,7 @@ public class Participant {
 		for (String remoteParticipantName : subscribers.keySet()) {
 			SubscriberEndpoint subscriber =
 					this.subscribers.get(remoteParticipantName);
-			if (subscriber.getEndpoint() != null) {
+			if (subscriber != null && subscriber.getEndpoint() != null) {
 				releaseSubscriberEndpoint(remoteParticipantName, subscriber);
 				log.debug("PARTICIPANT {}: Released subscriber endpoint to {}",
 						this.name, remoteParticipantName);

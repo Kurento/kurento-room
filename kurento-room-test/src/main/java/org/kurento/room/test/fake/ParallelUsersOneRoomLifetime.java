@@ -31,15 +31,16 @@ public class ParallelUsersOneRoomLifetime extends BaseFakeTest {
 	private static final long JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 30;
 	private static final long ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS = 180;
 	private static final long LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 10;
+	private static final long ROOM_ACTIVITY_IN_SECONDS = 120;
 
-	private static final int USERS = 10;
+	private static final int USERS = 6;
 	private static final String USER_PREFIX = "user";
 
 	public ParallelUsersOneRoomLifetime(Logger log) {
 		super(log);
 	}
 
-	//TODO make it testable
+	// TODO configure accessible files' list in Jenkins job
 	@Ignore
 	@Test
 	public void test() {
@@ -51,7 +52,10 @@ public class ParallelUsersOneRoomLifetime extends BaseFakeTest {
 					public void exec(int numTask) throws Exception {
 						try {
 							FakeSession s = createSession(roomName);
-							s.newParticipant(USER_PREFIX + numTask, true);
+							s.newParticipant(
+									USER_PREFIX + numTask,
+									playerUris.get(numTask % playerUris.size()),
+									true);
 						} finally {
 							joinLatch.countDown();
 						}
@@ -80,14 +84,17 @@ public class ParallelUsersOneRoomLifetime extends BaseFakeTest {
 
 		log.info("\n-----------------\n"
 				+ "Wait for active live concluded in room '{}'"
-				+ "\n-----------------\n" + "Waiting 30 seconds", roomName);
+				+ "\n-----------------\n" + "Waiting {} seconds", roomName,
+				ROOM_ACTIVITY_IN_SECONDS);
 
 		try {
-			Thread.sleep(30 * 1000);
+			Thread.sleep(ROOM_ACTIVITY_IN_SECONDS * 1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		log.info("Leaving room '{}'", roomName);
+		log.info("\n-----------------\n" + "Leaving room '{}'"
+				+ "\n-----------------\n", roomName);
+
 
 		final CountDownLatch leaveLatch = new CountDownLatch(USERS);
 		parallelTasks(USERS, USER_PREFIX, "parallelLeaveRoom", exceptions,

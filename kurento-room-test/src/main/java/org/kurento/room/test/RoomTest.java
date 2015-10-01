@@ -38,7 +38,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.kurento.commons.ConfigFileFinder;
 import org.kurento.commons.PropertiesManager;
-import org.kurento.test.base.KurentoTest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.ElementNotVisibleException;
@@ -64,7 +63,7 @@ import com.google.common.base.Function;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-public class RoomTest extends KurentoTest {
+public class RoomTest {
 	protected Logger log = LoggerFactory.getLogger(this.getClass());
 
 	public final static String CONFIG_TEST_FILENAME = "/kroomtest.conf.json";
@@ -133,18 +132,11 @@ public class RoomTest extends KurentoTest {
 
 	@Before
 	public void setup() {
-		try {
-			super.setupKurentoTest();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
 		roomName = ROOM_NAME + random.nextInt(9999);
 	}
 
 	@After
 	public void tearDown() {
-		super.teardownKurentoTest();
 		closeBrowsers();
 	}
 

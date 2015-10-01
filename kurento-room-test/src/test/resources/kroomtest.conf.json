@@ -3,5 +3,24 @@
       "uris": [
          "ws://127.0.0.1:8888/kurento"
       ]
+   },
+   "kurento": {
+      "test": {
+         "fake": {
+            "uri": "ws://127.0.0.1:8888/kurento",
+            "files": "/tmp",
+            //accessible to the user that runs KMS
+            // (default is nobody:nogroup)
+            "filenames": []
+         },
+         "chrome": {
+            "files": "/tmp",
+            //accessible to the user that runs the test
+            "filenames": {
+               "wav": [],
+               "y4m": []
+            }
+         }
+      }
    }
 }

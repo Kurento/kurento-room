@@ -15,7 +15,6 @@ package org.kurento.room.test.fake.util;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
@@ -47,10 +46,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class FakeParticipant implements Closeable {
-	private static final long WAIT_ACTIVE_LIVE_BY_PEER_TIMEOUT = 7; // seconds
-
-	private static final String PLAY_SRC_FILENAME = "smpte-1min.webm";
-	// private static final String PLAY_SRC_FILENAME = "elephants-2min.webm";
+	private static final long WAIT_ACTIVE_LIVE_BY_PEER_TIMEOUT = 10; // seconds
 
 	private static Logger log = LoggerFactory.getLogger(FakeParticipant.class);
 
@@ -63,6 +59,7 @@ public class FakeParticipant implements Closeable {
 
 	private String name;
 	private String room;
+	private String playerUri;
 
 	private boolean autoMedia = false;
 
@@ -75,13 +72,14 @@ public class FakeParticipant implements Closeable {
 
 	private Thread notifThread;
 
-	public FakeParticipant(String serviceUrl, String name, String room,
+	public FakeParticipant(String serviceUrl, String name, String room, String playerUri,
 			MediaPipeline pipeline, boolean autoMedia) {
 		this.name = name;
 		this.room = room;
+		this.playerUri = playerUri;
 		this.autoMedia = autoMedia;
 		this.pipeline = pipeline;
-		this.jsonRpcClient = new KurentoRoomClient(serviceUrl + "/room");
+		this.jsonRpcClient = new KurentoRoomClient(serviceUrl);
 		this.notifThread = new Thread(name + "-notif") {
 			@Override
 			public void run() {
@@ -331,15 +329,8 @@ public class FakeParticipant implements Closeable {
 			}
 		});
 
-		String path = System.getProperty("kurento.test.files", "/tmp/");
-		String filePath = PLAY_SRC_FILENAME;
-		if (!path.endsWith("/"))
-			filePath = "/" + filePath;
-		URI playerUri = new URI("file://" + path + filePath);
-		log.debug("Player source: {}", playerUri.toString());
-
 		player =
-				new PlayerEndpoint.Builder(pipeline, playerUri.toString())
+				new PlayerEndpoint.Builder(pipeline, playerUri)
 						.build();
 		player.addErrorListener(new EventListener<ErrorEvent>() {
 			@Override
@@ -349,7 +340,7 @@ public class FakeParticipant implements Closeable {
 			}
 		});
 		player.connect(webRtc);
-
+		log.debug("Playing media from {}", playerUri);
 		return webRtc.generateOffer();
 	}
 
@@ -404,7 +395,6 @@ public class FakeParticipant implements Closeable {
 		notifThread.interrupt();
 	}
 
-	// TODO concurrency problems
 	public void waitForActiveLive(CountDownLatch waitForLatch) {
 		try {
 			boolean allPeersConnected = true;
@@ -419,7 +409,7 @@ public class FakeParticipant implements Closeable {
 				return;
 
 			long remaining =
-					WAIT_ACTIVE_LIVE_BY_PEER_TIMEOUT * peerEndpoints.size();
+					WAIT_ACTIVE_LIVE_BY_PEER_TIMEOUT * (peerEndpoints.size() + 1);
 			log.debug(
 					"{}: Start waiting for ACTIVE_LIVE in session '{}' - max {}s",
 					name, room, remaining);
