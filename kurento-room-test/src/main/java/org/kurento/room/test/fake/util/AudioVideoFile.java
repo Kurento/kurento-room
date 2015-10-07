@@ -11,12 +11,12 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
-package org.kurento.room.test.fake;
+package org.kurento.room.test.fake.util;
 
 public class AudioVideoFile {
 	private String audio;
 	private String video;
-	
+
 	public AudioVideoFile(String audio, String video) {
 		super();
 		this.audio = audio;

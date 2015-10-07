@@ -5,15 +5,22 @@
       ]
    },
    "kurento": {
+      "client": {
+         //milliseconds
+         "requestTimeout": 20000
+      },
       "test": {
          "fake": {
-            "uri": "ws://127.0.0.1:8888/kurento",
-            "files": "/tmp",
-            //accessible to the user that runs KMS
-            // (default is nobody:nogroup)
-            "filenames": []
+            "kmsUri": "ws://127.0.0.1:8888/kurento",
+            "wr": {
+               //absolute path on the KMS's machine
+               "files": "/tmp",
+               //readable by the user that runs KMS (default is nobody:nogroup)
+               "filenames": []
+            }
          },
          "chrome": {
+            //if not absolute path, is considered relative to user's home
             "files": "/tmp",
             //accessible to the user that runs the test
             "filenames": {

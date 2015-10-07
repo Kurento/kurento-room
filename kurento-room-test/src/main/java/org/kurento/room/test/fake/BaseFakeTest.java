@@ -45,6 +45,7 @@ import org.kurento.client.KurentoClient;
 import org.kurento.client.KurentoConnectionListener;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
+import org.kurento.room.test.fake.util.AudioVideoFile;
 import org.kurento.room.test.fake.util.FakeSession;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -68,21 +69,54 @@ import com.google.gson.JsonArray;
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  *
  */
-public class BaseFakeTest {
-
+public abstract class BaseFakeTest {
 	public interface Task {
 		public void exec(int numTask) throws Exception;
 	}
 
-	private static final long TASKS_TIMEOUT_IN_MINUTES = 15 * 60;
-
 	protected static Logger log = LoggerFactory.getLogger(BaseFakeTest.class);
 
-	protected static List<String> playerUris = new ArrayList<String>();
+	private static final long TASKS_TIMEOUT_IN_MINUTES = 15 * 60;
+
+	// configuration keys
+	/** {@value} */
+	public static final String KURENTO_TEST_FAKE_KMS_URI =
+			"kurento.test.fake.kmsUri";
+	/** {@value} */
+	public static final String KURENTO_TEST_FAKE_WR_USERS =
+			"kurento.test.fake.wr.users";
+	/** {@value} */
+	public static final String KURENTO_TEST_FAKE_WR_FILES =
+			"kurento.test.fake.wr.files";
+	/** {@value} */
+	public static final String KURENTO_TEST_FAKE_WR_FILENAMES =
+			"kurento.test.fake.wr.filenames";
+	/** {@value} */
+	public static final String KURENTO_TEST_CHROME_FILES =
+			"kurento.test.chrome.files";
+	/** {@value} */
+	public static final String KURENTO_TEST_CHROME_FILENAMES_Y4M =
+			"kurento.test.chrome.filenames.y4m";
+	/** {@value} */
+	public static final String KURENTO_TEST_CHROME_FILENAMES_WAV =
+			"kurento.test.chrome.filenames.wav";
+
+	protected static final String FAKE_WR_USER_PREFIX = "user";
+	protected static final String CHROME_PREFIX = "chrome";
+
+	protected static int FAKE_WR_USERS = 0;
+
+	protected static long JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 30;
+	protected static long ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS = 180;
+	protected static long ROOM_ACTIVITY_IN_SECONDS = 120;
+	protected static long LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 10;
+
+	protected static List<String> playerFakeWRUris = new ArrayList<String>();
 	protected static List<AudioVideoFile> chromeSrcFiles =
 			new ArrayList<AudioVideoFile>();
 
-	private volatile KurentoClient kurento;
+	protected volatile KurentoClient testFakeKurento;
+	protected static String testFakeKmsWsUri = "ws://localhost:8888/kurento";
 
 	protected static String appUrl;
 
@@ -92,9 +126,6 @@ public class BaseFakeTest {
 			"server.address", "127.0.0.1");
 	protected static String serverUriBase = "http://" + serverAddress + ":"
 			+ serverPort;
-
-	protected static String KMS_FAKE_TEST_WS_URI =
-			"ws://localhost:8888/kurento";
 
 	protected static final String ROOM_WS_URL = "ws://" + serverAddress + ":"
 			+ serverPort;
@@ -111,21 +142,19 @@ public class BaseFakeTest {
 	private ConcurrentMap<String, FakeSession> sessions =
 			new ConcurrentHashMap<String, FakeSession>();
 
+	protected Map<String, Exception> execExceptions =
+			new HashMap<String, Exception>();
 
 	private static final int WEB_TEST_DRIVER_INIT_THREAD_TIMEOUT = 30; // seconds
 	private static final int WEB_TEST_DRIVER_INIT_THREAD_JOIN = 1; // seconds
-
 	private static final int WEB_TEST_TIMEOUT = 20; // seconds
-
 	private static final int WEB_TEST_FIND_LATENCY = 100;
-
 	private static final int WEB_TEST_MAX_WIDTH = 1200;
+	private static final int WEB_TEST_LEFT_BAR_WIDTH = 60;
+	private static final int WEB_TEST_TOP_BAR_WIDTH = 30;
 
 	protected static int WEB_TEST_BROWSER_WIDTH = 500;
 	protected static int WEB_TEST_BROWSER_HEIGHT = 400;
-
-	private static final int WEB_TEST_LEFT_BAR_WIDTH = 60;
-	private static final int WEB_TEST_TOP_BAR_WIDTH = 30;
 
 	protected List<WebDriver> browsers;
 	final protected Object browsersLock = new Object();
@@ -135,6 +164,8 @@ public class BaseFakeTest {
 		if (log != null)
 			BaseFakeTest.log = log;
 	}
+
+	protected abstract int getDefaultFakeWRUsersNum();
 
 	@BeforeClass
 	public static void setupClass() {
@@ -146,57 +177,77 @@ public class BaseFakeTest {
 
 	@Before
 	public void setup() {
+		execExceptions.clear();
+
 		roomName = ROOM_NAME + random.nextInt(9999);
 		log.info("Will connect to WS of room app: {}", serviceUrl);
 
-		KMS_FAKE_TEST_WS_URI =
-				PropertiesManager.getProperty("kms.test.fake.uri",
-						KMS_FAKE_TEST_WS_URI);
-		log.info("Using KMS for fake clients from {}", KMS_FAKE_TEST_WS_URI);
+		String USER_HOME = System.getProperty("user.home");
+		USER_HOME += (!USER_HOME.endsWith("/") ? "/" : "");
+
+		FAKE_WR_USERS =
+				PropertiesManager.getProperty(KURENTO_TEST_FAKE_WR_USERS,
+						getDefaultFakeWRUsersNum());
+
+		testFakeKmsWsUri =
+				PropertiesManager.getProperty(KURENTO_TEST_FAKE_KMS_URI,
+						testFakeKmsWsUri);
+		log.info("Using KMS for {} fake clients from {}", FAKE_WR_USERS,
+				testFakeKmsWsUri);
 
 		List<String> playerFilenames =
 				JsonUtils.toStringList(PropertiesManager.getPropertyJson(
-						"kurento.test.fake.filenames", "[]", JsonArray.class));
+						KURENTO_TEST_FAKE_WR_FILENAMES, "[]", JsonArray.class));
 		String filesFolder =
-				PropertiesManager.getProperty("kurento.test.fake.files",
-						"/tmp/");
+				PropertiesManager.getProperty(KURENTO_TEST_FAKE_WR_FILES,
+						"/tmp");
 		filesFolder += (!filesFolder.endsWith("/") ? "/" : "");
-		playerUris.clear();
+		playerFakeWRUris.clear();
 		for (String fileName : playerFilenames)
 			try {
 				URI playerUri = new URI("file://" + filesFolder + fileName);
-				playerUris.add(playerUri.toString());
+				playerFakeWRUris.add(playerUri.toString());
 			} catch (URISyntaxException e) {
 				Assert.fail("Error setting player URI: " + e);
 				e.printStackTrace();
 			}
-		log.info("Fake clients player sources: {}", playerUris);
+		log.info("Fake clients player sources: {}", playerFakeWRUris);
 
 		List<String> chromeFilenamesWav =
 				JsonUtils.toStringList(PropertiesManager.getPropertyJson(
-						"kurento.test.chrome.filenames.wav", "[]",
+						KURENTO_TEST_CHROME_FILENAMES_WAV, "[]",
 						JsonArray.class));
 		List<String> chromeFilenamesY4M =
 				JsonUtils.toStringList(PropertiesManager.getPropertyJson(
-						"kurento.test.chrome.filenames.y4m", "[]",
+						KURENTO_TEST_CHROME_FILENAMES_Y4M, "[]",
 						JsonArray.class));
-		Assert.assertEquals("Chrome files lists must have the same size",
-				chromeFilenamesWav.size(), chromeFilenamesY4M.size());
 		String chromeFilesFolder =
-				PropertiesManager.getProperty("kurento.test.chrome.files",
+				PropertiesManager.getProperty(KURENTO_TEST_CHROME_FILES,
 						System.getProperty("user.home"));
 		chromeFilesFolder += (!chromeFilesFolder.endsWith("/") ? "/" : "");
+		if (!chromeFilesFolder.startsWith("/"))
+			chromeFilesFolder = USER_HOME + chromeFilesFolder;
+
 		chromeSrcFiles.clear();
-		for (int i = 0; i < chromeFilenamesWav.size(); i++) {
-			File a = new File(chromeFilesFolder, chromeFilenamesWav.get(i));
-			Assert.assertTrue(
-					"Can't read audio for chrome from " + a.getPath(),
-					a.canRead());
-			File v = new File(chromeFilesFolder, chromeFilenamesY4M.get(i));
-			Assert.assertTrue(
-					"Can't read video for chrome from " + v.getPath(),
-					v.canRead());
-			chromeSrcFiles.add(new AudioVideoFile(a.getPath(), v.getPath()));
+		int maxLen =
+				Math.max(chromeFilenamesWav.size(), chromeFilenamesY4M.size());
+		for (int i = 0; i < maxLen; i++) {
+			File a = null;
+			File v = null;
+			if (i < chromeFilenamesWav.size()) {
+				a = new File(chromeFilesFolder, chromeFilenamesWav.get(i));
+				Assert.assertTrue(
+						"Can't read audio for chrome from " + a.getPath(),
+						a.canRead());
+			}
+			if (i < chromeFilenamesY4M.size()) {
+				v = new File(chromeFilesFolder, chromeFilenamesY4M.get(i));
+				Assert.assertTrue(
+						"Can't read video for chrome from " + v.getPath(),
+						v.canRead());
+			}
+			chromeSrcFiles.add(new AudioVideoFile((a != null ? a.getPath()
+					: null), (v != null ? v.getPath() : null)));
 		}
 		log.info("Chrome clients play sources: {}", chromeSrcFiles);
 	}
@@ -209,18 +260,18 @@ public class BaseFakeTest {
 			} catch (IOException e) {
 				log.warn("Error closing session", e);
 			}
-		if (kurento != null) {
-			kurento.destroy();
+		if (testFakeKurento != null) {
+			testFakeKurento.destroy();
 			log.info("Closed testing KurentoClient");
 		}
 		closeBrowsers();
 	}
 
-	protected synchronized KurentoClient getKurento() {
+	protected synchronized KurentoClient getTestFakeKurento() {
 
-		if (kurento == null) {
-			kurento =
-					KurentoClient.create(KMS_FAKE_TEST_WS_URI,
+		if (testFakeKurento == null) {
+			testFakeKurento =
+					KurentoClient.create(testFakeKmsWsUri,
 							new KurentoConnectionListener() {
 								@Override
 								public void connected() {}
@@ -230,7 +281,7 @@ public class BaseFakeTest {
 
 								@Override
 								public void disconnected() {
-									kurento = null;
+									testFakeKurento = null;
 								}
 
 								@Override
@@ -238,7 +289,7 @@ public class BaseFakeTest {
 							});
 		}
 
-		return kurento;
+		return testFakeKurento;
 	}
 
 	protected FakeSession getSession(String room) {
@@ -248,7 +299,7 @@ public class BaseFakeTest {
 	protected FakeSession createSession(String room) {
 		if (sessions.containsKey(room))
 			return sessions.get(room);
-		FakeSession s = new FakeSession(serviceUrl, room, getKurento());
+		FakeSession s = new FakeSession(serviceUrl, room, getTestFakeKurento());
 		FakeSession old = sessions.putIfAbsent(room, s);
 		if (old != null)
 			return old;
@@ -309,11 +360,11 @@ public class BaseFakeTest {
 		}
 	}
 
-	protected void failWithExceptions(Map<String, Exception> exceptions) {
-		if (!exceptions.isEmpty()) {
+	protected void failWithExceptions() {
+		if (!execExceptions.isEmpty()) {
 			StringBuffer sb = new StringBuffer();
-			for (String exKey : exceptions.keySet()) {
-				Exception e = exceptions.get(exKey);
+			for (String exKey : execExceptions.keySet()) {
+				Exception e = execExceptions.get(exKey);
 				log.error("Error on '{}'", exKey, e);
 				sb.append(exKey).append(" - ").append(e.getMessage())
 						.append("\n");
@@ -323,7 +374,143 @@ public class BaseFakeTest {
 		}
 	}
 
-	// --------------------- Chrome part -------------------------------------
+	protected void idlePeriod() {
+		if (!execExceptions.isEmpty()) {
+			log.warn("\n-----------------\n"
+					+ "Wait for active live concluded in room '{}':\n"
+					+ "WITH ERROR(s). No idle waiting for this test."
+					+ "\n-----------------\n", roomName);
+		} else {
+			log.info("\n-----------------\n"
+					+ "Wait for active live concluded in room '{}'"
+					+ "\n-----------------\n" + "Waiting {} seconds", roomName,
+					ROOM_ACTIVITY_IN_SECONDS);
+
+			try {
+				Thread.sleep(ROOM_ACTIVITY_IN_SECONDS * 1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		log.info("\n-----------------\n" + "Leaving room '{}'"
+				+ "\n-----------------\n", roomName);
+	}
+
+	// ------------------------ Fake WebRTC users ----------------------------
+
+	protected void seqJoinWR() {
+		for (int i = 0; i < FAKE_WR_USERS; i++) {
+			try {
+				FakeSession s = createSession(roomName);
+				s.newParticipant(FAKE_WR_USER_PREFIX + i,
+						playerFakeWRUris.get(i % playerFakeWRUris.size()), true);
+			} catch (Exception e) {
+				log.debug("{}: WR seq join MCU exception", FAKE_WR_USER_PREFIX
+						+ i, e);
+				execExceptions.put("seqWRJoinRoom" + "-" + FAKE_WR_USER_PREFIX
+						+ i, e);
+			}
+		}
+	}
+
+	protected CountDownLatch parallelJoinWR() {
+		final CountDownLatch joinLatch = new CountDownLatch(FAKE_WR_USERS);
+		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX, "parallelWRJoinRoom",
+				execExceptions, new Task() {
+					@Override
+					public void exec(int numTask) throws Exception {
+						try {
+							FakeSession s = createSession(roomName);
+							s.newParticipant(
+									FAKE_WR_USER_PREFIX + numTask,
+									playerFakeWRUris.get(numTask
+											% playerFakeWRUris.size()), true);
+						} finally {
+							joinLatch.countDown();
+						}
+					}
+				});
+		return joinLatch;
+	}
+
+	protected CountDownLatch parallelWaitActiveLiveWR() {
+		final CountDownLatch waitForLatch = new CountDownLatch(FAKE_WR_USERS);
+		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX,
+				"parallelWaitForActiveLive", execExceptions, new Task() {
+					@Override
+					public void exec(int numTask) throws Exception {
+						getSession(roomName).getParticipant(
+								FAKE_WR_USER_PREFIX + numTask)
+								.waitForActiveLive(waitForLatch);
+					}
+				});
+		return waitForLatch;
+	}
+
+	protected void seqLeaveWR() {
+		for (int i = 0; i < FAKE_WR_USERS; i++) {
+			try {
+				getSession(roomName).getParticipant(FAKE_WR_USER_PREFIX + i)
+						.leaveRoom();
+			} catch (Exception e) {
+				log.debug("{}: WR seq leave MCU exception", FAKE_WR_USER_PREFIX
+						+ i, e);
+				execExceptions.put("seqWRLeaveRoom" + "-" + FAKE_WR_USER_PREFIX
+						+ i, e);
+			}
+		}
+	}
+
+	protected CountDownLatch parallelLeaveWR() {
+		final CountDownLatch leaveLatch = new CountDownLatch(FAKE_WR_USERS);
+		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX,
+				"parallelWRLeaveRoom", execExceptions, new Task() {
+					@Override
+					public void exec(int numTask) throws Exception {
+						try {
+							getSession(roomName).getParticipant(
+									FAKE_WR_USER_PREFIX + numTask).leaveRoom();
+						} finally {
+							leaveLatch.countDown();
+						}
+					}
+				});
+		return leaveLatch;
+	}
+
+	protected void await(CountDownLatch waitLatch, long actionTimeoutInSeconds,
+			String action, Map<String, Exception> awaitExceptions) {
+		try {
+			if (!waitLatch.await(actionTimeoutInSeconds, TimeUnit.SECONDS))
+				awaitExceptions.put(action, new Exception(
+						"Timeout waiting for '" + action + "' of "
+								+ FAKE_WR_USERS + " tasks (max "
+								+ actionTimeoutInSeconds + "s)"));
+			else
+				log.debug("Finished waiting for {}", action);
+		} catch (InterruptedException e) {
+			log.warn("Interrupted when waiting for {} of {} tasks (max {}s)",
+					action, FAKE_WR_USERS, actionTimeoutInSeconds, e);
+		}
+	}
+
+	// --------------------- Chrome users -------------------------------------
+
+	protected void joinChrome() {
+		try {
+			browsers = createBrowsers(chromeSrcFiles.size(), chromeSrcFiles);
+			for (int i = 0; i < chromeSrcFiles.size(); i++)
+				joinToRoom(browsers.get(i), CHROME_PREFIX + i, roomName);
+		} catch (Exception e) {
+			execExceptions.put("chromeBrowser", e);
+			log.debug("Error in joining from browser", e);
+		}
+	}
+
+	protected void leaveChrome() {
+		for (int i = 0; i < chromeSrcFiles.size(); i++)
+			exitFromRoom(CHROME_PREFIX + i, browsers.get(i));
+	}
 
 	protected WebDriver newWebDriver(AudioVideoFile localMedia) {
 		ChromeOptions options = new ChromeOptions();

@@ -1,13 +1,5 @@
-package org.kurento.room.test.fake;
-
-import org.junit.runner.RunWith;
-import org.kurento.room.test.BasicTestConfig;
-import org.kurento.room.test.fake.ParallelUsersOneRoomLifetime;
-import org.slf4j.LoggerFactory;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
 /*
- * (C) Copyright 2014 Kurento (http://kurento.org/)
+ * (C) Copyright 2015 Kurento (http://kurento.org/)
  * 
  * All rights reserved. This program and the accompanying materials are made
  * available under the terms of the GNU Lesser General Public License (LGPL)
@@ -19,18 +11,23 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
+package org.kurento.room.test.fake;
 
+import org.junit.runner.RunWith;
+import org.kurento.room.test.BasicTestConfig;
+import org.slf4j.LoggerFactory;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
- * 
+ * @see FakeWRUsersOneRoom
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @BasicTestConfig
-public class ParallelUsersOneRoomLifetimeTest extends ParallelUsersOneRoomLifetime {
+public class FakeWRUsersOneRoomTest extends FakeWRUsersOneRoom {
 
-	public ParallelUsersOneRoomLifetimeTest() {
-		super(LoggerFactory.getLogger(ParallelUsersOneRoomLifetimeTest.class));
+	public FakeWRUsersOneRoomTest() {
+		super(LoggerFactory.getLogger(FakeWRUsersOneRoomTest.class));
 	}
 
 }
