@@ -44,8 +44,7 @@ public class Room {
 
 	private final static Logger log = LoggerFactory.getLogger(Room.class);
 
-	private final ConcurrentMap<String, Participant> participants =
-			new ConcurrentHashMap<String, Participant>();
+	private final ConcurrentMap<String, Participant> participants = new ConcurrentHashMap<String, Participant>();
 	private final String name;
 
 	private MediaPipeline pipeline;
@@ -62,11 +61,13 @@ public class Room {
 	private Object pipelineCreateLock = new Object();
 	private Object pipelineReleaseLock = new Object();
 	private volatile boolean pipelineReleased = false;
+	private boolean destroyKurentoClient;
 
 	public Room(String roomName, KurentoClient kurentoClient,
-			RoomHandler roomHandler) {
+			RoomHandler roomHandler, boolean destroyKurentoClient) {
 		this.name = roomName;
 		this.kurentoClient = kurentoClient;
+		this.destroyKurentoClient = destroyKurentoClient;
 		this.roomHandler = roomHandler;
 		log.debug("New ROOM instance, named '{}'", roomName);
 	}
@@ -101,8 +102,8 @@ public class Room {
 
 		createPipeline();
 
-		participants.put(participantId, new Participant(participantId,
-				userName, this, getPipeline(), webParticipant));
+		participants.put(participantId, new Participant(participantId, userName,
+				this, getPipeline(), webParticipant));
 
 		log.info("ROOM {}: Added participant {}", name, userName);
 	}
@@ -198,6 +199,10 @@ public class Room {
 
 			log.debug("Room {} closed", this.name);
 
+			if (destroyKurentoClient) {
+				kurentoClient.destroy();
+			}
+
 			this.closed = true;
 		} else {
 			log.warn("Closing an already closed room '{}'", this.name);
@@ -220,8 +225,8 @@ public class Room {
 
 	private void checkClosed() {
 		if (closed)
-			throw new RoomException(Code.ROOM_CLOSED_ERROR_CODE, "The room '"
-					+ name + "' is closed");
+			throw new RoomException(Code.ROOM_CLOSED_ERROR_CODE,
+					"The room '" + name + "' is closed");
 	}
 
 	private void removeParticipant(Participant participant) {
@@ -276,8 +281,8 @@ public class Room {
 							}
 						});
 			} catch (Exception e) {
-				log.error("Unable to create media pipeline for room '{}'",
-						name, e);
+				log.error("Unable to create media pipeline for room '{}'", name,
+						e);
 				pipelineLatch.countDown();
 			}
 			if (getPipeline() == null)
@@ -288,13 +293,13 @@ public class Room {
 			pipeline.addErrorListener(new EventListener<ErrorEvent>() {
 				@Override
 				public void onEvent(ErrorEvent event) {
-					String desc =
-							event.getType() + ": " + event.getDescription()
-									+ "(errCode=" + event.getErrorCode() + ")";
+					String desc = event.getType() + ": "
+							+ event.getDescription() + "(errCode="
+							+ event.getErrorCode() + ")";
 					log.warn("ROOM {}: Pipeline error encountered: {}", name,
 							desc);
-					roomHandler
-							.onPipelineError(name, getParticipantIds(), desc);
+					roomHandler.onPipelineError(name, getParticipantIds(),
+							desc);
 				}
 			});
 		}

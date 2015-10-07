@@ -21,8 +21,8 @@ import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.jsonrpc.internal.server.config.JsonRpcConfiguration;
 import org.kurento.jsonrpc.server.JsonRpcConfigurer;
 import org.kurento.jsonrpc.server.JsonRpcHandlerRegistry;
+import org.kurento.room.api.KurentoClientProvider;
 import org.kurento.room.kms.FixedOneKmsManager;
-import org.kurento.room.kms.KmsManager;
 import org.kurento.room.rpc.JsonRpcNotificationService;
 import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
@@ -45,27 +46,43 @@ import com.google.gson.JsonArray;
 public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
 	public static final String KMSS_URIS_PROPERTY = "kms.uris";
-	public static final String KMSS_URIS_DEFAULT =
-			"[ \"ws://localhost:8888/kurento\" ]";
+	public static final String KMSS_URIS_DEFAULT = "[ \"ws://localhost:8888/kurento\" ]";
 
 	private static final Logger log = LoggerFactory
 			.getLogger(KurentoRoomServerApp.class);
 
-	private static JsonRpcNotificationService userNotificationService =
-			new JsonRpcNotificationService();
+	private static JsonRpcNotificationService userNotificationService = new JsonRpcNotificationService();
 
 	@Bean
 	@ConditionalOnMissingBean
-	public KmsManager kmsManager() {
-		JsonArray kmsUris =
-				getPropertyJson(KMSS_URIS_PROPERTY, KMSS_URIS_DEFAULT,
-						JsonArray.class);
+	public KurentoClientProvider kmsManager() {
+
+		JsonArray kmsUris = getPropertyJson(KMSS_URIS_PROPERTY,
+				KMSS_URIS_DEFAULT, JsonArray.class);
 		List<String> kmsWsUris = JsonUtils.toStringList(kmsUris);
 
-		log.info("Configuring Kurento Room Server to use first of the following kmss: "
-				+ kmsWsUris);
+		if (kmsWsUris.isEmpty()) {
+			throw new IllegalArgumentException(KMSS_URIS_PROPERTY
+					+ " should contain at least one kms url");
+		}
 
-		return new FixedOneKmsManager(kmsWsUris.get(0));
+		String firstKmsWsUri = kmsWsUris.get(0);
+
+		if (firstKmsWsUri.equals("autodiscovery")) {
+
+			log.info(
+					"Using autodiscovery rules to locate KMS on every pipeline");
+
+			return new AutodiscoveryKurentoClientProvider();
+
+		} else {
+
+			log.info(
+					"Configuring Kurento Room Server to use first of the following kmss: "
+							+ kmsWsUris);
+
+			return new FixedOneKmsManager(firstKmsWsUri);
+		}
 	}
 
 	@Bean
@@ -98,6 +115,10 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 	}
 
 	public static void main(String[] args) throws Exception {
-		SpringApplication.run(KurentoRoomServerApp.class, args);
+		start(args);
+	}
+
+	public static ConfigurableApplicationContext start(String[] args) {
+		return SpringApplication.run(KurentoRoomServerApp.class, args);
 	}
 }

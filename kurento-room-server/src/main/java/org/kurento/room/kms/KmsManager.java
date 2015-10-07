@@ -74,9 +74,11 @@ public abstract class KmsManager implements KurentoClientProvider {
 	/**
 	 * Returns a {@link Kms} using a round-robin strategy.
 	 * 
-	 * @param sessionInfo session's id
+	 * @param sessionInfo
+	 *            session's id
 	 */
-	public synchronized Kms getKms(DefaultKurentoClientSessionInfo sessionInfo) {
+	public synchronized Kms getKms(
+			DefaultKurentoClientSessionInfo sessionInfo) {
 		if (usageIterator == null || !usageIterator.hasNext())
 			usageIterator = kmss.iterator();
 		return usageIterator.next();
@@ -112,5 +114,10 @@ public abstract class KmsManager implements KurentoClientProvider {
 			log.trace("Calc load {} for kms: {}", load, kms.getUri());
 		}
 		return kmsLoads;
+	}
+
+	@Override
+	public boolean destroyWhenUnused() {
+		return false;
 	}
 }

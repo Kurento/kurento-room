@@ -31,12 +31,16 @@ public interface KurentoClientProvider {
 	 * Obtains a {@link KurentoClient} instance given the custom session bean.
 	 * Normally, it'd be called during a room's instantiation.
 	 * 
-	 * @param sessionInfo custom information object required by the implementors
-	 *        of this interface
+	 * @param sessionInfo
+	 *            custom information object required by the implementors of this
+	 *            interface
 	 * @return the {@link KurentoClient} instance
-	 * @throws RoomException in case there is an error obtaining a
-	 *         {@link KurentoClient} instance
+	 * @throws RoomException
+	 *             in case there is an error obtaining a {@link KurentoClient}
+	 *             instance
 	 */
 	KurentoClient getKurentoClient(KurentoClientSessionInfo sessionInfo)
 			throws RoomException;
+
+	boolean destroyWhenUnused();
 }

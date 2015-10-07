@@ -59,32 +59,36 @@ public class NotificationRoomManager {
 	 * service that will be used by the default event handler to send responses
 	 * and notifications back to the clients.
 	 * 
-	 * @param notificationService encapsulates the communication layer, used to
-	 *        instantiate {@link DefaultNotificationRoomHandler}
-	 * @param kcProvider enables the manager to obtain Kurento Client instances
+	 * @param notificationService
+	 *            encapsulates the communication layer, used to instantiate
+	 *            {@link DefaultNotificationRoomHandler}
+	 * @param kcProvider
+	 *            enables the manager to obtain Kurento Client instances
 	 */
 	public NotificationRoomManager(UserNotificationService notificationService,
 			KurentoClientProvider kcProvider) {
 		super();
-		this.notificationRoomHandler =
-				new DefaultNotificationRoomHandler(notificationService);
-		this.internalManager =
-				new RoomManager(notificationRoomHandler, kcProvider);
+		this.notificationRoomHandler = new DefaultNotificationRoomHandler(
+				notificationService);
+		this.internalManager = new RoomManager(notificationRoomHandler,
+				kcProvider);
 	}
 
 	/**
 	 * Provides an instance of the room manager by setting an event handler.
 	 * 
-	 * @param notificationRoomHandler the room event handler implementation
-	 * @param kcProvider enables the manager to obtain Kurento Client instances
+	 * @param notificationRoomHandler
+	 *            the room event handler implementation
+	 * @param kcProvider
+	 *            enables the manager to obtain Kurento Client instances
 	 */
 	public NotificationRoomManager(
 			NotificationRoomHandler notificationRoomHandler,
 			KurentoClientProvider kcProvider) {
 		super();
 		this.notificationRoomHandler = notificationRoomHandler;
-		this.internalManager =
-				new RoomManager(notificationRoomHandler, kcProvider);
+		this.internalManager = new RoomManager(notificationRoomHandler,
+				kcProvider);
 	}
 
 	// ----------------- CLIENT-ORIGINATED REQUESTS ------------
@@ -95,10 +99,11 @@ public class NotificationRoomManager {
 	 * with a {@link DefaultKurentoClientSessionInfo} bean as implementation of
 	 * the {@link KurentoClientSessionInfo}.
 	 * 
-	 * @param request instance of {@link ParticipantRequest} POJO containing the
-	 *        participant's id and a request id (optional identifier of the
-	 *        request at the communications level, included when responding back
-	 *        to the client)
+	 * @param request
+	 *            instance of {@link ParticipantRequest} POJO containing the
+	 *            participant's id and a request id (optional identifier of the
+	 *            request at the communications level, included when responding
+	 *            back to the client)
 	 * 
 	 * @see RoomManager#joinRoom(String, String, boolean,
 	 *      KurentoClientSessionInfo, String)
@@ -107,16 +112,13 @@ public class NotificationRoomManager {
 			boolean webParticipant, ParticipantRequest request) {
 		Set<UserParticipant> existingParticipants = null;
 		try {
-			KurentoClientSessionInfo kcSessionInfo =
-					new DefaultKurentoClientSessionInfo(
-							request.getParticipantId(), roomName);
-			existingParticipants =
-					internalManager.joinRoom(userName, roomName,
-							webParticipant, kcSessionInfo,
-							request.getParticipantId());
+			KurentoClientSessionInfo kcSessionInfo = new DefaultKurentoClientSessionInfo(
+					request.getParticipantId(), roomName);
+			existingParticipants = internalManager.joinRoom(userName, roomName,
+					webParticipant, kcSessionInfo, request.getParticipantId());
 		} catch (RoomException e) {
-			log.warn("PARTICIPANT {}: Error joining/creating room {}",
-					userName, roomName, e);
+			log.warn("PARTICIPANT {}: Error joining/creating room {}", userName,
+					roomName, e);
 			notificationRoomHandler.onParticipantJoined(request, roomName,
 					userName, null, e);
 		}
@@ -126,7 +128,8 @@ public class NotificationRoomManager {
 	}
 
 	/**
-	 * @param request instance of {@link ParticipantRequest} POJO
+	 * @param request
+	 *            instance of {@link ParticipantRequest} POJO
 	 * 
 	 * @see RoomManager#leaveRoom(String)
 	 */
@@ -150,7 +153,8 @@ public class NotificationRoomManager {
 	}
 
 	/**
-	 * @param request instance of {@link ParticipantRequest} POJO
+	 * @param request
+	 *            instance of {@link ParticipantRequest} POJO
 	 * 
 	 * @see RoomManager#publishMedia(String, boolean, String, MediaElement,
 	 *      MediaType, boolean, MediaElement...)
@@ -165,25 +169,24 @@ public class NotificationRoomManager {
 		String sdpAnswer = null;
 		try {
 			userName = internalManager.getParticipantName(pid);
-			participants =
-					internalManager.getParticipants(internalManager
-							.getRoomName(pid));
-			sdpAnswer =
-					internalManager.publishMedia(request.getParticipantId(),
-							isOffer, sdp, loopbackAlternativeSrc,
-							loopbackConnectionType, doLoopback, mediaElements);
+			participants = internalManager
+					.getParticipants(internalManager.getRoomName(pid));
+			sdpAnswer = internalManager.publishMedia(request.getParticipantId(),
+					isOffer, sdp, loopbackAlternativeSrc,
+					loopbackConnectionType, doLoopback, mediaElements);
 		} catch (RoomException e) {
 			log.warn("PARTICIPANT {}: Error publishing media", userName, e);
-			notificationRoomHandler
-					.onPublishMedia(request, null, null, null, e);
+			notificationRoomHandler.onPublishMedia(request, null, null, null,
+					e);
 		}
 		if (sdpAnswer != null)
-			notificationRoomHandler.onPublishMedia(request, userName,
-					sdpAnswer, participants, null);
+			notificationRoomHandler.onPublishMedia(request, userName, sdpAnswer,
+					participants, null);
 	}
 
 	/**
-	 * @param request instance of {@link ParticipantRequest} POJO
+	 * @param request
+	 *            instance of {@link ParticipantRequest} POJO
 	 * 
 	 * @see RoomManager#publishMedia(String, String, boolean, MediaElement...)
 	 */
@@ -194,7 +197,8 @@ public class NotificationRoomManager {
 	}
 
 	/**
-	 * @param request instance of {@link ParticipantRequest} POJO
+	 * @param request
+	 *            instance of {@link ParticipantRequest} POJO
 	 * 
 	 * @see RoomManager#unpublishMedia(String)
 	 */
@@ -207,9 +211,8 @@ public class NotificationRoomManager {
 			userName = internalManager.getParticipantName(pid);
 			internalManager.unpublishMedia(pid);
 			unpublished = true;
-			participants =
-					internalManager.getParticipants(internalManager
-							.getRoomName(pid));
+			participants = internalManager
+					.getParticipants(internalManager.getRoomName(pid));
 		} catch (RoomException e) {
 			log.warn("PARTICIPANT {}: Error unpublishing media", userName, e);
 			notificationRoomHandler.onUnpublishMedia(request, null, null, e);
@@ -220,7 +223,8 @@ public class NotificationRoomManager {
 	}
 
 	/**
-	 * @param request instance of {@link ParticipantRequest} POJO
+	 * @param request
+	 *            instance of {@link ParticipantRequest} POJO
 	 * 
 	 * @see RoomManager#subscribe(String, String, String)
 	 */
@@ -244,7 +248,8 @@ public class NotificationRoomManager {
 	/**
 	 * @see RoomManager#unsubscribe(String, String)
 	 * 
-	 * @param request instance of {@link ParticipantRequest} POJO
+	 * @param request
+	 *            instance of {@link ParticipantRequest} POJO
 	 */
 	public void unsubscribe(String remoteName, ParticipantRequest request) {
 		String pid = request.getParticipantId();
@@ -276,9 +281,10 @@ public class NotificationRoomManager {
 					sdpMLineIndex, sdpMid, request.getParticipantId());
 			notificationRoomHandler.onRecvIceCandidate(request, null);
 		} catch (RoomException e) {
-			log.warn("PARTICIPANT {}: Error receiving ICE "
-					+ "candidate (epName={}, candidate={})", userName,
-					endpointName, candidate, e);
+			log.warn(
+					"PARTICIPANT {}: Error receiving ICE "
+							+ "candidate (epName={}, candidate={})",
+					userName, endpointName, candidate, e);
 			notificationRoomHandler.onRecvIceCandidate(request, e);
 		}
 	}
@@ -291,10 +297,14 @@ public class NotificationRoomManager {
 	 * notifications to the all participants in the room with the message and
 	 * its sender.
 	 * 
-	 * @param message message contents
-	 * @param userName name or identifier of the user in the room
-	 * @param roomName room's name
-	 * @param request instance of {@link ParticipantRequest} POJO
+	 * @param message
+	 *            message contents
+	 * @param userName
+	 *            name or identifier of the user in the room
+	 * @param roomName
+	 *            room's name
+	 * @param request
+	 *            instance of {@link ParticipantRequest} POJO
 	 */
 	public void sendMessage(String message, String userName, String roomName,
 			ParticipantRequest request) {
@@ -387,12 +397,14 @@ public class NotificationRoomManager {
 	/**
 	 * @see RoomManager#getPipeline(String)
 	 */
-	public MediaPipeline getPipeline(String participantId) throws RoomException {
+	public MediaPipeline getPipeline(String participantId)
+			throws RoomException {
 		return internalManager.getPipeline(participantId);
 	}
 
 	/**
-	 * Application-originated request to remove a participant from the room. <br/>
+	 * Application-originated request to remove a participant from the room.
+	 * <br/>
 	 * <strong>Side effects:</strong> The room event handler should notify the
 	 * user that she has been evicted. Should also send notifications to all
 	 * other participants about the one that's just been evicted.
@@ -400,10 +412,10 @@ public class NotificationRoomManager {
 	 * @see RoomManager#leaveRoom(String)
 	 */
 	public void evictParticipant(String participantId) throws RoomException {
-		UserParticipant participant =
-				internalManager.getParticipantInfo(participantId);
-		Set<UserParticipant> remainingParticipants =
-				internalManager.leaveRoom(participantId);
+		UserParticipant participant = internalManager
+				.getParticipantInfo(participantId);
+		Set<UserParticipant> remainingParticipants = internalManager
+				.leaveRoom(participantId);
 		notificationRoomHandler.onParticipantLeft(participant.getUserName(),
 				remainingParticipants);
 		notificationRoomHandler.onParticipantEvicted(participant);
@@ -452,15 +464,16 @@ public class NotificationRoomManager {
 	/**
 	 * @see RoomManager#mutePublishedMedia(MutedMediaType, String)
 	 */
-	public void mutePublishedMedia(MutedMediaType muteType, String participantId)
-			throws RoomException {
+	public void mutePublishedMedia(MutedMediaType muteType,
+			String participantId) throws RoomException {
 		internalManager.mutePublishedMedia(muteType, participantId);
 	}
 
 	/**
 	 * @see RoomManager#unmutePublishedMedia(String)
 	 */
-	public void unmutePublishedMedia(String participantId) throws RoomException {
+	public void unmutePublishedMedia(String participantId)
+			throws RoomException {
 		internalManager.unmutePublishedMedia(participantId);
 	}
 
@@ -469,8 +482,8 @@ public class NotificationRoomManager {
 	 */
 	public void muteSubscribedMedia(String remoteName, MutedMediaType muteType,
 			String participantId) throws RoomException {
-		internalManager
-				.muteSubscribedMedia(remoteName, muteType, participantId);
+		internalManager.muteSubscribedMedia(remoteName, muteType,
+				participantId);
 	}
 
 	/**
@@ -479,5 +492,9 @@ public class NotificationRoomManager {
 	public void unmuteSubscribedMedia(String remoteName, String participantId)
 			throws RoomException {
 		internalManager.unmuteSubscribedMedia(remoteName, participantId);
+	}
+
+	public RoomManager getRoomManager() {
+		return internalManager;
 	}
 }
