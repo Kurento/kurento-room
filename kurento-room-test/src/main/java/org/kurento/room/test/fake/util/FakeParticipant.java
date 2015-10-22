@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
+import org.kurento.client.EndOfStreamEvent;
 import org.kurento.client.ErrorEvent;
 import org.kurento.client.EventListener;
 import org.kurento.client.MediaPipeline;
@@ -62,6 +63,7 @@ public class FakeParticipant implements Closeable {
 	private String playerUri;
 
 	private boolean autoMedia = false;
+	private boolean loopMedia = false;
 
 	private Map<String, String> peerStreams =
 			new ConcurrentSkipListMap<String, String>();
@@ -72,12 +74,14 @@ public class FakeParticipant implements Closeable {
 
 	private Thread notifThread;
 
-	public FakeParticipant(String serviceUrl, String name, String room, String playerUri,
-			MediaPipeline pipeline, boolean autoMedia) {
+	public FakeParticipant(String serviceUrl, String name, String room,
+			String playerUri, MediaPipeline pipeline, boolean autoMedia,
+			boolean loopMedia) {
 		this.name = name;
 		this.room = room;
 		this.playerUri = playerUri;
 		this.autoMedia = autoMedia;
+		this.loopMedia = loopMedia;
 		this.pipeline = pipeline;
 		this.jsonRpcClient = new KurentoRoomClient(serviceUrl);
 		this.notifThread = new Thread(name + "-notif") {
@@ -97,39 +101,44 @@ public class FakeParticipant implements Closeable {
 	private void internalGetNotification() throws InterruptedException {
 		log.info("Starting receiving notifications by polling blocking queue");
 		while (true) {
-			Notification notif = jsonRpcClient.getServerNotification();
-			if (notif == null)
-				return;
-			log.debug("Polled notif {}", notif);
-			switch (notif.getMethod()) {
-				case ICECANDIDATE_METHOD:
-					onIceCandidate(notif);
-					break;
-				case MEDIAERROR_METHOD:
-					// TODO
-					break;
-				case PARTICIPANTEVICTED_METHOD:
-					// TODO
-					break;
-				case PARTICIPANTJOINED_METHOD:
-					// TODO
-					break;
-				case PARTICIPANTLEFT_METHOD:
-					onParticipantLeft(notif);
-					break;
-				case PARTICIPANTPUBLISHED_METHOD:
-					onParticipantPublished(notif);
-					break;
-				case PARTICIPANTSENDMESSAGE_METHOD:
-					break;
-				case PARTICIPANTUNPUBLISHED_METHOD:
-					onParticipantUnpublish(notif);
-					break;
-				case ROOMCLOSED_METHOD:
-					// TODO
-					break;
-				default:
-					break;
+			try {
+				Notification notif = jsonRpcClient.getServerNotification();
+				if (notif == null)
+					return;
+				log.debug("Polled notif {}", notif);
+				switch (notif.getMethod()) {
+					case ICECANDIDATE_METHOD:
+						onIceCandidate(notif);
+						break;
+					case MEDIAERROR_METHOD:
+						// TODO
+						break;
+					case PARTICIPANTEVICTED_METHOD:
+						// TODO
+						break;
+					case PARTICIPANTJOINED_METHOD:
+						// TODO
+						break;
+					case PARTICIPANTLEFT_METHOD:
+						onParticipantLeft(notif);
+						break;
+					case PARTICIPANTPUBLISHED_METHOD:
+						onParticipantPublished(notif);
+						break;
+					case PARTICIPANTSENDMESSAGE_METHOD:
+						break;
+					case PARTICIPANTUNPUBLISHED_METHOD:
+						onParticipantUnpublish(notif);
+						break;
+					case ROOMCLOSED_METHOD:
+						// TODO
+						break;
+					default:
+						break;
+				}
+			} catch (Exception e) {
+				log.warn("Encountered a problem when reading "
+						+ "the notifications queue", e);
 			}
 		}
 	}
@@ -243,6 +252,10 @@ public class FakeParticipant implements Closeable {
 			log.warn("Unable to unpublish in room '{}'", room, e);
 			Assert.fail("Unable to unpublish: " + e.getMessage());
 		} finally {
+			if (player != null) {
+				player.stop();
+				player.release();
+			}
 			if (webRtc != null)
 				webRtc.release();
 			ownLatch = null;
@@ -329,15 +342,24 @@ public class FakeParticipant implements Closeable {
 			}
 		});
 
-		player =
-				new PlayerEndpoint.Builder(pipeline, playerUri)
-						.build();
+		player = new PlayerEndpoint.Builder(pipeline, playerUri).build();
 		player.addErrorListener(new EventListener<ErrorEvent>() {
 			@Override
 			public void onEvent(ErrorEvent event) {
 				log.warn("ErrorEvent for player of '{}': {}", name,
 						event.getDescription());
 			}
+		});
+		player.addEndOfStreamListener(new EventListener<EndOfStreamEvent>() {
+			@Override
+			public void onEvent(EndOfStreamEvent event) {
+				if (loopMedia) {
+					log.debug("Replaying {}", playerUri);
+					player.play();
+				} else
+					log.debug("Finished playing from {}", playerUri);
+			}
+
 		});
 		player.connect(webRtc);
 		log.debug("Playing media from {}", playerUri);
@@ -409,7 +431,8 @@ public class FakeParticipant implements Closeable {
 				return;
 
 			long remaining =
-					WAIT_ACTIVE_LIVE_BY_PEER_TIMEOUT * (peerEndpoints.size() + 1);
+					WAIT_ACTIVE_LIVE_BY_PEER_TIMEOUT
+							* (peerEndpoints.size() + 1);
 			log.debug(
 					"{}: Start waiting for ACTIVE_LIVE in session '{}' - max {}s",
 					name, room, remaining);

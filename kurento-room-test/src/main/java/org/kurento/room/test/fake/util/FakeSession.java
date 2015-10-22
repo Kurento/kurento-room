@@ -63,10 +63,11 @@ public class FakeSession implements Closeable {
 		closePipeline();
 	}
 
-	public void newParticipant(String name, String playerUri, boolean autoMedia) {
+	public void newParticipant(String name, String playerUri,
+			boolean autoMedia, boolean loopMedia) {
 		FakeParticipant participant =
-				new FakeParticipant(serviceUrl, name, room, playerUri, getPipeline(),
-						autoMedia);
+				new FakeParticipant(serviceUrl, name, room, playerUri,
+						getPipeline(), autoMedia, loopMedia);
 		participants.put(name, participant);
 		participant.joinRoom();
 	}

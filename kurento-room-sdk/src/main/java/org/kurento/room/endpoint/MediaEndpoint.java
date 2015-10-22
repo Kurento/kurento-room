@@ -123,8 +123,8 @@ public abstract class MediaEndpoint {
 	 * @return the existing endpoint, if any
 	 */
 	public synchronized SdpEndpoint createEndpoint(CountDownLatch endpointLatch) {
-		SdpEndpoint old = this.endpoint;
-		if (this.endpoint == null)
+		SdpEndpoint old = this.getEndpoint();
+		if (old == null)
 			internalEndpointInitialization(endpointLatch);
 		else
 			endpointLatch.countDown();
@@ -448,7 +448,12 @@ public abstract class MediaEndpoint {
 		});
 	}
 
-	private void internalAddIceCandidate(IceCandidate candidate) {
+	private void internalAddIceCandidate(IceCandidate candidate)
+			throws RoomException {
+		if (webEndpoint == null)
+			throw new RoomException(Code.MEDIA_WEBRTC_ENDPOINT_ERROR_CODE,
+					"Can't add existing ICE candidates to null WebRtcEndpoint (ep: "
+							+ endpointName + ")");
 		this.webEndpoint.addIceCandidate(candidate, new Continuation<Void>() {
 			@Override
 			public void onSuccess(Void result) throws Exception {

@@ -76,7 +76,7 @@ public abstract class BaseFakeTest {
 
 	protected static Logger log = LoggerFactory.getLogger(BaseFakeTest.class);
 
-	private static final long TASKS_TIMEOUT_IN_MINUTES = 15 * 60;
+	public static final long TASKS_TIMEOUT_IN_MINUTES = 15 * 60;
 
 	// configuration keys
 	/** {@value} */
@@ -398,48 +398,81 @@ public abstract class BaseFakeTest {
 
 	// ------------------------ Fake WebRTC users ----------------------------
 
+	protected void joinWR(int userSuffix, String fakeWRUri) {
+		joinWR(roomName, userSuffix, fakeWRUri);
+	}
+
+	protected void joinWR(String room, int userSuffix, String fakeWRUri) {
+		try {
+			FakeSession s = createSession(room);
+			s.newParticipant(FAKE_WR_USER_PREFIX + userSuffix, fakeWRUri, true,
+					true);
+		} catch (Exception e) {
+			log.debug("{}-{}: WR join MCU exception", room, FAKE_WR_USER_PREFIX
+					+ userSuffix, e);
+			execExceptions.put("WRJoinRoom-" + room + "-" + FAKE_WR_USER_PREFIX
+					+ userSuffix, e);
+		}
+	}
+
 	protected void seqJoinWR() {
+		seqJoinWR(roomName);
+	}
+
+	protected void seqJoinWR(String room) {
 		for (int i = 0; i < FAKE_WR_USERS; i++) {
 			try {
-				FakeSession s = createSession(roomName);
+				FakeSession s = createSession(room);
 				s.newParticipant(FAKE_WR_USER_PREFIX + i,
-						playerFakeWRUris.get(i % playerFakeWRUris.size()), true);
+						playerFakeWRUris.get(i % playerFakeWRUris.size()),
+						true, true);
 			} catch (Exception e) {
-				log.debug("{}: WR seq join MCU exception", FAKE_WR_USER_PREFIX
-						+ i, e);
-				execExceptions.put("seqWRJoinRoom" + "-" + FAKE_WR_USER_PREFIX
-						+ i, e);
+				log.debug("{}-{}: WR seq join MCU exception", room,
+						FAKE_WR_USER_PREFIX + i, e);
+				execExceptions.put("seqWRJoinRoom-" + room + "-"
+						+ FAKE_WR_USER_PREFIX + i, e);
 			}
 		}
 	}
 
 	protected CountDownLatch parallelJoinWR() {
+		return parallelJoinWR(roomName);
+	}
+
+	protected CountDownLatch parallelJoinWR(final String room) {
+		log.debug("Joining room '{}': {} fake WR participants", room,
+				FAKE_WR_USERS);
 		final CountDownLatch joinLatch = new CountDownLatch(FAKE_WR_USERS);
-		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX, "parallelWRJoinRoom",
-				execExceptions, new Task() {
-					@Override
-					public void exec(int numTask) throws Exception {
-						try {
-							FakeSession s = createSession(roomName);
-							s.newParticipant(
-									FAKE_WR_USER_PREFIX + numTask,
-									playerFakeWRUris.get(numTask
-											% playerFakeWRUris.size()), true);
-						} finally {
-							joinLatch.countDown();
-						}
-					}
-				});
+		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX, "parallelWRJoinRoom-"
+				+ room, execExceptions, new Task() {
+			@Override
+			public void exec(int numTask) throws Exception {
+				try {
+					FakeSession s = createSession(room);
+					s.newParticipant(
+							FAKE_WR_USER_PREFIX + numTask,
+							playerFakeWRUris.get(numTask
+									% playerFakeWRUris.size()), true, true);
+				} finally {
+					joinLatch.countDown();
+				}
+			}
+		});
 		return joinLatch;
 	}
 
 	protected CountDownLatch parallelWaitActiveLiveWR() {
+		return parallelWaitActiveLiveWR(roomName);
+	}
+
+	protected CountDownLatch parallelWaitActiveLiveWR(final String room) {
 		final CountDownLatch waitForLatch = new CountDownLatch(FAKE_WR_USERS);
 		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX,
-				"parallelWaitForActiveLive", execExceptions, new Task() {
+				"parallelWaitForActiveLive-" + room, execExceptions,
+				new Task() {
 					@Override
 					public void exec(int numTask) throws Exception {
-						getSession(roomName).getParticipant(
+						getSession(room).getParticipant(
 								FAKE_WR_USER_PREFIX + numTask)
 								.waitForActiveLive(waitForLatch);
 					}
@@ -448,27 +481,35 @@ public abstract class BaseFakeTest {
 	}
 
 	protected void seqLeaveWR() {
+		seqLeaveWR(roomName);
+	}
+
+	protected void seqLeaveWR(String room) {
 		for (int i = 0; i < FAKE_WR_USERS; i++) {
 			try {
-				getSession(roomName).getParticipant(FAKE_WR_USER_PREFIX + i)
+				getSession(room).getParticipant(FAKE_WR_USER_PREFIX + i)
 						.leaveRoom();
 			} catch (Exception e) {
-				log.debug("{}: WR seq leave MCU exception", FAKE_WR_USER_PREFIX
-						+ i, e);
-				execExceptions.put("seqWRLeaveRoom" + "-" + FAKE_WR_USER_PREFIX
-						+ i, e);
+				log.debug("{}-{}: WR seq leave MCU exception", room,
+						FAKE_WR_USER_PREFIX + i, e);
+				execExceptions.put("seqWRLeaveRoom-" + room + "-"
+						+ FAKE_WR_USER_PREFIX + i, e);
 			}
 		}
 	}
 
 	protected CountDownLatch parallelLeaveWR() {
+		return parallelLeaveWR(roomName);
+	}
+
+	protected CountDownLatch parallelLeaveWR(final String room) {
 		final CountDownLatch leaveLatch = new CountDownLatch(FAKE_WR_USERS);
 		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX,
-				"parallelWRLeaveRoom", execExceptions, new Task() {
+				"parallelWRLeaveRoom-" + room, execExceptions, new Task() {
 					@Override
 					public void exec(int numTask) throws Exception {
 						try {
-							getSession(roomName).getParticipant(
+							getSession(room).getParticipant(
 									FAKE_WR_USER_PREFIX + numTask).leaveRoom();
 						} finally {
 							leaveLatch.countDown();
@@ -499,7 +540,7 @@ public abstract class BaseFakeTest {
 	protected void joinChrome() {
 		try {
 			browsers = createBrowsers(chromeSrcFiles.size(), chromeSrcFiles);
-			for (int i = 0; i < chromeSrcFiles.size(); i++)
+			for (int i = 0; i < browsers.size(); i++)
 				joinToRoom(browsers.get(i), CHROME_PREFIX + i, roomName);
 		} catch (Exception e) {
 			execExceptions.put("chromeBrowser", e);
@@ -507,8 +548,19 @@ public abstract class BaseFakeTest {
 		}
 	}
 
+	protected void joinChromeSpinner(int numBrowsers) {
+		try {
+			browsers = createBrowsers(numBrowsers, null);
+			for (int i = 0; i < browsers.size(); i++)
+				joinToRoom(browsers.get(i), CHROME_PREFIX + i, roomName);
+		} catch (Exception e) {
+			execExceptions.put("chromeBrowserSpinner", e);
+			log.debug("Error in joining from browser (green spinner)", e);
+		}
+	}
+
 	protected void leaveChrome() {
-		for (int i = 0; i < chromeSrcFiles.size(); i++)
+		for (int i = 0; i < browsers.size(); i++)
 			exitFromRoom(CHROME_PREFIX + i, browsers.get(i));
 	}
 
@@ -565,6 +617,8 @@ public abstract class BaseFakeTest {
 
 		final List<WebDriver> browsers =
 				Collections.synchronizedList(new ArrayList<WebDriver>());
+		if (numUsers == 0)
+			return browsers;
 
 		parallelBrowserInit(numUsers, 0, browsers, localFiles);
 

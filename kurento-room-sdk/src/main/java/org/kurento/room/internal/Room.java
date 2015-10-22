@@ -114,7 +114,7 @@ public class Room {
 		for (Participant participant1 : participants.values()) {
 			if (participant.equals(participant1))
 				continue;
-			participant1.addSubscriber(participant.getName());
+			participant1.getNewOrExistingSubscriber(participant.getName());
 		}
 
 		log.debug(
@@ -248,7 +248,7 @@ public class Room {
 	public void deregisterPublisher() {
 		this.activePublishers.decrementAndGet();
 	}
-	
+
 	private void createPipeline() {
 		synchronized (pipelineCreateLock) {
 			if (pipeline != null)
@@ -314,7 +314,8 @@ public class Room {
 
 				@Override
 				public void onError(Throwable cause) throws Exception {
-					log.warn("ROOM {}: Could not successfully release Pipeline",
+					log.warn(
+							"ROOM {}: Could not successfully release Pipeline",
 							Room.this.name, cause);
 					pipelineReleased = true;
 				}
