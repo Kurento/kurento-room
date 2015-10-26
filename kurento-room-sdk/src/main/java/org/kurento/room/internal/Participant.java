@@ -352,6 +352,10 @@ public class Participant {
 
 	public void close() {
 		log.debug("PARTICIPANT {}: Closing user", this.name);
+		if (isClosed()) {
+			log.warn("PARTICIPANT {}: Already closed", this.name);
+			return;
+		}
 		this.closed = true;
 		for (String remoteParticipantName : subscribers.keySet()) {
 			SubscriberEndpoint subscriber =

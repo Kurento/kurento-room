@@ -375,16 +375,24 @@ public abstract class BaseFakeTest {
 	}
 
 	protected void idlePeriod() {
+		idlePeriod("ACTIVE_LIVE", "LEAVE_ROOM", roomName);
+	}
+
+	protected void idlePeriod(String room) {
+		idlePeriod("ACTIVE_LIVE", "LEAVE_ROOM", room);
+	}
+
+	protected void idlePeriod(String previousAction, String nextAction,
+			String room) {
 		if (!execExceptions.isEmpty()) {
 			log.warn("\n-----------------\n"
-					+ "Wait for active live concluded in room '{}':\n"
+					+ "Wait for {} concluded in '{}':\n"
 					+ "WITH ERROR(s). No idle waiting for this test."
-					+ "\n-----------------\n", roomName);
+					+ "\n-----------------\n", previousAction, room);
 		} else {
-			log.info("\n-----------------\n"
-					+ "Wait for active live concluded in room '{}'"
-					+ "\n-----------------\n" + "Waiting {} seconds", roomName,
-					ROOM_ACTIVITY_IN_SECONDS);
+			log.info("\n-----------------\n" + "Wait for {} concluded in '{}'"
+					+ "\n-----------------\n" + "Waiting {} seconds",
+					previousAction, room, ROOM_ACTIVITY_IN_SECONDS);
 
 			try {
 				Thread.sleep(ROOM_ACTIVITY_IN_SECONDS * 1000);
@@ -392,8 +400,8 @@ public abstract class BaseFakeTest {
 				e.printStackTrace();
 			}
 		}
-		log.info("\n-----------------\n" + "Leaving room '{}'"
-				+ "\n-----------------\n", roomName);
+		log.info("\n-----------------\n" + "{} in '{}'"
+				+ "\n-----------------\n", nextAction, room);
 	}
 
 	// ------------------------ Fake WebRTC users ----------------------------
@@ -466,8 +474,13 @@ public abstract class BaseFakeTest {
 	}
 
 	protected CountDownLatch parallelWaitActiveLiveWR(final String room) {
-		final CountDownLatch waitForLatch = new CountDownLatch(FAKE_WR_USERS);
-		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX,
+		return parallelWaitActiveLiveWR(room, FAKE_WR_USERS);
+	}
+
+	protected CountDownLatch parallelWaitActiveLiveWR(final String room,
+			int userThreads) {
+		final CountDownLatch waitForLatch = new CountDownLatch(userThreads);
+		parallelTasks(userThreads, FAKE_WR_USER_PREFIX,
 				"parallelWaitForActiveLive-" + room, execExceptions,
 				new Task() {
 					@Override
@@ -485,7 +498,11 @@ public abstract class BaseFakeTest {
 	}
 
 	protected void seqLeaveWR(String room) {
-		for (int i = 0; i < FAKE_WR_USERS; i++) {
+		seqLeaveWR(room, FAKE_WR_USERS);
+	}
+
+	protected void seqLeaveWR(String room, int userThreads) {
+		for (int i = 0; i < userThreads; i++) {
 			try {
 				getSession(room).getParticipant(FAKE_WR_USER_PREFIX + i)
 						.leaveRoom();
@@ -503,35 +520,46 @@ public abstract class BaseFakeTest {
 	}
 
 	protected CountDownLatch parallelLeaveWR(final String room) {
-		final CountDownLatch leaveLatch = new CountDownLatch(FAKE_WR_USERS);
-		parallelTasks(FAKE_WR_USERS, FAKE_WR_USER_PREFIX,
-				"parallelWRLeaveRoom-" + room, execExceptions, new Task() {
-					@Override
-					public void exec(int numTask) throws Exception {
-						try {
-							getSession(room).getParticipant(
-									FAKE_WR_USER_PREFIX + numTask).leaveRoom();
-						} finally {
-							leaveLatch.countDown();
-						}
-					}
-				});
+		return parallelLeaveWR(room, FAKE_WR_USERS);
+	}
+
+	protected CountDownLatch parallelLeaveWR(final String room, int userThreads) {
+		final CountDownLatch leaveLatch = new CountDownLatch(userThreads);
+		parallelTasks(userThreads, FAKE_WR_USER_PREFIX, "parallelWRLeaveRoom-"
+				+ room, execExceptions, new Task() {
+			@Override
+			public void exec(int numTask) throws Exception {
+				try {
+					getSession(room).getParticipant(
+							FAKE_WR_USER_PREFIX + numTask).leaveRoom();
+				} finally {
+					leaveLatch.countDown();
+				}
+			}
+		});
 		return leaveLatch;
 	}
 
 	protected void await(CountDownLatch waitLatch, long actionTimeoutInSeconds,
 			String action, Map<String, Exception> awaitExceptions) {
+		await(waitLatch, actionTimeoutInSeconds, action, awaitExceptions,
+				FAKE_WR_USERS);
+	}
+
+	protected void await(CountDownLatch waitLatch, long actionTimeoutInSeconds,
+			String action, Map<String, Exception> awaitExceptions,
+			int userThreads) {
 		try {
 			if (!waitLatch.await(actionTimeoutInSeconds, TimeUnit.SECONDS))
 				awaitExceptions.put(action, new Exception(
 						"Timeout waiting for '" + action + "' of "
-								+ FAKE_WR_USERS + " tasks (max "
+								+ userThreads + " tasks (max "
 								+ actionTimeoutInSeconds + "s)"));
 			else
 				log.debug("Finished waiting for {}", action);
 		} catch (InterruptedException e) {
 			log.warn("Interrupted when waiting for {} of {} tasks (max {}s)",
-					action, FAKE_WR_USERS, actionTimeoutInSeconds, e);
+					action, userThreads, actionTimeoutInSeconds, e);
 		}
 	}
 
