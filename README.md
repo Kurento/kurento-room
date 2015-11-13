@@ -73,8 +73,8 @@ and the server.
 Currently, the demo is only supported for Ubuntu 14.04 LTS 64bits.
 
 After cloning the tutorial, it can be executed directly from the terminal by 
-using Maven's `exec` plugin (`[...]` are optional). To make sure the demo's 
-build and execution work smoothly, a stable release (or tag) is checked out 
+using Maven's `exec` plugin. To make sure the demo's 
+build and execution works smoothly, a stable release (or tag) is checked out 
 before proceeding with the build (prevents missing dependencies, given that in 
 Kurento *master* is the development branch):
 
@@ -82,6 +82,7 @@ Kurento *master* is the development branch):
 $ git clone git@github.com:Kurento/kurento-room.git
 $ cd kurento-room
 $ git checkout 6.1.0
+$ cd kurento-room-demo
 $ mvn compile exec:java
 ```
 
@@ -141,7 +142,7 @@ contents are the following:
        }
     } 
 
-All of theese properties can be overwritten on the command-line when starting 
+These properties can be overwritten on the command-line when starting 
 the demo server:
 
 ```
