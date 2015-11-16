@@ -17,6 +17,9 @@ import java.util.concurrent.CountDownLatch;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.kurento.client.KurentoClient;
+import org.kurento.client.KurentoConnectionListener;
+import org.kurento.commons.PropertiesManager;
 import org.slf4j.Logger;
 
 /**
@@ -26,27 +29,82 @@ import org.slf4j.Logger;
  * {@link BaseFakeTest#KURENTO_TEST_FAKE_WR_USERS}, if set, indicates how many
  * fake users to create (default is {@link #WR_USERNUM_VALUE}).
  * 
+ * Adds extra users that will use the configured extra KMS for WebRTC support.
+ * (cfg key is {@link BaseFakeTest#KURENTO_TEST_FAKE_KMS_URI} {@code + ".extra"}
+ * )
+ * 
  * @see BaseFakeTest#KURENTO_TEST_FAKE_WR_USERS
  * @see #WR_USERNUM_VALUE
  * @see BaseFakeTest#KURENTO_TEST_FAKE_WR_FILENAMES
  * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
-public class FakeWRUsersOneRoom extends BaseFakeTest {
+public class FakeWRUsersExtraKMSOneRoom extends BaseFakeTest {
 	/**
 	 * Total fake WR users in the test: {@value} .
 	 */
-	public final static int WR_USERNUM_VALUE = 6;
+	public final static int WR_USERNUM_VALUE = 2;
 
 	private final static int ROOM_ACTIVITY_IN_MINUTES = 5;
 
-	public FakeWRUsersOneRoom(Logger log) {
+	private static final String FAKE_EXTRA_USER_PREFIX = FAKE_WR_USER_PREFIX
+			+ "Extra";
+
+	private static final int FAKE_EXTRA_USERS = 2;
+
+	private static String EXTRA_KMS_URI;
+
+	private KurentoClient extraKurento;
+
+	public FakeWRUsersExtraKMSOneRoom(Logger log) {
 		super(log);
+	}
+
+	@Override
+	public void setup() {
+		super.setup();
+		EXTRA_KMS_URI =
+				PropertiesManager.getProperty(KURENTO_TEST_FAKE_KMS_URI
+						+ ".extra", testFakeKmsWsUri);
+		log.debug("Extra KMS URI: {}", EXTRA_KMS_URI);
+	}
+
+	@Override
+	public void tearDown() {
+		super.tearDown();
+		if (extraKurento != null) {
+			extraKurento.destroy();
+			extraKurento = null;
+		}
 	}
 
 	@Override
 	protected int getDefaultFakeWRUsersNum() {
 		return WR_USERNUM_VALUE;
+	}
+
+	protected synchronized KurentoClient getExtraKurento() {
+		if (extraKurento == null) {
+			extraKurento =
+					KurentoClient.create(EXTRA_KMS_URI,
+							new KurentoConnectionListener() {
+								@Override
+								public void connected() {}
+
+								@Override
+								public void connectionFailed() {}
+
+								@Override
+								public void disconnected() {
+									extraKurento = null;
+								}
+
+								@Override
+								public void reconnected(boolean sameServer) {}
+							});
+		}
+
+		return extraKurento;
 	}
 
 	@Test
@@ -62,10 +120,28 @@ public class FakeWRUsersOneRoom extends BaseFakeTest {
 		log.info("\n-----------------\n" + "Join concluded in room '{}'"
 				+ "\n-----------------\n", roomName);
 
+		joinLatch =
+				parallelJoinWR(roomName, FAKE_EXTRA_USERS,
+						FAKE_EXTRA_USER_PREFIX, getExtraKurento());
+
+		await(joinLatch, JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS, "extraJoinRoom",
+				execExceptions);
+
+		log.info("\n-----------------\n" + "Extra Join concluded in room '{}'"
+				+ "\n-----------------\n", roomName);
+
+
 		CountDownLatch waitForLatch = parallelWaitActiveLiveWR();
 
 		await(waitForLatch, ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS,
 				"waitForActiveLive", execExceptions);
+
+		waitForLatch =
+				parallelWaitActiveLiveWR(roomName, FAKE_EXTRA_USERS,
+						FAKE_EXTRA_USER_PREFIX);
+
+		await(waitForLatch, ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS,
+				"extraWaitForActiveLive", execExceptions);
 
 		ROOM_ACTIVITY_IN_SECONDS = ROOM_ACTIVITY_IN_MINUTES * 60;
 		idlePeriod();
@@ -74,6 +150,13 @@ public class FakeWRUsersOneRoom extends BaseFakeTest {
 
 		await(leaveLatch, LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS, "leaveRoom",
 				execExceptions);
+
+		leaveLatch =
+				parallelLeaveWR(roomName, FAKE_EXTRA_USERS,
+						FAKE_EXTRA_USER_PREFIX);
+
+		await(leaveLatch, LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS,
+				"extraLeaveRoom", execExceptions);
 
 		log.info("\n-----------------\n" + "Leave concluded in room '{}'"
 				+ "\n-----------------\n", roomName);

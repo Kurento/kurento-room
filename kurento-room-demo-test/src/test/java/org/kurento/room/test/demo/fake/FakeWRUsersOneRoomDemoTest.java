@@ -11,28 +11,26 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
+package org.kurento.room.test.demo.fake;
 
-package org.kurento.room.test.demo;
-
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
-import org.kurento.room.test.SeqAddRemoveUser;
+import org.kurento.room.test.demo.DemoTestConfig;
+import org.kurento.room.test.fake.FakeWRUsersOneRoom;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
- * Room demo integration test (demo version).
- * 
+ * @see FakeWRUsersOneRoom
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @DemoTestConfig
 @Ignore
-public class SeqAddRemoveUserRoomDemoTest extends SeqAddRemoveUser {
+public class FakeWRUsersOneRoomDemoTest extends FakeWRUsersOneRoom {
 
-	@BeforeClass
-	public static void setupBeforeClass() {
-		appUrl = DEMO_ROOM_APP_URL;
+	public FakeWRUsersOneRoomDemoTest() {
+		super(LoggerFactory.getLogger(FakeWRUsersOneRoomDemoTest.class));
 	}
 
 }

@@ -62,6 +62,7 @@
 							<executable>bower</executable>
 							<arguments>
 								<argument>install</argument>
+								<argument>--allow-root</argument>
 							</arguments>
 						</configuration>
 					</execution>

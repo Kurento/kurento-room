@@ -33,27 +33,27 @@ public class SeqNUsersEqualLifetime extends RoomTest {
 	private static final String USER2_NAME = "user2";
 
 	@Test
-	public void twoUsersRoomTest() throws InterruptedException,
-			ExecutionException, TimeoutException {
+	public void twoUsersRoomTest()
+			throws InterruptedException, ExecutionException, TimeoutException {
 
 		browsers = createBrowsers(2);
 
-		joinToRoom(browsers.get(0), USER1_NAME, roomName);
-		joinToRoom(browsers.get(1), USER2_NAME, roomName);
+		joinToRoom(browsers.get(0).getWebDriver(), USER1_NAME, roomName);
+		joinToRoom(browsers.get(1).getWebDriver(), USER2_NAME, roomName);
 
-		waitForStream(USER1_NAME, browsers.get(0), "native-video-" + USER2_NAME
-				+ "_webcam");
+		waitForStream(USER1_NAME, browsers.get(0).getWebDriver(),
+				"native-video-" + USER2_NAME + "_webcam");
 		log.debug("Received media from " + USER2_NAME + " in " + USER1_NAME);
 
-		waitForStream(USER2_NAME, browsers.get(1), "native-video-" + USER1_NAME
-				+ "_webcam");
+		waitForStream(USER2_NAME, browsers.get(1).getWebDriver(),
+				"native-video-" + USER1_NAME + "_webcam");
 		log.debug("Received media from " + USER1_NAME + " in " + USER2_NAME);
 
 		// Guard time to see application in action
 		Thread.sleep(PLAY_TIME * 1000);
 
 		// Stop application by caller
-		exitFromRoom(USER1_NAME, browsers.get(0));
-		exitFromRoom(USER2_NAME, browsers.get(1));
+		exitFromRoom(USER1_NAME, browsers.get(0).getWebDriver());
+		exitFromRoom(USER2_NAME, browsers.get(1).getWebDriver());
 	}
 }

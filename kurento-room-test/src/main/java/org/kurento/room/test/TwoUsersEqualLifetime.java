@@ -37,25 +37,25 @@ public class TwoUsersEqualLifetime extends RoomTest {
 	private WebDriver user2Browser;
 
 	@Test
-	public void twoUsersRoomTest() throws InterruptedException,
-			ExecutionException, TimeoutException {
+	public void twoUsersRoomTest()
+			throws InterruptedException, ExecutionException, TimeoutException {
 
 		browsers = createBrowsers(2);
-		user1Browser = browsers.get(0);
-		user2Browser = browsers.get(1);
+		user1Browser = browsers.get(0).getWebDriver();
+		user2Browser = browsers.get(1).getWebDriver();
 
 		joinToRoom(user1Browser, USER1_NAME, roomName);
 		joinToRoom(user2Browser, USER2_NAME, roomName);
 
-		waitForStream(USER1_NAME, user1Browser, "native-video-" + USER1_NAME
-				+ "_webcam");
-		waitForStream(USER2_NAME, user2Browser, "native-video-" + USER2_NAME
-				+ "_webcam");
+		waitForStream(USER1_NAME, user1Browser,
+				"native-video-" + USER1_NAME + "_webcam");
+		waitForStream(USER2_NAME, user2Browser,
+				"native-video-" + USER2_NAME + "_webcam");
 
-		waitForStream(USER1_NAME, user1Browser, "native-video-" + USER2_NAME
-				+ "_webcam");
-		waitForStream(USER2_NAME, user1Browser, "native-video-" + USER1_NAME
-				+ "_webcam");
+		waitForStream(USER1_NAME, user1Browser,
+				"native-video-" + USER2_NAME + "_webcam");
+		waitForStream(USER2_NAME, user1Browser,
+				"native-video-" + USER1_NAME + "_webcam");
 
 		// Guard time to see application in action
 		Thread.sleep(PLAY_TIME * 1000);

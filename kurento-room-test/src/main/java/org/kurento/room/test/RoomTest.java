@@ -28,15 +28,25 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 import org.kurento.commons.ClassPath;
 import org.kurento.commons.PropertiesManager;
+import org.kurento.test.TestConfiguration;
+import org.kurento.test.browser.Browser;
+import org.kurento.test.browser.BrowserType;
+import org.kurento.test.browser.WebPageType;
+import org.kurento.test.config.BrowserScope;
+import org.kurento.test.services.KurentoMediaServerManager;
+import org.kurento.test.services.KurentoServicesTestHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.ElementNotVisibleException;
@@ -46,7 +56,6 @@ import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -68,6 +77,9 @@ public class RoomTest {
 	protected Logger log = LoggerFactory.getLogger(this.getClass());
 
 	public final static String CONFIG_TEST_FILENAME = "/kroomtest.conf.json";
+
+	@Rule
+	public TestName testName = new TestName();
 
 	public interface UserLifecycle {
 		public void run(int numUser, int iteration, WebDriver browser)
@@ -106,9 +118,6 @@ public class RoomTest {
 		random = new SecureRandom();
 	}
 
-	private static final int DRIVER_INIT_THREAD_TIMEOUT = 30; // seconds
-	private static final int DRIVER_INIT_THREAD_JOIN = 1; // seconds
-
 	private static final int TEST_TIMEOUT = 20; // seconds
 
 	private static final int MAX_WIDTH = 1200;
@@ -121,15 +130,46 @@ public class RoomTest {
 
 	private static final int FIND_LATENCY = 100;
 
-	protected List<WebDriver> browsers;
+	protected List<Browser> browsers;
 	final protected Object browsersLock = new Object();
 	private boolean browsersClosed;
 
+	private AtomicInteger numBrowsers = new AtomicInteger(0);
+
+	private static KurentoMediaServerManager kms;
+
 	@BeforeClass
-	public static void setupClass() {
+	public static void setupClass() throws IOException {
 		appUrl = BASIC_ROOM_APP_URL;
 		// Chrome binary
 		ChromeDriverManager.getInstance().setup();
+
+		String kmsAutostart = PropertiesManager.getProperty(
+				TestConfiguration.KMS_AUTOSTART_PROP,
+				TestConfiguration.KMS_AUTOSTART_DEFAULT);
+
+		if (!kmsAutostart.equals(TestConfiguration.AUTOSTART_FALSE_VALUE)) {
+
+			if (kms == null) {
+
+				kms = KurentoServicesTestHelper.startKurentoMediaServer(false);
+
+				System.setProperty("kms.uris", "[\"" + kms.getWsUri() + "\"]");
+
+			}
+		}
+	}
+
+	@AfterClass
+	public static void teardownClass() throws IOException {
+
+		// String kmsAutostart =
+		// getProperty(TestConfiguration.KMS_AUTOSTART_PROP,
+		// TestConfiguration.KMS_AUTOSTART_DEFAULT);
+		//
+		// if (!kmsAutostart.equals(TestConfiguration.AUTOSTART_FALSE_VALUE)) {
+		// KurentoServicesTestHelper.teardownKurentoMediaServer();
+		// }
 	}
 
 	@Before
@@ -142,40 +182,20 @@ public class RoomTest {
 		closeBrowsers();
 	}
 
-	protected WebDriver newWebDriver() {
-		ChromeOptions options = new ChromeOptions();
+	protected Browser newWebDriver() {
+		KurentoServicesTestHelper.getKms()
+				.setTestMethodName(testName.getMethodName());
+		KurentoServicesTestHelper.getKms()
+				.setTestClassName(this.getClass().getName());
 
-		// This flag avoids granting camera/microphone
-		options.addArguments("--use-fake-ui-for-media-stream");
-
-		// This flag makes using a synthetic video (green with spinner) in
-		// WebRTC instead of real media from camera/microphone
-		options.addArguments("--use-fake-device-for-media-stream");
-
-		DesiredCapabilities capabilities = new DesiredCapabilities();
-		capabilities.setCapability(ChromeOptions.CAPABILITY, options);
-		capabilities
-				.setBrowserName(DesiredCapabilities.chrome().getBrowserName());
-
-		ExecutorService webExec = Executors.newFixedThreadPool(1);
-		BrowserInit initThread = new BrowserInit(capabilities);
-		webExec.execute(initThread);
-		webExec.shutdown();
-		try {
-			if (!webExec.awaitTermination(DRIVER_INIT_THREAD_TIMEOUT,
-					TimeUnit.SECONDS)) {
-				log.warn(
-						"Webdriver init thread timed-out after {}s, will be interrupted",
-						DRIVER_INIT_THREAD_TIMEOUT);
-				initThread.interrupt();
-				initThread.join(DRIVER_INIT_THREAD_JOIN);
-			}
-		} catch (InterruptedException e) {
-			log.error("Interrupted exception", e);
-			fail(e.getMessage());
-		}
-
-		return initThread.getBrowser();
+		int numBrowser = numBrowsers.getAndIncrement();
+		Browser browser = new Browser.Builder().browserType(BrowserType.CHROME)
+				.scope(BrowserScope.LOCAL)
+				.serverPort(Integer.parseInt(serverPort)).timeout(1)
+				.webPageType(WebPageType.ROOM).build();
+		browser.setId("browser-" + numBrowser);
+		browser.init();
+		return browser;
 	}
 
 	protected void exitFromRoom(String label, WebDriver userBrowser) {
@@ -192,7 +212,6 @@ public class RoomTest {
 
 	protected void joinToRoom(WebDriver userBrowser, String userName,
 			String roomName) {
-		userBrowser.get(appUrl);
 		findElement(userName, userBrowser, "name").sendKeys(userName);
 		findElement(userName, userBrowser, "roomName").sendKeys(roomName);
 		findElement(userName, userBrowser, "joinBtn").submit();
@@ -318,13 +337,13 @@ public class RoomTest {
 				log.debug("it#{}: Created {} WebDrivers", it, numUsers);
 				for (int i = 0; i < numUsers; i++) {
 					final int numUser = i;
-					final WebDriver browser = browsers.get(numUser);
+					final Browser browser = browsers.get(numUser);
 					futures.add(exec.submit(new Callable<Void>() {
 						@Override
 						public Void call() throws Exception {
 							Thread.currentThread()
 									.setName("it" + it + "|browser" + numUser);
-							user.run(numUser, it, browser);
+							user.run(numUser, it, browser.getWebDriver());
 							return null;
 						}
 					}));
@@ -347,11 +366,11 @@ public class RoomTest {
 		}
 	}
 
-	protected List<WebDriver> createBrowsers(int numUsers)
+	protected List<Browser> createBrowsers(int numUsers)
 			throws InterruptedException, ExecutionException, TimeoutException {
 
-		final List<WebDriver> browsers = Collections
-				.synchronizedList(new ArrayList<WebDriver>());
+		final List<Browser> browsers = Collections
+				.synchronizedList(new ArrayList<Browser>());
 
 		parallelBrowserInit(numUsers, 0, browsers);
 
@@ -368,11 +387,11 @@ public class RoomTest {
 
 		int row = 0;
 		int col = 0;
-		for (WebDriver browser : browsers) {
+		for (Browser browser : browsers) {
 
-			browser.manage().window()
+			browser.getWebDriver().manage().window()
 					.setSize(new Dimension(BROWSER_WIDTH, BROWSER_HEIGHT));
-			browser.manage().window()
+			browser.getWebDriver().manage().window()
 					.setPosition(new Point(col * BROWSER_WIDTH + LEFT_BAR_WIDTH,
 							row * BROWSER_HEIGHT + TOP_BAR_WIDTH));
 			col++;
@@ -387,12 +406,12 @@ public class RoomTest {
 	}
 
 	private void parallelBrowserInit(int required, final int existing,
-			final List<WebDriver> browsers) throws InterruptedException,
+			final List<Browser> browsers) throws InterruptedException,
 					ExecutionException, TimeoutException {
 		parallelTask(required, new Function<Integer, Void>() {
 			@Override
 			public Void apply(Integer num) {
-				WebDriver browser = newWebDriver();
+				Browser browser = newWebDriver();
 				if (browser != null) {
 					browsers.add(browser);
 					log.debug("Created and added browser #{} to browsers list",
@@ -460,11 +479,10 @@ public class RoomTest {
 
 	protected void closeBrowsers() {
 		if (!browsersClosed && browsers != null && !browsers.isEmpty()) {
-			for (WebDriver browser : browsers)
+			for (Browser browser : browsers)
 				if (browser != null)
 					try {
 						browser.close();
-						browser.quit();
 					} catch (Exception e) {
 						log.warn("Error closing browser", e);
 						fail("Unable to close browser: " + e.getMessage());
@@ -473,7 +491,7 @@ public class RoomTest {
 		}
 	}
 
-	protected void verify(List<WebDriver> browsers, boolean[] activeUsers) {
+	protected void verify(List<Browser> browsers, boolean[] activeUsers) {
 
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < activeUsers.length; i++) {
@@ -488,7 +506,7 @@ public class RoomTest {
 		for (int i = 0; i < activeUsers.length; i++) {
 
 			if (activeUsers[i]) {
-				WebDriver browser = browsers.get(i);
+				WebDriver browser = browsers.get(i).getWebDriver();
 
 				for (int j = 0; j < activeUsers.length; j++) {
 

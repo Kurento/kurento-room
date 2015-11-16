@@ -36,8 +36,8 @@ public class SeqAddRemoveUser extends RoomTest {
 	private static final int NUM_ITERATIONS = 2;
 
 	@Test
-	public void nUsersRoomTest() throws InterruptedException,
-			ExecutionException, TimeoutException {
+	public void nUsersRoomTest()
+			throws InterruptedException, ExecutionException, TimeoutException {
 
 		boolean[] activeUsers = new boolean[NUM_USERS];
 
@@ -48,7 +48,7 @@ public class SeqAddRemoveUser extends RoomTest {
 			for (int i = 0; i < NUM_USERS; i++) {
 				String userName = "user" + i;
 				log.info("User '{}' joining room '{}'", userName, roomName);
-				joinToRoom(browsers.get(i), userName, roomName);
+				joinToRoom(browsers.get(i).getWebDriver(), userName, roomName);
 				activeUsers[i] = true;
 				sleep(WAIT_TIME);
 				verify(browsers, activeUsers);
@@ -58,7 +58,7 @@ public class SeqAddRemoveUser extends RoomTest {
 			for (int i = 0; i < NUM_USERS; i++) {
 				for (int j = 0; j < NUM_USERS; j++) {
 					String userName = "user" + i;
-					waitForStream(userName, browsers.get(i),
+					waitForStream(userName, browsers.get(i).getWebDriver(),
 							"native-video-user" + j + "_webcam");
 					log.debug("Received media from user" + j
 							+ " in browser of user" + i);
@@ -73,7 +73,7 @@ public class SeqAddRemoveUser extends RoomTest {
 				String userName = "user" + i;
 				log.info("User '{}' is exiting from room '{}'", userName,
 						roomName);
-				exitFromRoom(userName, browsers.get(i));
+				exitFromRoom(userName, browsers.get(i).getWebDriver());
 				activeUsers[i] = false;
 				sleep(WAIT_TIME);
 				verify(browsers, activeUsers);

@@ -17,42 +17,41 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import org.kurento.client.Continuation;
-import org.kurento.client.ErrorEvent;
-import org.kurento.client.EventListener;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
-import org.kurento.room.internal.Room;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Stores the fake WebRTC participants for a session (room). Each participant
+ * will have assigned a shared {@link MediaPipeline} which it can use to create
+ * media elements and interact with the session. More than one pipelines are
+ * allowed for each session.
+ * 
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
- *
  */
 public class FakeSession implements Closeable {
 	private static Logger log = LoggerFactory.getLogger(FakeSession.class);
 
 	private String serviceUrl;
 	private String room;
-	private KurentoClient kurento;
-	private MediaPipeline pipeline;
+	private KurentoClient defaultKurento;
 
-	private CountDownLatch pipelineLatch = new CountDownLatch(1);
-	private Object pipelineCreateLock = new Object();
-	private Object pipelineReleaseLock = new Object();
-	private volatile boolean pipelineReleased = false;
+	private Map<KurentoClient, TestPipeline> pipelines =
+			new ConcurrentHashMap<KurentoClient, TestPipeline>();
 
 	private Map<String, FakeParticipant> participants =
 			new HashMap<String, FakeParticipant>();
 
+
 	public FakeSession(String serviceUrl, String room, KurentoClient kurento) {
 		this.serviceUrl = serviceUrl;
 		this.room = room;
-		this.kurento = kurento;
+		this.defaultKurento = kurento;
+		this.pipelines.put(kurento, new TestPipeline(kurento, room));
 	}
 
 	@Override
@@ -60,25 +59,24 @@ public class FakeSession implements Closeable {
 		log.debug("Closing Session '{}'", room);
 		for (FakeParticipant p : participants.values())
 			p.close();
-		closePipeline();
+		for (TestPipeline pipeline : this.pipelines.values())
+			pipeline.closePipeline();
 	}
 
 	public void newParticipant(String name, String playerUri,
 			boolean autoMedia, boolean loopMedia) {
-		FakeParticipant participant =
-				new FakeParticipant(serviceUrl, name, room, playerUri,
-						getPipeline(), autoMedia, loopMedia);
-		participants.put(name, participant);
-		participant.joinRoom();
+		newParticipant(name, playerUri, autoMedia, loopMedia, defaultKurento);
 	}
 
-	private MediaPipeline getPipeline() {
-		try {
-			pipelineLatch.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
-		return this.pipeline;
+	public void newParticipant(String name, String playerUri,
+			boolean autoMedia, boolean loopMedia, KurentoClient kurento) {
+		TestPipeline pipeline = getOrCreatePipeline(kurento);
+		pipeline.createPipeline();
+		FakeParticipant participant =
+				new FakeParticipant(serviceUrl, name, room, playerUri,
+						pipeline.getPipeline(), autoMedia, loopMedia);
+		participants.put(name, participant);
+		participant.joinRoom();
 	}
 
 	public FakeParticipant getParticipant(String name) {
@@ -91,57 +89,19 @@ public class FakeSession implements Closeable {
 		}
 	}
 
-	public void createPipeline() {
-		synchronized (pipelineCreateLock) {
+	private TestPipeline getOrCreatePipeline(KurentoClient kurento) {
+		TestPipeline pipeline = this.pipelines.get(kurento);
+		if (pipeline == null) {
+			String desc = kurento.getServerManager().getId();
+			pipeline =
+					this.pipelines.putIfAbsent(kurento, new TestPipeline(
+							kurento, room, desc));
 			if (pipeline != null)
-				return;
-			log.info("Session '{}': Creating MediaPipeline", room);
-			try {
-				kurento.createMediaPipeline(new Continuation<MediaPipeline>() {
-					@Override
-					public void onSuccess(MediaPipeline result)
-							throws Exception {
-						pipeline = result;
-						pipelineLatch.countDown();
-						log.debug("Session '{}': Created MediaPipeline", room);
-					}
-
-					@Override
-					public void onError(Throwable cause) throws Exception {
-						pipelineLatch.countDown();
-						log.error(
-								"Session '{}': Failed to create MediaPipeline",
-								room, cause);
-					}
-				});
-			} catch (Exception e) {
-				log.error("Unable to create media pipeline for Session '{}'",
-						room, e);
-				pipelineLatch.countDown();
-			}
-			if (getPipeline() == null)
-				throw new RuntimeException(
-						"Unable to create media pipeline for session '" + room
-								+ "'");
-
-			pipeline.addErrorListener(new EventListener<ErrorEvent>() {
-				@Override
-				public void onEvent(ErrorEvent event) {
-					String desc =
-							event.getType() + ": " + event.getDescription()
-									+ "(errCode=" + event.getErrorCode() + ")";
-					log.warn("Session '{}': Pipeline error encountered: {}",
-							room, desc);
-				}
-			});
+				log.debug(
+						"Pipeline already created for room '{}' and kurento '{}'",
+						room, desc);
+			pipeline = this.pipelines.get(kurento);
 		}
-	}
-
-	private void closePipeline() {
-		synchronized (pipelineReleaseLock) {
-			if (pipeline == null || pipelineReleased)
-				return;
-			getPipeline().release();
-		}
+		return pipeline;
 	}
 }

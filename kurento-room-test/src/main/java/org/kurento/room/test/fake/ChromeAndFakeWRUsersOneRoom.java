@@ -13,20 +13,23 @@
  */
 package org.kurento.room.test.fake;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 
 /**
- * Tests multiple fake WebRTC and Selenium (Chrome) users ' concurrently joining
+ * Tests multiple fake WebRTC and Selenium (Chrome) users concurrently joining
  * the same room. Configured media sources for the fake participants should
  * include at least one file (cfg key
  * {@link BaseFakeTest#KURENTO_TEST_FAKE_WR_FILENAMES}). There will be as many
  * Chrome participants as possible (max between sizes of
  * {@link BaseFakeTest#KURENTO_TEST_CHROME_FILENAMES_Y4M} and
- * {@link BaseFakeTest#KURENTO_TEST_CHROME_FILENAMES_WAV}).
+ * {@link BaseFakeTest#KURENTO_TEST_CHROME_FILENAMES_WAV}). If no chrome src
+ * filenames are configured, a fixed number of Chrome browser will be started
+ * using the "fake ui for media stream" option.
  * 
  * @see BaseFakeTest#KURENTO_TEST_FAKE_WR_FILENAMES
  * @see BaseFakeTest#KURENTO_TEST_CHROME_FILENAMES_WAV
@@ -38,31 +41,32 @@ import org.slf4j.Logger;
 public class ChromeAndFakeWRUsersOneRoom extends BaseFakeTest {
 
 	/**
-	 * Total fake WR users in the test: {@value}.
+	 * Total fake WR users in the test: {@value} .
 	 */
-	public final static int WR_USERNUM_VALUE = 5;
+	public final static int WR_USERNUM_VALUE = 2;
+
+	private final static int CHROME_SPINNER_USERS = 2;
 
 	public ChromeAndFakeWRUsersOneRoom(Logger log) {
 		super(log);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.kurento.room.test.fake.BaseFakeTest#getDefaultFakeWRUsersNum()
-	 */
 	@Override
 	protected int getDefaultFakeWRUsersNum() {
 		return WR_USERNUM_VALUE;
 	}
 
-	// TODO configure accessible files' list in Jenkins job
-    @Ignore
 	@Test
 	public void test() {
 		final CountDownLatch joinLatch = parallelJoinWR();
 
-		joinChrome();
+		if (!execExceptions.isEmpty())
+			failWithExceptions();
+
+		if (chromeSrcFiles.isEmpty())
+			joinChromeSpinner(CHROME_SPINNER_USERS);
+		else
+			joinChrome();
 
 		await(joinLatch, JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS, "joinRoom",
 				execExceptions);
@@ -75,12 +79,24 @@ public class ChromeAndFakeWRUsersOneRoom extends BaseFakeTest {
 		await(waitForLatch, ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS,
 				"waitForActiveLive", execExceptions);
 
+		boolean[] activeChromeUsers = new boolean[browsers.size()];
+		for (int i = 0; i < activeChromeUsers.length; i++)
+			activeChromeUsers[i] = true;
+		Map<String, Boolean> activeFakeWrUsers = new HashMap<String, Boolean>();
+		for (int i = 0; i < getDefaultFakeWRUsersNum(); i++)
+			activeFakeWrUsers.put(FAKE_WR_USER_PREFIX + i, true);
+		verify(browsers, activeChromeUsers, activeFakeWrUsers);
+
 		idlePeriod();
 
 		final CountDownLatch leaveLatch = parallelLeaveWR();
 
 		await(leaveLatch, LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS, "leaveRoom",
 				execExceptions);
+
+		for (int i = 0; i < getDefaultFakeWRUsersNum(); i++)
+			activeFakeWrUsers.put(FAKE_WR_USER_PREFIX + i, false);
+		verify(browsers, activeChromeUsers, activeFakeWrUsers);
 
 		leaveChrome();
 
