@@ -93,7 +93,7 @@ public class AutodiscoveryKmsUrlTest {
 			}
 
 			ConfigurableApplicationContext app = KurentoRoomServerApp
-					.start(new String[0]);
+					.start(new String[] { "--server.port=7777" });
 
 			NotificationRoomManager notifRoomManager = app
 					.getBean(NotificationRoomManager.class);
