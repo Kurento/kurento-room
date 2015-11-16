@@ -65,7 +65,7 @@
 				<module>kurento-room-demo</module>
 				<module>kurento-room-test</module>
 				<module>kurento-room-demo-test</module>
-				<module>kurento-room-doc</module>
+				<!--<module>kurento-room-doc</module>-->
 			</modules>
 		</profile>
 		<profile>
