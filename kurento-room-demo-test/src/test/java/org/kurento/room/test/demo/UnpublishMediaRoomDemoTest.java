@@ -18,6 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kurento.room.test.RoomTest;
@@ -28,6 +29,7 @@ import com.google.common.base.Function;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @DemoTestConfig
+@Ignore
 public class UnpublishMediaRoomDemoTest extends RoomTest {
 
 	private static final int PLAY_TIME = 5; // seconds
@@ -46,8 +48,8 @@ public class UnpublishMediaRoomDemoTest extends RoomTest {
 		final Object browsersLock = new Object();
 
 		final CountDownLatch joinCdl = new CountDownLatch(NUM_USERS);
-		final CountDownLatch publishCdl =
-				new CountDownLatch(NUM_USERS * NUM_USERS);
+		final CountDownLatch publishCdl = new CountDownLatch(
+				NUM_USERS * NUM_USERS);
 		final CountDownLatch unpublishCdl = new CountDownLatch(1);
 		final CountDownLatch verifyCdl = new CountDownLatch(NUM_USERS);
 		final CountDownLatch leaveCdl = new CountDownLatch(NUM_USERS);
@@ -77,8 +79,8 @@ public class UnpublishMediaRoomDemoTest extends RoomTest {
 					@Override
 					public Void apply(Integer num) {
 						String videoUserName = "user" + num;
-						waitForStream(userName, browser, "native-video-user"
-								+ num + "_webcam");
+						waitForStream(userName, browser,
+								"native-video-user" + num + "_webcam");
 						long duration = System.currentTimeMillis() - start;
 						log.info(
 								"Video received in browser of user {} for user '{}' in {} millis",

@@ -18,6 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kurento.room.test.RoomTest;
@@ -28,6 +29,7 @@ import com.google.common.base.Function;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @DemoTestConfig
+@Ignore
 public class UnsubscribeFromMediaRoomDemoTest extends RoomTest {
 
 	private static final int PLAY_TIME = 5; // seconds
@@ -46,15 +48,15 @@ public class UnsubscribeFromMediaRoomDemoTest extends RoomTest {
 		final Object browsersLock = new Object();
 
 		final CountDownLatch joinCdl = new CountDownLatch(NUM_USERS);
-		final CountDownLatch publishCdl =
-				new CountDownLatch(NUM_USERS * NUM_USERS);
+		final CountDownLatch publishCdl = new CountDownLatch(
+				NUM_USERS * NUM_USERS);
 		final CountDownLatch unsubscribeCdl = new CountDownLatch(NUM_USERS);
 		final CountDownLatch verifyCdl = new CountDownLatch(NUM_USERS);
 		final CountDownLatch leaveCdl = new CountDownLatch(NUM_USERS);
 
 		final int unsubscribeFrom = random.nextInt(NUM_USERS);
-		final String clickableVideoTagId =
-				"video-user" + unsubscribeFrom + "_webcam";
+		final String clickableVideoTagId = "video-user" + unsubscribeFrom
+				+ "_webcam";
 
 		parallelUsers(NUM_USERS, new UserLifecycle() {
 			@Override
