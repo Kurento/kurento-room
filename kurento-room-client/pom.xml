@@ -54,7 +54,6 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-room-server</artifactId>
-			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 
