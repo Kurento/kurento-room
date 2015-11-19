@@ -47,7 +47,7 @@ import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.room.test.fake.util.AudioVideoFile;
 import org.kurento.room.test.fake.util.FakeSession;
-import org.kurento.test.TestConfiguration;
+import org.kurento.test.config.TestConfiguration;
 import org.kurento.test.docker.Docker;
 import org.kurento.test.services.KurentoMediaServerManager;
 import org.kurento.test.services.KurentoServicesTestHelper;

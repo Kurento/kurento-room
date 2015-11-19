@@ -40,11 +40,11 @@ import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.kurento.commons.ClassPath;
 import org.kurento.commons.PropertiesManager;
-import org.kurento.test.TestConfiguration;
 import org.kurento.test.browser.Browser;
 import org.kurento.test.browser.BrowserType;
 import org.kurento.test.browser.WebPageType;
 import org.kurento.test.config.BrowserScope;
+import org.kurento.test.config.TestConfiguration;
 import org.kurento.test.services.KurentoMediaServerManager;
 import org.kurento.test.services.KurentoServicesTestHelper;
 import org.openqa.selenium.By;
@@ -183,11 +183,6 @@ public class RoomTest {
 	}
 
 	protected Browser newWebDriver() {
-		KurentoServicesTestHelper.getKms()
-				.setTestMethodName(testName.getMethodName());
-		KurentoServicesTestHelper.getKms()
-				.setTestClassName(this.getClass().getName());
-
 		int numBrowser = numBrowsers.getAndIncrement();
 		Browser browser = new Browser.Builder().browserType(BrowserType.CHROME)
 				.scope(BrowserScope.LOCAL)
