@@ -14,6 +14,7 @@
 package org.kurento.room.test.fake;
 
 import static org.junit.Assert.fail;
+import io.github.bonigarcia.wdm.ChromeDriverManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,8 +69,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
-
-import io.github.bonigarcia.wdm.ChromeDriverManager;
 
 /**
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
@@ -630,27 +629,31 @@ public abstract class BaseFakeTest {
 	// --------------------- Chrome users -------------------------------------
 
 	protected void joinChrome() {
+		joinChrome(chromeSrcFiles.size(), chromeSrcFiles);
+	}
+
+	protected void joinChromeSpinner(int numBrowsers) {
+		joinChrome(numBrowsers, null);
+	}
+
+	protected void joinChrome(int numBrowsers, List<AudioVideoFile> localFiles) {
+		int joinFrom = 0;
 		try {
-			browsers = createBrowsers(chromeSrcFiles.size(), chromeSrcFiles);
-			for (int i = 0; i < browsers.size(); i++)
+			synchronized (browsersLock) {
+				if (browsers != null && !browsers.isEmpty()) {
+					joinFrom = browsers.size();
+					browsers.addAll(createBrowsers(numBrowsers, localFiles));
+				} else
+					browsers = createBrowsers(numBrowsers, localFiles);
+			}
+			for (int i = joinFrom; i < browsers.size(); i++)
 				joinToRoom(browsers.get(i), CHROME_PREFIX + i, roomName);
 		} catch (Exception e) {
 			execExceptions.put("chromeBrowser", e);
 			log.debug("Error in joining from browser", e);
 		}
 	}
-
-	protected void joinChromeSpinner(int numBrowsers) {
-		try {
-			browsers = createBrowsers(numBrowsers, null);
-			for (int i = 0; i < browsers.size(); i++)
-				joinToRoom(browsers.get(i), CHROME_PREFIX + i, roomName);
-		} catch (Exception e) {
-			execExceptions.put("chromeBrowserSpinner", e);
-			log.debug("Error in joining from browser (green spinner)", e);
-		}
-	}
-
+	
 	protected void leaveChrome() {
 		for (int i = 0; i < browsers.size(); i++)
 			exitFromRoom(CHROME_PREFIX + i, browsers.get(i));
