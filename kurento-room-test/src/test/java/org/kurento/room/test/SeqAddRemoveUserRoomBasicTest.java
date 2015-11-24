@@ -1,7 +1,6 @@
 package org.kurento.room.test;
 
-import org.junit.Ignore;
-
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 /*
  * (C) Copyright 2014 Kurento (http://kurento.org/)
  * 
@@ -15,9 +14,7 @@ import org.junit.Ignore;
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
-
 import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * Room demo integration test (basic version).
@@ -25,7 +22,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @since 5.0.0
  */
-@Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
 @BasicTestConfig
 public class SeqAddRemoveUserRoomBasicTest extends SeqAddRemoveUser {

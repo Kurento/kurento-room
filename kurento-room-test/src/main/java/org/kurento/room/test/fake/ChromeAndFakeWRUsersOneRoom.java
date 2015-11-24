@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 
@@ -43,9 +44,9 @@ public class ChromeAndFakeWRUsersOneRoom extends BaseFakeTest {
 	/**
 	 * Total fake WR users in the test: {@value} .
 	 */
-	public final static int WR_USERNUM_VALUE = 2;
+	public final static int WR_USERNUM_VALUE = 1;
 
-	private final static int CHROME_SPINNER_USERS = 2;
+	private final static int CHROME_SPINNER_USERS = 1;
 
 	public ChromeAndFakeWRUsersOneRoom(Logger log) {
 		super(log);
@@ -58,11 +59,15 @@ public class ChromeAndFakeWRUsersOneRoom extends BaseFakeTest {
 
 	@Test
 	public void test() {
+		Assert.assertTrue("This test requires at least one media source file",
+				playerFakeWRUris.size() > 0);
+
 		final CountDownLatch joinLatch = parallelJoinWR();
 
 		if (!execExceptions.isEmpty())
 			failWithExceptions();
 
+		// FIXME test fails in Jenkins when the video src is not y4m
 		if (chromeSrcFiles.isEmpty())
 			joinChromeSpinner(CHROME_SPINNER_USERS);
 		else

@@ -45,16 +45,16 @@ public class FakeWRUsersExtraKMSOneRoom extends BaseFakeTest {
 	 */
 	public final static int WR_USERNUM_VALUE = 2;
 
-	private final static int ROOM_ACTIVITY_IN_MINUTES = 5;
+	private final static int ROOM_ACTIVITY_IN_MINUTES = 2;
 
 	private static final String FAKE_EXTRA_USER_PREFIX = FAKE_WR_USER_PREFIX
 			+ "Extra";
 
 	private static final int FAKE_EXTRA_USERS = 2;
 
-	private static String EXTRA_KMS_URI;
+	private static String testExtraFakeKmsWsUri;
 
-	private KurentoClient extraKurento;
+	private KurentoClient testExtraFakeKurento;
 
 	public FakeWRUsersExtraKMSOneRoom(Logger log) {
 		super(log);
@@ -63,18 +63,18 @@ public class FakeWRUsersExtraKMSOneRoom extends BaseFakeTest {
 	@Override
 	public void setup() {
 		super.setup();
-		EXTRA_KMS_URI =
-				PropertiesManager.getProperty(KURENTO_TEST_FAKE_KMS_URI
-						+ ".extra", testFakeKmsWsUri);
-		log.debug("Extra KMS URI: {}", EXTRA_KMS_URI);
+		testExtraFakeKmsWsUri = PropertiesManager.getProperty(
+				KURENTO_TEST_FAKE_KMS_URI + ".extra", testFakeKmsWsUri);
+
+		log.debug("Extra Fake KMS URI: {}", testExtraFakeKmsWsUri);
 	}
 
 	@Override
 	public void tearDown() {
 		super.tearDown();
-		if (extraKurento != null) {
-			extraKurento.destroy();
-			extraKurento = null;
+		if (testExtraFakeKurento != null) {
+			testExtraFakeKurento.destroy();
+			testExtraFakeKurento = null;
 		}
 	}
 
@@ -83,28 +83,30 @@ public class FakeWRUsersExtraKMSOneRoom extends BaseFakeTest {
 		return WR_USERNUM_VALUE;
 	}
 
-	protected synchronized KurentoClient getExtraKurento() {
-		if (extraKurento == null) {
-			extraKurento =
-					KurentoClient.create(EXTRA_KMS_URI,
-							new KurentoConnectionListener() {
-								@Override
-								public void connected() {}
+	protected synchronized KurentoClient getTestExtraFakeKurento() {
+		if (testExtraFakeKurento == null) {
+			testExtraFakeKurento = KurentoClient.create(testExtraFakeKmsWsUri,
+					new KurentoConnectionListener() {
+						@Override
+						public void connected() {
+						}
 
-								@Override
-								public void connectionFailed() {}
+						@Override
+						public void connectionFailed() {
+						}
 
-								@Override
-								public void disconnected() {
-									extraKurento = null;
-								}
+						@Override
+						public void disconnected() {
+							testExtraFakeKurento = null;
+						}
 
-								@Override
-								public void reconnected(boolean sameServer) {}
-							});
+						@Override
+						public void reconnected(boolean sameServer) {
+						}
+					});
 		}
 
-		return extraKurento;
+		return testExtraFakeKurento;
 	}
 
 	@Test
@@ -120,9 +122,8 @@ public class FakeWRUsersExtraKMSOneRoom extends BaseFakeTest {
 		log.info("\n-----------------\n" + "Join concluded in room '{}'"
 				+ "\n-----------------\n", roomName);
 
-		joinLatch =
-				parallelJoinWR(roomName, FAKE_EXTRA_USERS,
-						FAKE_EXTRA_USER_PREFIX, getExtraKurento());
+		joinLatch = parallelJoinWR(roomName, FAKE_EXTRA_USERS,
+				FAKE_EXTRA_USER_PREFIX, getTestExtraFakeKurento());
 
 		await(joinLatch, JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS, "extraJoinRoom",
 				execExceptions);
@@ -130,15 +131,13 @@ public class FakeWRUsersExtraKMSOneRoom extends BaseFakeTest {
 		log.info("\n-----------------\n" + "Extra Join concluded in room '{}'"
 				+ "\n-----------------\n", roomName);
 
-
 		CountDownLatch waitForLatch = parallelWaitActiveLiveWR();
 
 		await(waitForLatch, ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS,
 				"waitForActiveLive", execExceptions);
 
-		waitForLatch =
-				parallelWaitActiveLiveWR(roomName, FAKE_EXTRA_USERS,
-						FAKE_EXTRA_USER_PREFIX);
+		waitForLatch = parallelWaitActiveLiveWR(roomName, FAKE_EXTRA_USERS,
+				FAKE_EXTRA_USER_PREFIX);
 
 		await(waitForLatch, ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS,
 				"extraWaitForActiveLive", execExceptions);
@@ -151,9 +150,8 @@ public class FakeWRUsersExtraKMSOneRoom extends BaseFakeTest {
 		await(leaveLatch, LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS, "leaveRoom",
 				execExceptions);
 
-		leaveLatch =
-				parallelLeaveWR(roomName, FAKE_EXTRA_USERS,
-						FAKE_EXTRA_USER_PREFIX);
+		leaveLatch = parallelLeaveWR(roomName, FAKE_EXTRA_USERS,
+				FAKE_EXTRA_USER_PREFIX);
 
 		await(leaveLatch, LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS,
 				"extraLeaveRoom", execExceptions);

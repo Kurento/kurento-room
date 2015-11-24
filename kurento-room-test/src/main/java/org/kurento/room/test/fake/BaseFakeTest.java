@@ -16,7 +16,6 @@ package org.kurento.room.test.fake;
 import static org.junit.Assert.fail;
 import io.github.bonigarcia.wdm.ChromeDriverManager;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,17 +36,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.KurentoConnectionListener;
+import org.kurento.commons.ClassPath;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.room.test.fake.util.AudioVideoFile;
 import org.kurento.room.test.fake.util.FakeSession;
+import org.kurento.test.browser.Browser;
+import org.kurento.test.browser.BrowserType;
+import org.kurento.test.browser.WebPageType;
+import org.kurento.test.config.BrowserScope;
 import org.kurento.test.config.TestConfiguration;
 import org.kurento.test.docker.Docker;
 import org.kurento.test.services.KurentoMediaServerManager;
@@ -59,10 +65,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
@@ -82,6 +85,18 @@ public abstract class BaseFakeTest {
 	protected static Logger log = LoggerFactory.getLogger(BaseFakeTest.class);
 
 	public static final long TASKS_TIMEOUT_IN_MINUTES = 15 * 60;
+
+	public final static String CONFIG_TEST_FILENAME = "/kroomtest.conf.json";
+
+	static {
+		try {
+			System.setProperty("configFilePath",
+					ClassPath.get(CONFIG_TEST_FILENAME).toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
 
 	// configuration keys
 	/** {@value} */
@@ -115,22 +130,17 @@ public abstract class BaseFakeTest {
 	protected volatile KurentoClient testFakeKurento;
 	protected static String testFakeKmsWsUri;
 
-	protected static String appUrl;
-
-	private static String serverPort = PropertiesManager
-			.getProperty("server.port", "8080");
-	private static String serverAddress = PropertiesManager
-			.getProperty("server.address", "127.0.0.1");
-	protected static String serverUriBase = "http://" + serverAddress + ":"
+	private static String serverPort = PropertiesManager.getProperty(
+			"server.port", "8080");
+	// FIXME running in Docker might change the address?
+	private static String serverAddress = PropertiesManager.getProperty(
+			"server.address", "127.0.0.1");
+	protected static String APP_HTTP_URL = "http://" + serverAddress + ":"
 			+ serverPort;
-
-	protected static final String ROOM_WS_URL = "ws://" + serverAddress + ":"
+	protected static final String APP_WS_URL = "ws://" + serverAddress + ":"
 			+ serverPort;
-	protected static String serviceUrl;
-
-	protected static final String BASIC_ROOM_APP_URL = serverUriBase
-			+ "/room.html";
-	protected static final String DEMO_ROOM_APP_URL = serverUriBase;
+	// might get overwritten by custom room apps
+	protected static String serviceWsUrl = APP_WS_URL + "/room";;
 
 	protected static final String ROOM_NAME = "room";
 	protected String roomName;
@@ -140,8 +150,6 @@ public abstract class BaseFakeTest {
 
 	protected Map<String, Exception> execExceptions = new HashMap<String, Exception>();
 
-	private static final int WEB_TEST_DRIVER_INIT_THREAD_TIMEOUT = 30; // seconds
-	private static final int WEB_TEST_DRIVER_INIT_THREAD_JOIN = 1; // seconds
 	private static final int WEB_TEST_TIMEOUT = 20; // seconds
 	private static final int WEB_TEST_FIND_LATENCY = 100;
 	private static final int WEB_TEST_MAX_WIDTH = 1200;
@@ -151,9 +159,15 @@ public abstract class BaseFakeTest {
 	protected static int WEB_TEST_BROWSER_WIDTH = 500;
 	protected static int WEB_TEST_BROWSER_HEIGHT = 400;
 
-	protected List<WebDriver> browsers;
+	protected List<Browser> browsers;
 	final protected Object browsersLock = new Object();
 	private boolean browsersClosed;
+
+	private AtomicInteger numBrowsers = new AtomicInteger(0);
+
+	private static KurentoMediaServerManager kms;
+
+	protected static WebPageType webPageType = WebPageType.ROOM;
 
 	public BaseFakeTest(Logger log) {
 		if (log != null)
@@ -163,11 +177,36 @@ public abstract class BaseFakeTest {
 	protected abstract int getDefaultFakeWRUsersNum();
 
 	@BeforeClass
-	public static void setupClass() {
-		appUrl = BASIC_ROOM_APP_URL;
-		serviceUrl = ROOM_WS_URL + "/room";
+	public static void setupClass() throws IOException {
 		// Chrome binary
 		ChromeDriverManager.getInstance().setup();
+
+		String kmsAutostart = PropertiesManager.getProperty(
+				TestConfiguration.KMS_AUTOSTART_PROP,
+				TestConfiguration.KMS_AUTOSTART_DEFAULT);
+
+		if (!kmsAutostart.equals(TestConfiguration.AUTOSTART_FALSE_VALUE)) {
+
+			if (kms == null) {
+
+				kms = KurentoServicesTestHelper.startKurentoMediaServer(false);
+
+				System.setProperty("kms.uris", "[\"" + kms.getWsUri() + "\"]");
+
+			}
+		}
+	}
+
+	@AfterClass
+	public static void teardownClass() throws IOException {
+
+		// String kmsAutostart =
+		// getProperty(TestConfiguration.KMS_AUTOSTART_PROP,
+		// TestConfiguration.KMS_AUTOSTART_DEFAULT);
+		//
+		// if (!kmsAutostart.equals(TestConfiguration.AUTOSTART_FALSE_VALUE)) {
+		// KurentoServicesTestHelper.teardownKurentoMediaServer();
+		// }
 	}
 
 	@Before
@@ -175,21 +214,20 @@ public abstract class BaseFakeTest {
 		execExceptions.clear();
 
 		roomName = ROOM_NAME + random.nextInt(9999);
-		log.info("Will connect to WS of room app: {}", serviceUrl);
-
-		String USER_HOME = System.getProperty("user.home");
-		USER_HOME += (!USER_HOME.endsWith("/") ? "/" : "");
+		log.info("Will connect to WS of room app: {}", serviceWsUrl);
 
 		FAKE_WR_USERS = PropertiesManager.getProperty(
 				KURENTO_TEST_FAKE_WR_USERS, getDefaultFakeWRUsersNum());
 
 		initKurentoClientForFakeClients();
 
+		String defaultTestFiles = KurentoServicesTestHelper.getTestFilesPath();
+
 		List<String> playerFilenames = JsonUtils.toStringList(PropertiesManager
-				.getPropertyJson(KURENTO_TEST_FAKE_WR_FILENAMES, "[chrome.mp4]",
-						JsonArray.class));
+				.getPropertyJson(KURENTO_TEST_FAKE_WR_FILENAMES,
+						"[\"video/format/chrome.mp4\"]", JsonArray.class));
 		String filesLoc = PropertiesManager.getProperty(
-				KURENTO_TEST_FAKE_WR_FILES, "http://files.kurento.org/video/");
+				KURENTO_TEST_FAKE_WR_FILES, defaultTestFiles);
 		if (filesLoc == null)
 			filesLoc = "";
 		if (!filesLoc.isEmpty()) {
@@ -205,8 +243,8 @@ public abstract class BaseFakeTest {
 				URI playerUri = new URI(filesLoc + fileName);
 				playerFakeWRUris.add(playerUri.toString());
 			} catch (URISyntaxException e) {
+				log.error("Player URI error", e);
 				Assert.fail("Error setting player URI: " + e);
-				e.printStackTrace();
 			}
 		log.info("Fake clients player sources: {}", playerFakeWRUris);
 
@@ -218,33 +256,43 @@ public abstract class BaseFakeTest {
 				.toStringList(PropertiesManager.getPropertyJson(
 						KURENTO_TEST_CHROME_FILENAMES_Y4M, "[]",
 						JsonArray.class));
-		String chromeFilesFolder = PropertiesManager.getProperty(
-				KURENTO_TEST_CHROME_FILES, System.getProperty("user.home"));
-		chromeFilesFolder += (!chromeFilesFolder.endsWith("/") ? "/" : "");
-		if (!chromeFilesFolder.startsWith("/"))
-			chromeFilesFolder = USER_HOME + chromeFilesFolder;
+
+		String chromeFileLoc = PropertiesManager.getProperty(
+				KURENTO_TEST_CHROME_FILES, defaultTestFiles);
+		chromeFileLoc += (!chromeFileLoc.endsWith("/") ? "/" : "");
+
+		if (!chromeFileLoc.startsWith("/") && !chromeFileLoc.startsWith("http")
+				&& !chromeFileLoc.startsWith("https")) {
+			String USER_HOME = System.getProperty("user.home");
+			USER_HOME += (!USER_HOME.endsWith("/") ? "/" : "");
+			chromeFileLoc = USER_HOME + chromeFileLoc;
+		}
 
 		chromeSrcFiles.clear();
 		int maxLen = Math.max(chromeFilenamesWav.size(),
 				chromeFilenamesY4M.size());
 		for (int i = 0; i < maxLen; i++) {
-			File a = null;
-			File v = null;
+			String a = null;
+			String v = null;
 			if (i < chromeFilenamesWav.size()) {
-				a = new File(chromeFilesFolder, chromeFilenamesWav.get(i));
-				Assert.assertTrue(
-						"Can't read audio for chrome from " + a.getPath(),
-						a.canRead());
+				try {
+					a = new URI(chromeFileLoc + chromeFilenamesWav.get(i))
+							.toString();
+				} catch (URISyntaxException e) {
+					log.error("Audio file URI error", e);
+					Assert.fail("Error setting audio file URI: " + e);
+				}
 			}
 			if (i < chromeFilenamesY4M.size()) {
-				v = new File(chromeFilesFolder, chromeFilenamesY4M.get(i));
-				Assert.assertTrue(
-						"Can't read video for chrome from " + v.getPath(),
-						v.canRead());
+				try {
+					v = new URI(chromeFileLoc + chromeFilenamesY4M.get(i))
+							.toString();
+				} catch (URISyntaxException e) {
+					log.error("Video file URI error", e);
+					Assert.fail("Error setting video file URI: " + e);
+				}
 			}
-			chromeSrcFiles
-					.add(new AudioVideoFile((a != null ? a.getPath() : null),
-							(v != null ? v.getPath() : null)));
+			chromeSrcFiles.add(new AudioVideoFile(a, v));
 		}
 		log.info("Chrome clients play sources: {}", chromeSrcFiles);
 	}
@@ -337,7 +385,8 @@ public abstract class BaseFakeTest {
 	protected FakeSession createSession(String room) {
 		if (sessions.containsKey(room))
 			return sessions.get(room);
-		FakeSession s = new FakeSession(serviceUrl, room, getTestFakeKurento());
+		FakeSession s = new FakeSession(serviceWsUrl, room,
+				getTestFakeKurento());
 		FakeSession old = sessions.putIfAbsent(room, s);
 		if (old != null)
 			return old;
@@ -345,8 +394,7 @@ public abstract class BaseFakeTest {
 	}
 
 	protected void parallelTasks(int numThreads, final String thPrefix,
-			String taskName, Map<String, Exception> exceptions,
-			final Task task) {
+			String taskName, Map<String, Exception> exceptions, final Task task) {
 		ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
 		ExecutorCompletionService<Void> exec = new ExecutorCompletionService<>(
 				threadPool);
@@ -423,15 +471,13 @@ public abstract class BaseFakeTest {
 	protected void idlePeriod(String previousAction, String nextAction,
 			String room) {
 		if (!execExceptions.isEmpty()) {
-			log.warn(
-					"\n-----------------\n" + "Wait for {} concluded in '{}':\n"
-							+ "WITH ERROR(s). No idle waiting for this test."
-							+ "\n-----------------\n",
-					previousAction, room);
+			log.warn("\n-----------------\n"
+					+ "Wait for {} concluded in '{}':\n"
+					+ "WITH ERROR(s). No idle waiting for this test."
+					+ "\n-----------------\n", previousAction, room);
 		} else {
-			log.info(
-					"\n-----------------\n" + "Wait for {} concluded in '{}'"
-							+ "\n-----------------\n" + "Waiting {} seconds",
+			log.info("\n-----------------\n" + "Wait for {} concluded in '{}'"
+					+ "\n-----------------\n" + "Waiting {} seconds",
 					previousAction, room, ROOM_ACTIVITY_IN_SECONDS);
 
 			try {
@@ -456,8 +502,8 @@ public abstract class BaseFakeTest {
 			s.newParticipant(FAKE_WR_USER_PREFIX + userSuffix, fakeWRUri, true,
 					true);
 		} catch (Exception e) {
-			log.debug("{}-{}: WR join MCU exception", room,
-					FAKE_WR_USER_PREFIX + userSuffix, e);
+			log.debug("{}-{}: WR join MCU exception", room, FAKE_WR_USER_PREFIX
+					+ userSuffix, e);
 			execExceptions.put("WRJoinRoom-" + room + "-" + FAKE_WR_USER_PREFIX
 					+ userSuffix, e);
 		}
@@ -472,14 +518,13 @@ public abstract class BaseFakeTest {
 			try {
 				FakeSession s = createSession(room);
 				s.newParticipant(FAKE_WR_USER_PREFIX + i,
-						playerFakeWRUris.get(i % playerFakeWRUris.size()), true,
-						true);
+						playerFakeWRUris.get(i % playerFakeWRUris.size()),
+						true, true);
 			} catch (Exception e) {
 				log.debug("{}-{}: WR seq join MCU exception", room,
 						FAKE_WR_USER_PREFIX + i, e);
-				execExceptions.put(
-						"seqWRJoinRoom-" + room + "-" + FAKE_WR_USER_PREFIX + i,
-						e);
+				execExceptions.put("seqWRJoinRoom-" + room + "-"
+						+ FAKE_WR_USER_PREFIX + i, e);
 			}
 		}
 	}
@@ -504,12 +549,14 @@ public abstract class BaseFakeTest {
 						try {
 							FakeSession s = createSession(room);
 							if (kurento == null)
-								s.newParticipant(userPrefix + numTask,
+								s.newParticipant(
+										userPrefix + numTask,
 										playerFakeWRUris.get(numTask
 												% playerFakeWRUris.size()),
 										true, true);
 							else
-								s.newParticipant(userPrefix + numTask,
+								s.newParticipant(
+										userPrefix + numTask,
 										playerFakeWRUris.get(numTask
 												% playerFakeWRUris.size()),
 										true, true, kurento);
@@ -537,15 +584,14 @@ public abstract class BaseFakeTest {
 	protected CountDownLatch parallelWaitActiveLiveWR(final String room,
 			int userThreads, final String userPrefix) {
 		final CountDownLatch waitForLatch = new CountDownLatch(userThreads);
-		parallelTasks(userThreads, userPrefix,
-				"parallelWaitForActiveLive-" + room, execExceptions,
-				new Task() {
-					@Override
-					public void exec(int numTask) throws Exception {
-						getSession(room).getParticipant(userPrefix + numTask)
-								.waitForActiveLive(waitForLatch);
-					}
-				});
+		parallelTasks(userThreads, userPrefix, "parallelWaitForActiveLive-"
+				+ room, execExceptions, new Task() {
+			@Override
+			public void exec(int numTask) throws Exception {
+				getSession(room).getParticipant(userPrefix + numTask)
+						.waitForActiveLive(waitForLatch);
+			}
+		});
 		return waitForLatch;
 	}
 
@@ -579,22 +625,20 @@ public abstract class BaseFakeTest {
 		return parallelLeaveWR(room, FAKE_WR_USERS);
 	}
 
-	protected CountDownLatch parallelLeaveWR(final String room,
-			int userThreads) {
+	protected CountDownLatch parallelLeaveWR(final String room, int userThreads) {
 		return parallelLeaveWR(room, userThreads, FAKE_WR_USER_PREFIX);
 	}
 
-	protected CountDownLatch parallelLeaveWR(final String room, int userThreads,
-			final String userPrefix) {
+	protected CountDownLatch parallelLeaveWR(final String room,
+			int userThreads, final String userPrefix) {
 		final CountDownLatch leaveLatch = new CountDownLatch(userThreads);
 		parallelTasks(userThreads, userPrefix, "parallelWRLeaveRoom-" + room,
 				execExceptions, new Task() {
 					@Override
 					public void exec(int numTask) throws Exception {
 						try {
-							getSession(room)
-									.getParticipant(userPrefix + numTask)
-									.leaveRoom();
+							getSession(room).getParticipant(
+									userPrefix + numTask).leaveRoom();
 						} finally {
 							leaveLatch.countDown();
 						}
@@ -614,8 +658,8 @@ public abstract class BaseFakeTest {
 			int userThreads) {
 		try {
 			if (!waitLatch.await(actionTimeoutInSeconds, TimeUnit.SECONDS))
-				awaitExceptions.put(action,
-						new Exception("Timeout waiting for '" + action + "' of "
+				awaitExceptions.put(action, new Exception(
+						"Timeout waiting for '" + action + "' of "
 								+ userThreads + " tasks (max "
 								+ actionTimeoutInSeconds + "s)"));
 			else
@@ -647,71 +691,50 @@ public abstract class BaseFakeTest {
 					browsers = createBrowsers(numBrowsers, localFiles);
 			}
 			for (int i = joinFrom; i < browsers.size(); i++)
-				joinToRoom(browsers.get(i), CHROME_PREFIX + i, roomName);
+				joinToRoom(browsers.get(i).getWebDriver(), CHROME_PREFIX + i,
+						roomName);
 		} catch (Exception e) {
 			execExceptions.put("chromeBrowser", e);
 			log.debug("Error in joining from browser", e);
 		}
 	}
-	
+
 	protected void leaveChrome() {
 		for (int i = 0; i < browsers.size(); i++)
-			exitFromRoom(CHROME_PREFIX + i, browsers.get(i));
+			exitFromRoom(CHROME_PREFIX + i, browsers.get(i).getWebDriver());
 	}
 
-	protected WebDriver newWebDriver(AudioVideoFile localMedia) {
-		ChromeOptions options = new ChromeOptions();
+	protected Browser newWebDriver(AudioVideoFile localMedia) {
 
-		// This flag avoids granting camera/microphone
-		options.addArguments("--use-fake-ui-for-media-stream");
+		int numBrowser = numBrowsers.getAndIncrement();
 
-		// This flag makes using a synthetic video (green with spinner) in
-		// WebRTC instead of real media from camera/microphone
-		options.addArguments("--use-fake-device-for-media-stream");
+		Browser.Builder builder = new Browser.Builder()
+				.browserType(BrowserType.CHROME).scope(BrowserScope.LOCAL)
+				.serverPort(Integer.parseInt(serverPort)).timeout(1)
+				.webPageType(webPageType);
 
 		if (localMedia != null) {
-			// This flag allows reading local files in video tags
-			options.addArguments("--allow-file-access-from-files");
-			if (localMedia.getVideo() != null)
-				options.addArguments("--use-file-for-fake-video-capture="
-						+ localMedia.getVideo());
-			if (localMedia.getAudio() != null)
-				options.addArguments("--use-file-for-fake-audio-capture="
-						+ localMedia.getAudio());
-		}
-
-		DesiredCapabilities capabilities = new DesiredCapabilities();
-		capabilities.setCapability(ChromeOptions.CAPABILITY, options);
-		capabilities
-				.setBrowserName(DesiredCapabilities.chrome().getBrowserName());
-
-		ExecutorService webExec = Executors.newFixedThreadPool(1);
-		BrowserInit initThread = new BrowserInit(capabilities);
-		webExec.execute(initThread);
-		webExec.shutdown();
-		try {
-			if (!webExec.awaitTermination(WEB_TEST_DRIVER_INIT_THREAD_TIMEOUT,
-					TimeUnit.SECONDS)) {
-				log.warn(
-						"Webdriver init thread timed-out after {}s, will be interrupted",
-						WEB_TEST_DRIVER_INIT_THREAD_TIMEOUT);
-				initThread.interrupt();
-				initThread.join(WEB_TEST_DRIVER_INIT_THREAD_JOIN);
+			if (localMedia.getVideo() != null) {
+				builder.video(localMedia.getVideo());
 			}
-		} catch (InterruptedException e) {
-			log.error("Interrupted exception", e);
-			fail(e.getMessage());
+			// TODO once the option is available in the test framework
+			// if (localMedia.getAudio() != null)
+			// options.addArguments("--use-file-for-fake-audio-capture="
+			// + localMedia.getAudio());
 		}
 
-		return initThread.getBrowser();
+		Browser browser = builder.build();
+		browser.setId("browser-" + numBrowser);
+		browser.init();
+		return browser;
 	}
 
-	protected List<WebDriver> createBrowsers(int numUsers,
+	protected List<Browser> createBrowsers(int numUsers,
 			List<AudioVideoFile> localFiles) throws InterruptedException,
-					ExecutionException, TimeoutException {
+			ExecutionException, TimeoutException {
 
-		final List<WebDriver> browsers = Collections
-				.synchronizedList(new ArrayList<WebDriver>());
+		final List<Browser> browsers = Collections
+				.synchronizedList(new ArrayList<Browser>());
 		if (numUsers == 0)
 			return browsers;
 
@@ -721,8 +744,7 @@ public abstract class BaseFakeTest {
 			int required = numUsers - browsers.size();
 			log.warn("Not enough browsers were created, will retry to "
 					+ "recreate the missing ones: {}", required);
-			parallelBrowserInit(required, browsers.size(), browsers,
-					localFiles);
+			parallelBrowserInit(required, browsers.size(), browsers, localFiles);
 		}
 
 		if (browsers.size() < numUsers)
@@ -731,17 +753,25 @@ public abstract class BaseFakeTest {
 
 		int row = 0;
 		int col = 0;
-		for (WebDriver browser : browsers) {
 
-			browser.manage().window().setSize(new Dimension(
-					WEB_TEST_BROWSER_WIDTH, WEB_TEST_BROWSER_HEIGHT));
-			browser.manage().window()
-					.setPosition(new Point(col * WEB_TEST_BROWSER_WIDTH
-							+ WEB_TEST_LEFT_BAR_WIDTH,
-					row * WEB_TEST_BROWSER_HEIGHT + WEB_TEST_TOP_BAR_WIDTH));
+		for (Browser browser : browsers) {
+
+			browser.getWebDriver()
+					.manage()
+					.window()
+					.setSize(
+							new Dimension(WEB_TEST_BROWSER_WIDTH,
+									WEB_TEST_BROWSER_HEIGHT));
+			browser.getWebDriver()
+					.manage()
+					.window()
+					.setPosition(
+							new Point(col * WEB_TEST_BROWSER_WIDTH
+									+ WEB_TEST_LEFT_BAR_WIDTH, row
+									* WEB_TEST_BROWSER_HEIGHT
+									+ WEB_TEST_TOP_BAR_WIDTH));
 			col++;
-			if (col * WEB_TEST_BROWSER_WIDTH
-					+ WEB_TEST_LEFT_BAR_WIDTH > WEB_TEST_MAX_WIDTH) {
+			if (col * WEB_TEST_BROWSER_WIDTH + WEB_TEST_LEFT_BAR_WIDTH > WEB_TEST_MAX_WIDTH) {
 				col = 0;
 				row++;
 			}
@@ -753,16 +783,17 @@ public abstract class BaseFakeTest {
 
 	protected void closeBrowsers() {
 		if (!browsersClosed && browsers != null && !browsers.isEmpty()) {
-			for (WebDriver browser : browsers)
+			for (Browser browser : browsers)
 				if (browser != null)
 					try {
 						browser.close();
-						browser.quit();
 					} catch (Exception e) {
 						log.warn("Error closing browser", e);
 						fail("Unable to close browser: " + e.getMessage());
 					}
 			browsersClosed = true;
+		} else {
+			log.warn("No browsers to close (close flag: {})", browsersClosed);
 		}
 	}
 
@@ -792,8 +823,9 @@ public abstract class BaseFakeTest {
 								"Verifing element {} exists in browser of user{}",
 								videoElementId, i);
 						try {
-							WebElement video = findElement(getChromeUserName(i),
-									browser, videoElementId);
+							WebElement video = findElement(
+									getChromeUserName(i), browser,
+									videoElementId);
 							if (video == null)
 								fail("Video element " + videoElementId
 										+ " was not found in browser of user"
@@ -828,7 +860,7 @@ public abstract class BaseFakeTest {
 		log.debug("Checked active users: [{}] in {} millis", sb, duration);
 	}
 
-	protected void verify(List<WebDriver> browsers, boolean[] activeChromeUsers,
+	protected void verify(List<Browser> browsers, boolean[] activeChromeUsers,
 			Map<String, Boolean> activeFakeWrUsers) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < activeChromeUsers.length; i++) {
@@ -847,7 +879,7 @@ public abstract class BaseFakeTest {
 		for (int i = 0; i < activeChromeUsers.length; i++) {
 
 			if (activeChromeUsers[i]) {
-				WebDriver browser = browsers.get(i);
+				WebDriver browser = browsers.get(i).getWebDriver();
 				String browserLabel = getChromeUserName(i);
 				String chromeName = CHROME_PREFIX + i;
 
@@ -912,16 +944,18 @@ public abstract class BaseFakeTest {
 					.perform();
 			log.debug("'buttonLeaveRoom' clicked on in {}", label);
 		} catch (ElementNotVisibleException e) {
-			log.warn(
-					"Button 'buttonLeaveRoom' is not visible. Session can't be closed");
+			log.warn("Button 'buttonLeaveRoom' is not visible. Session can't be closed");
 		}
 	}
 
 	protected void joinToRoom(WebDriver userBrowser, String userName,
 			String roomName) {
-		userBrowser.get(appUrl);
-		findElement(userName, userBrowser, "name").sendKeys(userName);
-		findElement(userName, userBrowser, "roomName").sendKeys(roomName);
+		WebElement nameInput = findElement(userName, userBrowser, "name");
+		nameInput.clear();
+		nameInput.sendKeys(userName);
+		WebElement roomInput = findElement(userName, userBrowser, "roomName");
+		roomInput.clear();
+		roomInput.sendKeys(roomName);
 		findElement(userName, userBrowser, "joinBtn").submit();
 	}
 
@@ -949,9 +983,9 @@ public abstract class BaseFakeTest {
 			}
 		}
 		if (i == WEB_TEST_TIMEOUT) {
-			Assert.fail(
-					"Video tag '" + videoTagId + "' is not playing media after "
-							+ WEB_TEST_TIMEOUT + " seconds");
+			Assert.fail("Video tag '" + videoTagId
+					+ "' is not playing media after " + WEB_TEST_TIMEOUT
+					+ " seconds");
 		}
 	}
 
@@ -959,17 +993,16 @@ public abstract class BaseFakeTest {
 		try {
 			userBrowser.findElement(By.id("buttonDisconnect")).click();
 		} catch (ElementNotVisibleException e) {
-			log.warn(
-					"Button 'buttonDisconnect' is not visible. Can't unpublish media.");
+			log.warn("Button 'buttonDisconnect' is not visible. Can't unpublish media.");
 		}
 	}
 
-	protected void unsubscribe(WebDriver userBrowser,
-			String clickableVideoTagId) {
+	protected void unsubscribe(WebDriver userBrowser, String clickableVideoTagId) {
 		try {
 			userBrowser.findElement(By.id(clickableVideoTagId)).click();
 		} catch (ElementNotVisibleException e) {
-			String msg = "Video tag " + clickableVideoTagId
+			String msg = "Video tag "
+					+ clickableVideoTagId
 					+ " is not visible. Can't select video to unsubscribe from.";
 			log.warn(msg);
 			fail(msg);
@@ -977,35 +1010,31 @@ public abstract class BaseFakeTest {
 		try {
 			userBrowser.findElement(By.id("buttonDisconnect")).click();
 		} catch (ElementNotVisibleException e) {
-			log.warn(
-					"Button 'buttonDisconnect' is not visible. Can't unsubscribe from media.");
+			log.warn("Button 'buttonDisconnect' is not visible. Can't unsubscribe from media.");
 		}
 	}
 
 	protected void waitWhileElement(String label, WebDriver browser, String id)
 			throws TimeoutException {
 		try {
-			(new WebDriverWait(browser, WEB_TEST_TIMEOUT,
-					WEB_TEST_FIND_LATENCY))
-							.until(ExpectedConditions
-									.invisibilityOfElementLocated(By.id(id)));
+			(new WebDriverWait(browser, WEB_TEST_TIMEOUT, WEB_TEST_FIND_LATENCY))
+					.until(ExpectedConditions.invisibilityOfElementLocated(By
+							.id(id)));
 		} catch (org.openqa.selenium.TimeoutException e) {
 			log.warn(
 					"Timeout when waiting for element {} to disappear in browser {}",
 					id, label, e);
-			throw new TimeoutException(
-					"Element with id='" + id + "' is present in page after "
-							+ WEB_TEST_TIMEOUT + " seconds");
+			throw new TimeoutException("Element with id='" + id
+					+ "' is present in page after " + WEB_TEST_TIMEOUT
+					+ " seconds");
 		}
 	}
 
-	protected WebElement findElement(String label, WebDriver browser,
-			String id) {
+	protected WebElement findElement(String label, WebDriver browser, String id) {
 		try {
 			return (new WebDriverWait(browser, WEB_TEST_TIMEOUT,
-					WEB_TEST_FIND_LATENCY))
-							.until(ExpectedConditions
-									.presenceOfElementLocated(By.id(id)));
+					WEB_TEST_FIND_LATENCY)).until(ExpectedConditions
+					.presenceOfElementLocated(By.id(id)));
 		} catch (org.openqa.selenium.TimeoutException e) {
 			log.warn(
 					"Timeout when waiting for element {} to exist in browser {}",
@@ -1036,18 +1065,17 @@ public abstract class BaseFakeTest {
 	}
 
 	private void parallelBrowserInit(int required, final int existing,
-			final List<WebDriver> browsers,
-			final List<AudioVideoFile> localFiles) throws InterruptedException,
-					ExecutionException, TimeoutException {
+			final List<Browser> browsers, final List<AudioVideoFile> localFiles)
+			throws InterruptedException, ExecutionException, TimeoutException {
 		Map<String, Exception> exceptions = new HashMap<String, Exception>();
 		parallelTasks(required, "web", "browserInit", exceptions, new Task() {
 
 			@Override
 			public void exec(int numTask) throws Exception {
 				int realNum = existing + numTask;
-				AudioVideoFile localFile = (localFiles != null
-						? localFiles.get(realNum) : null);
-				WebDriver browser = newWebDriver(localFile);
+				AudioVideoFile localFile = (localFiles != null ? localFiles
+						.get(realNum) : null);
+				Browser browser = newWebDriver(localFile);
 				if (browser != null) {
 					browsers.add(browser);
 					log.debug(
@@ -1057,23 +1085,5 @@ public abstract class BaseFakeTest {
 					log.warn("Browser instance #{} found to be null", realNum);
 			}
 		});
-	}
-
-	static class BrowserInit extends Thread {
-		private DesiredCapabilities capabilities;
-		private WebDriver browser;
-
-		BrowserInit(DesiredCapabilities capabilities) {
-			this.capabilities = capabilities;
-		}
-
-		@Override
-		public void run() {
-			browser = new ChromeDriver(capabilities);
-		}
-
-		WebDriver getBrowser() {
-			return browser;
-		}
 	}
 }

@@ -17,6 +17,7 @@ package org.kurento.room.test.demo;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.kurento.room.test.AddRemoveUsersNoSinkVerify;
+import org.kurento.test.browser.WebPageType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
@@ -31,6 +32,6 @@ public class AddRemoveUsersNoSinkVerifyRoomDemoTest extends
 
 	@BeforeClass
 	public static void setupBeforeClass() {
-		appUrl = DEMO_ROOM_APP_URL;
+		webPageType = WebPageType.ROOT;
 	}
 }

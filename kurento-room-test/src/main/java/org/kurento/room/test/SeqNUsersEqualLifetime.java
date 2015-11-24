@@ -37,7 +37,7 @@ public class SeqNUsersEqualLifetime extends RoomTest {
 			throws InterruptedException, ExecutionException, TimeoutException {
 
 		browsers = createBrowsers(2);
-
+		
 		joinToRoom(browsers.get(0).getWebDriver(), USER1_NAME, roomName);
 		joinToRoom(browsers.get(1).getWebDriver(), USER2_NAME, roomName);
 

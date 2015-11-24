@@ -15,6 +15,7 @@ package org.kurento.room.test;
  */
 
 import static org.junit.Assert.fail;
+import io.github.bonigarcia.wdm.ChromeDriverManager;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -55,17 +56,13 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
-
-import io.github.bonigarcia.wdm.ChromeDriverManager;
 
 /**
  * Base class for integration testing of Room API.
@@ -96,18 +93,8 @@ public class RoomTest {
 		}
 	}
 
-	private static String serverPort = PropertiesManager
-			.getProperty("server.port", "8080");
-	private static String serverAddress = PropertiesManager
-			.getProperty("server.address", "127.0.0.1");
-	protected static String serverUriBase = "http://" + serverAddress + ":"
-			+ serverPort;
-
-	protected static final String BASIC_ROOM_APP_URL = serverUriBase
-			+ "/room.html";
-	protected static final String DEMO_ROOM_APP_URL = serverUriBase;
-
-	protected static String appUrl;
+	private static String serverPort = PropertiesManager.getProperty(
+			"server.port", "8080");
 
 	protected static SecureRandom random;
 
@@ -138,9 +125,10 @@ public class RoomTest {
 
 	private static KurentoMediaServerManager kms;
 
+	protected static WebPageType webPageType = WebPageType.ROOM;
+
 	@BeforeClass
 	public static void setupClass() throws IOException {
-		appUrl = BASIC_ROOM_APP_URL;
 		// Chrome binary
 		ChromeDriverManager.getInstance().setup();
 
@@ -187,7 +175,7 @@ public class RoomTest {
 		Browser browser = new Browser.Builder().browserType(BrowserType.CHROME)
 				.scope(BrowserScope.LOCAL)
 				.serverPort(Integer.parseInt(serverPort)).timeout(1)
-				.webPageType(WebPageType.ROOM).build();
+				.webPageType(webPageType).build();
 		browser.setId("browser-" + numBrowser);
 		browser.init();
 		return browser;
@@ -200,15 +188,18 @@ public class RoomTest {
 					.perform();
 			log.debug("'buttonLeaveRoom' clicked on in {}", label);
 		} catch (ElementNotVisibleException e) {
-			log.warn(
-					"Button 'buttonLeaveRoom' is not visible. Session can't be closed");
+			log.warn("Button 'buttonLeaveRoom' is not visible. Session can't be closed");
 		}
 	}
 
 	protected void joinToRoom(WebDriver userBrowser, String userName,
 			String roomName) {
-		findElement(userName, userBrowser, "name").sendKeys(userName);
-		findElement(userName, userBrowser, "roomName").sendKeys(roomName);
+		WebElement nameInput = findElement(userName, userBrowser, "name");
+		nameInput.clear();
+		nameInput.sendKeys(userName);
+		WebElement roomInput = findElement(userName, userBrowser, "roomName");
+		roomInput.clear();
+		roomInput.sendKeys(roomName);
 		findElement(userName, userBrowser, "joinBtn").submit();
 	}
 
@@ -233,9 +224,9 @@ public class RoomTest {
 			}
 		}
 		if (i == TEST_TIMEOUT) {
-			Assert.fail(
-					"Video tag '" + videoTagId + "' is not playing media after "
-							+ TEST_TIMEOUT + " seconds");
+			Assert.fail("Video tag '" + videoTagId
+					+ "' is not playing media after " + TEST_TIMEOUT
+					+ " seconds");
 		}
 	}
 
@@ -243,17 +234,16 @@ public class RoomTest {
 		try {
 			userBrowser.findElement(By.id("buttonDisconnect")).click();
 		} catch (ElementNotVisibleException e) {
-			log.warn(
-					"Button 'buttonDisconnect' is not visible. Can't unpublish media.");
+			log.warn("Button 'buttonDisconnect' is not visible. Can't unpublish media.");
 		}
 	}
 
-	protected void unsubscribe(WebDriver userBrowser,
-			String clickableVideoTagId) {
+	protected void unsubscribe(WebDriver userBrowser, String clickableVideoTagId) {
 		try {
 			userBrowser.findElement(By.id(clickableVideoTagId)).click();
 		} catch (ElementNotVisibleException e) {
-			String msg = "Video tag " + clickableVideoTagId
+			String msg = "Video tag "
+					+ clickableVideoTagId
 					+ " is not visible. Can't select video to unsubscribe from.";
 			log.warn(msg);
 			fail(msg);
@@ -261,32 +251,30 @@ public class RoomTest {
 		try {
 			userBrowser.findElement(By.id("buttonDisconnect")).click();
 		} catch (ElementNotVisibleException e) {
-			log.warn(
-					"Button 'buttonDisconnect' is not visible. Can't unsubscribe from media.");
+			log.warn("Button 'buttonDisconnect' is not visible. Can't unsubscribe from media.");
 		}
 	}
 
 	protected void waitWhileElement(String label, WebDriver browser, String id)
 			throws TimeoutException {
 		try {
-			(new WebDriverWait(browser, TEST_TIMEOUT, FIND_LATENCY)).until(
-					ExpectedConditions.invisibilityOfElementLocated(By.id(id)));
+			(new WebDriverWait(browser, TEST_TIMEOUT, FIND_LATENCY))
+					.until(ExpectedConditions.invisibilityOfElementLocated(By
+							.id(id)));
 		} catch (org.openqa.selenium.TimeoutException e) {
 			log.warn(
 					"Timeout when waiting for element {} to disappear in browser {}",
 					id, label, e);
-			throw new TimeoutException(
-					"Element with id='" + id + "' is present in page after "
-							+ TEST_TIMEOUT + " seconds");
+			throw new TimeoutException("Element with id='" + id
+					+ "' is present in page after " + TEST_TIMEOUT + " seconds");
 		}
 	}
 
-	protected WebElement findElement(String label, WebDriver browser,
-			String id) {
+	protected WebElement findElement(String label, WebDriver browser, String id) {
 		try {
 			return (new WebDriverWait(browser, TEST_TIMEOUT, FIND_LATENCY))
-					.until(ExpectedConditions
-							.presenceOfElementLocated(By.id(id)));
+					.until(ExpectedConditions.presenceOfElementLocated(By
+							.id(id)));
 		} catch (org.openqa.selenium.TimeoutException e) {
 			log.warn(
 					"Timeout when waiting for element {} to exist in browser {}",
@@ -315,7 +303,7 @@ public class RoomTest {
 
 	public void iterParallelUsers(int numUsers, int iterations,
 			final UserLifecycle user) throws InterruptedException,
-					ExecutionException, TimeoutException {
+			ExecutionException, TimeoutException {
 
 		int totalExecutions = iterations * numUsers;
 		ExecutorService threadPool = Executors
@@ -336,8 +324,8 @@ public class RoomTest {
 					futures.add(exec.submit(new Callable<Void>() {
 						@Override
 						public Void call() throws Exception {
-							Thread.currentThread()
-									.setName("it" + it + "|browser" + numUser);
+							Thread.currentThread().setName(
+									"it" + it + "|browser" + numUser);
 							user.run(numUser, it, browser.getWebDriver());
 							return null;
 						}
@@ -386,9 +374,12 @@ public class RoomTest {
 
 			browser.getWebDriver().manage().window()
 					.setSize(new Dimension(BROWSER_WIDTH, BROWSER_HEIGHT));
-			browser.getWebDriver().manage().window()
-					.setPosition(new Point(col * BROWSER_WIDTH + LEFT_BAR_WIDTH,
-							row * BROWSER_HEIGHT + TOP_BAR_WIDTH));
+			browser.getWebDriver()
+					.manage()
+					.window()
+					.setPosition(
+							new Point(col * BROWSER_WIDTH + LEFT_BAR_WIDTH, row
+									* BROWSER_HEIGHT + TOP_BAR_WIDTH));
 			col++;
 			if (col * BROWSER_WIDTH + LEFT_BAR_WIDTH > MAX_WIDTH) {
 				col = 0;
@@ -402,7 +393,7 @@ public class RoomTest {
 
 	private void parallelBrowserInit(int required, final int existing,
 			final List<Browser> browsers) throws InterruptedException,
-					ExecutionException, TimeoutException {
+			ExecutionException, TimeoutException {
 		parallelTask(required, new Function<Integer, Void>() {
 			@Override
 			public Void apply(Integer num) {
@@ -412,8 +403,8 @@ public class RoomTest {
 					log.debug("Created and added browser #{} to browsers list",
 							existing + num);
 				} else
-					log.warn("Browser instance #{} found to be null",
-							existing + num);
+					log.warn("Browser instance #{} found to be null", existing
+							+ num);
 				return null;
 			}
 		});
@@ -446,8 +437,7 @@ public class RoomTest {
 					exec.take().get();
 					log.debug("Job completed ({}/{})", i + 1, num);
 				} catch (ExecutionException e) {
-					log.error("Execution exception of job {}/{}", i + 1, num,
-							e);
+					log.error("Execution exception of job {}/{}", i + 1, num, e);
 					throw e;
 				}
 			}
@@ -483,6 +473,8 @@ public class RoomTest {
 						fail("Unable to close browser: " + e.getMessage());
 					}
 			browsersClosed = true;
+		} else {
+			log.warn("No browsers to close (close flag: {})", browsersClosed);
 		}
 	}
 
@@ -558,24 +550,6 @@ public class RoomTest {
 			cdl[i] = new CountDownLatch(numUsers);
 		}
 		return cdl;
-	}
-
-	static class BrowserInit extends Thread {
-		private DesiredCapabilities capabilities;
-		private WebDriver browser;
-
-		BrowserInit(DesiredCapabilities capabilities) {
-			this.capabilities = capabilities;
-		}
-
-		@Override
-		public void run() {
-			browser = new ChromeDriver(capabilities);
-		}
-
-		WebDriver getBrowser() {
-			return browser;
-		}
 	}
 
 }

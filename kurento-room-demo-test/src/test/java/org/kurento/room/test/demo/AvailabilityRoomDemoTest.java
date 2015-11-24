@@ -18,6 +18,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kurento.room.test.RoomTest;
+import org.kurento.test.browser.WebPageType;
 import org.openqa.selenium.WebDriver;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -29,7 +30,7 @@ public class AvailabilityRoomDemoTest extends RoomTest {
 
 	@BeforeClass
 	public static void setupBeforeClass() {
-		appUrl = DEMO_ROOM_APP_URL;
+		webPageType = WebPageType.ROOT;
 	}
 
 	@Test

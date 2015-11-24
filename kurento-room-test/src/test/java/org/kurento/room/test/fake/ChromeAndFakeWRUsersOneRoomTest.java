@@ -13,7 +13,6 @@
  */
 package org.kurento.room.test.fake;
 
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.kurento.room.test.BasicTestConfig;
 import org.slf4j.LoggerFactory;
@@ -25,9 +24,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @BasicTestConfig
-@Ignore
-public class ChromeAndFakeWRUsersOneRoomTest
-		extends ChromeAndFakeWRUsersOneRoom {
+public class ChromeAndFakeWRUsersOneRoomTest extends
+		ChromeAndFakeWRUsersOneRoom {
 
 	public ChromeAndFakeWRUsersOneRoomTest() {
 		super(LoggerFactory.getLogger(ChromeAndFakeWRUsersOneRoomTest.class));

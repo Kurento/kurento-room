@@ -36,9 +36,9 @@ public class FakeWRUsersOneRoom extends BaseFakeTest {
 	/**
 	 * Total fake WR users in the test: {@value} .
 	 */
-	public final static int WR_USERNUM_VALUE = 6;
+	public final static int WR_USERNUM_VALUE = 4;
 
-	private final static int ROOM_ACTIVITY_IN_MINUTES = 5;
+	private final static int ROOM_ACTIVITY_IN_MINUTES = 2;
 
 	public FakeWRUsersOneRoom(Logger log) {
 		super(log);

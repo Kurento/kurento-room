@@ -14,10 +14,10 @@
 package org.kurento.room.test.demo.fake;
 
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.kurento.room.test.demo.DemoTestConfig;
 import org.kurento.room.test.fake.ChromeAndFakeWRUsersOneRoom;
+import org.kurento.test.browser.WebPageType;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -27,9 +27,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @DemoTestConfig
-@Ignore
-public class ChromeAndFakeWRUsersOneRoomDemoTest
-		extends ChromeAndFakeWRUsersOneRoom {
+public class ChromeAndFakeWRUsersOneRoomDemoTest extends
+		ChromeAndFakeWRUsersOneRoom {
 
 	public ChromeAndFakeWRUsersOneRoomDemoTest() {
 		super(LoggerFactory
@@ -38,7 +37,7 @@ public class ChromeAndFakeWRUsersOneRoomDemoTest
 
 	@BeforeClass
 	public static void setupBeforeClass() {
-		appUrl = DEMO_ROOM_APP_URL;
+		webPageType = WebPageType.ROOT;
 	}
 
 }

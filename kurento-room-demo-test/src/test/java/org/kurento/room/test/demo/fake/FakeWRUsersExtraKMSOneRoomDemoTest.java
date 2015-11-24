@@ -13,10 +13,11 @@
  */
 package org.kurento.room.test.demo.fake;
 
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.kurento.room.test.demo.DemoTestConfig;
 import org.kurento.room.test.fake.FakeWRUsersExtraKMSOneRoom;
+import org.kurento.test.browser.WebPageType;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -26,13 +27,16 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @DemoTestConfig
-@Ignore
-public class FakeWRUsersExtraKMSOneRoomDemoTest
-		extends FakeWRUsersExtraKMSOneRoom {
+public class FakeWRUsersExtraKMSOneRoomDemoTest extends
+		FakeWRUsersExtraKMSOneRoom {
 
 	public FakeWRUsersExtraKMSOneRoomDemoTest() {
-		super(LoggerFactory
-				.getLogger(FakeWRUsersExtraKMSOneRoomDemoTest.class));
+		super(LoggerFactory.getLogger(FakeWRUsersExtraKMSOneRoomDemoTest.class));
+	}
+
+	@BeforeClass
+	public static void setupBeforeClass() {
+		webPageType = WebPageType.ROOT;
 	}
 
 }

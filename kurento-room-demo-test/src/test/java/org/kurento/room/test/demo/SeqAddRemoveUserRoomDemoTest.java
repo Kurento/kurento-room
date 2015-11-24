@@ -15,9 +15,9 @@
 package org.kurento.room.test.demo;
 
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.kurento.room.test.SeqAddRemoveUser;
+import org.kurento.test.browser.WebPageType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
@@ -27,12 +27,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @DemoTestConfig
-@Ignore
 public class SeqAddRemoveUserRoomDemoTest extends SeqAddRemoveUser {
 
 	@BeforeClass
 	public static void setupBeforeClass() {
-		appUrl = DEMO_ROOM_APP_URL;
+		webPageType = WebPageType.ROOT;
 	}
-
 }
