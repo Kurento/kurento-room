@@ -67,7 +67,6 @@ public class ChromeAndFakeWRUsersOneRoom extends BaseFakeTest {
 		if (!execExceptions.isEmpty())
 			failWithExceptions();
 
-		// FIXME test fails in Jenkins when the video src is not y4m
 		if (chromeSrcFiles.isEmpty())
 			joinChromeSpinner(CHROME_SPINNER_USERS);
 		else

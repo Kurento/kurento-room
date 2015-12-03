@@ -201,6 +201,7 @@ public class RoomTest {
 		roomInput.clear();
 		roomInput.sendKeys(roomName);
 		findElement(userName, userBrowser, "joinBtn").submit();
+		log.debug("Clicked on 'joinBtn' in {}", userName);
 	}
 
 	@SuppressWarnings("unused")
