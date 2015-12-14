@@ -181,7 +181,7 @@ public abstract class BaseFakeTest {
 
     String kmsAutostart = PropertiesManager.getProperty(TestConfiguration.KMS_AUTOSTART_PROP,
         TestConfiguration.KMS_AUTOSTART_DEFAULT);
-    log.debug("KMS autostart property {}={}", TestConfiguration.KMS_AUTOSTART_PROP, kmsAutostart);
+    log.info("KMS autostart property {}={}", TestConfiguration.KMS_AUTOSTART_PROP, kmsAutostart);
 
     if (!kmsAutostart.equals(TestConfiguration.AUTOSTART_FALSE_VALUE)) {
       if (kms == null) {
