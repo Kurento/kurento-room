@@ -27,9 +27,9 @@ means of WebRTC. These modules are:
   * `kurento-room-demo-test` - integration and functionality tests for the demo 
     application.
 
-There is extensive documentation on each of these components together with a
-tutorial based on the Room demo. This documentation can be easily generated in 
-HTML format from the [kurento-room-doc](./kurento-room-doc/README.md) project.
+There is extensive [documentation][doc-kurento-room] on each of these components 
+together with a tutorial based on the Room demo. These docs are generated from a
+separate [Kurento project][GitHub Doc Kurento Room].
 
 Dependencies
 ------------
@@ -81,7 +81,8 @@ Kurento *master* is the development branch):
 ```
 $ git clone git@github.com:Kurento/kurento-room.git
 $ cd kurento-room
-$ git checkout 6.1.0
+# checkout the latest tag
+$ git checkout $(git describe --abbrev=0 --tags)
 $ cd kurento-room-demo
 $ mvn compile exec:java
 ```
@@ -255,3 +256,5 @@ Before asking for support, please read first the [Kurento Netiquette Guidelines]
 [readthedocs.org]: http://kurento.readthedocs.org/
 [Open API specification]: http://kurento.github.io/doc-kurento/
 [apiary.io]: http://docs.streamoriented.apiary.io/
+[GitHub Doc Kurento Room]: https://github.com/Kurento/doc-kurento-room-readthedocs
+[doc-kurento-room]: http://www.kurento.org/docs/room-current/

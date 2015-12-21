@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.kurento</groupId>
 		<artifactId>kurento-room</artifactId>
-		<version>6.2.0</version>
+		<version>6.2.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>kurento-room-demo-test</artifactId>
 	<packaging>jar</packaging>
@@ -47,12 +47,10 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-room-demo</artifactId>
-			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-room-test</artifactId>
-			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
