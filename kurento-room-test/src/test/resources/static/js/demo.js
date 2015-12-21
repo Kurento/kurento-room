@@ -10,7 +10,7 @@ function register() {
 	var userId = document.getElementById('name').value;
 	var roomId = document.getElementById('roomName').value;
 
-	var wsUri = 'ws://' + location.host + '/room';
+	var wsUri = 'wss://' + location.host + '/room';
 
 	kurento = KurentoRoom(wsUri, function(error, kurento) {
 

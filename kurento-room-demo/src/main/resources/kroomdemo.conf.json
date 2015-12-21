@@ -3,7 +3,7 @@
       "uris": ["ws://localhost:8888/kurento", "ws://127.0.0.1:8888/kurento"]
    },
    "app": {
-      "uri": "http://localhost:8080/"
+      "uri": "https://localhost:8443/"
    },
    "kurento": {
       "client": {
