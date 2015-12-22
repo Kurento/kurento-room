@@ -5,13 +5,12 @@ Copyright © 2013-2016 [Kurento]. Licensed under [LGPL v2.1 License].
 kurento-room-server
 ======================
 
-Kurento Room Server is a Kurento service for implementing group 
-communications applications based on WebRTC.
-Provides a WebSocket API through which clients using the Javascript 
-library KurentoRoom.js (included as well) can interact with the Room API.
+Kurento Room Server provides group communication capabilities
+based in WebRTC. Client applications can access the Room API using the
+Javascript library KurentoRoom.js, included in this project.
  
-Kurento Room Demo is provided as an example on how to implement a room
-application using the services from Kurento Room Server. 
+Kurento Room Demo is also provided as an example about how to implement room
+applications based in Kurento Room Server. 
 
 What is Kurento
 ---------------
