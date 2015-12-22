@@ -130,3 +130,5 @@ Before asking for support, please read first the [Kurento Netiquette Guidelines]
 [readthedocs.org]: http://kurento.readthedocs.org/
 [Open API specification]: http://kurento.github.io/doc-kurento/
 [apiary.io]: http://docs.streamoriented.apiary.io/
+[GitHub Doc Kurento Room]: https://github.com/Kurento/doc-kurento-room-readthedocs
+[doc-kurento-room]: http://www.kurento.org/docs/room-current/
