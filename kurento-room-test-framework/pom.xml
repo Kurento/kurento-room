@@ -7,11 +7,16 @@
 		<artifactId>kurento-room</artifactId>
 		<version>6.2.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>kurento-room-demo-test</artifactId>
+
+	<artifactId>kurento-room-test-framework</artifactId>
 	<packaging>jar</packaging>
 
-	<name>Kurento Room Demo Test</name>
-	<description>Kurento Room Demo integration tests</description>
+	<name>Kurento Room Test Framework</name>
+	<description>
+			Kurento Room Tests Framework
+
+			This project contains the test framework for the kurento-room projects
+	</description>
 	<url>http://www.kurento.org/docs/${project.version}</url>
 
 	<licenses>
@@ -45,19 +50,31 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-demo</artifactId>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-test-framework</artifactId>
-			<scope>test</scope>
+			<artifactId>kurento-room-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-test</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-log4j</artifactId>
 		</dependency>
 	</dependencies>
-
 </project>
-

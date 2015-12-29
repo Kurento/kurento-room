@@ -1,0 +1,43 @@
+/*
+ * (C) Copyright 2015 Kurento (http://kurento.org/)
+ *
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the GNU Lesser General Public License (LGPL)
+ * version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+package org.kurento.room.test.demo.fake;
+
+import java.lang.invoke.MethodHandles;
+import java.util.Collection;
+
+import org.junit.runners.Parameterized.Parameters;
+import org.kurento.room.test.fake.MixedUsers;
+import org.kurento.test.browser.WebPageType;
+
+/**
+ * @see MixedUsers
+ *
+ * @since 6.0.0
+ * @author Radu Tom Vlad (rvlad@naevatec.com)
+ */
+public class MixedUsersDemoTest extends MixedUsers {
+
+  @Override
+  public void setupBrowserTest() throws InterruptedException {
+    webPageType = WebPageType.ROOT;
+    super.setupBrowserTest();
+  }
+
+  @Parameters(name = "{index}: {0}")
+  public static Collection<Object[]> data() {
+    return localChromes(MethodHandles.lookup().lookupClass().getSimpleName(), CHROME_SPINNER_USERS,
+        WebPageType.ROOT);
+  }
+
+}

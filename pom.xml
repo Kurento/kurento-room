@@ -5,10 +5,11 @@
 	<parent>
 		<groupId>org.kurento</groupId>
 		<artifactId>kurento-parent-pom</artifactId>
-		<version>6.2.1-SNAPSHOT</version>
+		<version>6.2.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>kurento-room</artifactId>
+	<version>6.2.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Kurento Room</name>
@@ -47,6 +48,9 @@
 	</developers>
 
 	<properties>
+		<!-- Kurento versions -->
+		<version.kurento.room>6.2.1-SNAPSHOT</version.kurento.room>
+
 		<kurento-room.scm.url>https://github.com/Kurento/kurento-room</kurento-room.scm.url>
 		<kurento-room.scm.connection>git@github.com:Kurento/kurento-room.git</kurento-room.scm.connection>
 	</properties>
@@ -63,9 +67,9 @@
 				<module>kurento-room-client</module>
 				<module>kurento-room-client-js</module>
 				<module>kurento-room-demo</module>
+				<module>kurento-room-test-framework</module>
 				<module>kurento-room-test</module>
 				<module>kurento-room-demo-test</module>
-				<!--<module>kurento-room-doc</module>-->
 			</modules>
 		</profile>
 		<profile>
@@ -75,6 +79,7 @@
 				<module>kurento-room-server</module>
                 <module>kurento-room-client</module>
 				<module>kurento-room-client-js</module>
+				<module>kurento-room-test-framework</module>
 			</modules>
 		</profile>
 	</profiles>
@@ -84,37 +89,37 @@
 			<dependency>
 				<groupId>org.kurento</groupId>
 				<artifactId>kurento-room-sdk</artifactId>
-				<version>${project.version}</version>
+				<version>${version.kurento.room}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.kurento</groupId>
 				<artifactId>kurento-room-server</artifactId>
-				<version>${project.version}</version>
+				<version>${version.kurento.room}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-client</artifactId>
+				<version>${version.kurento.room}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.kurento</groupId>
 				<artifactId>kurento-room-client-js</artifactId>
-				<version>${project.version}</version>
+				<version>${version.kurento.room}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.kurento</groupId>
 				<artifactId>kurento-room-demo</artifactId>
-				<version>${project.version}</version>
+				<version>${version.kurento.room}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-test-framework</artifactId>
+				<version>${version.kurento.room}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.kurento</groupId>
 				<artifactId>kurento-room-test</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.kurento</groupId>
-				<artifactId>kurento-room-demo-test</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.kurento</groupId>
-				<artifactId>kurento-room-doc</artifactId>
-				<version>${project.version}</version>
+				<version>${version.kurento.room}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
