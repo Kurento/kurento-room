@@ -24,16 +24,16 @@ import org.kurento.client.KurentoClient;
 import org.kurento.client.KurentoConnectionListener;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.room.test.RoomFunctionalFakeTest;
+import org.kurento.room.test.config.RoomTestConfiguration;
 import org.kurento.test.browser.WebPage;
-import org.kurento.test.config.TestConfiguration;
 
 /**
  * Tests multiple fake WebRTC users concurrently joining the same room. Some of them are built on a
  * pipeline from an extra KMS instance. (the config key for the WS URI of this instance is
- * {@link TestConfiguration#KMS_WS_URI_PROP} {@code + ".extra"}, with the default value
- * <em>ws://amazon.kurento.com:8888/kurento</em>)
+ * {@link RoomTestConfiguration#EXTRA_KMS_WS_URI_PROP}, with the default value
+ * {@link RoomTestConfiguration#EXTRA_KMS_WS_URI_DEFAULT})
  *
- * @see TestConfiguration#KMS_WS_URI_PROP
+ * @see RoomTestConfiguration#EXTRA_KMS_WS_URI_PROP
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  * @since 6.2.1
  */
@@ -42,11 +42,11 @@ public class ExtraKmsFakeUsers extends RoomFunctionalFakeTest<WebPage> {
   public final static int NUM_USERS = 0;
 
   public static String[] relativeUris = { "/video/filter/fiwarecut.webm",
-    "/video/filter/fiwarecut_30.webm", "/video/filter/street.webm" };
+      "/video/filter/fiwarecut_30.webm", "/video/filter/street.webm" };
 
   public static String[] extraRelativeUris = { "/video/filter/plates.webm" };
 
-  public String testExtraFakeKmsWsUri;// = "ws://amazon.kurento.com:8888/kurento";
+  public String testExtraFakeKmsWsUri;
 
   public KurentoClient testExtraFakeKurento;
 
@@ -79,23 +79,23 @@ public class ExtraKmsFakeUsers extends RoomFunctionalFakeTest<WebPage> {
     if (testExtraFakeKurento == null) {
       testExtraFakeKurento = KurentoClient.create(testExtraFakeKmsWsUri,
           new KurentoConnectionListener() {
-        @Override
-        public void connected() {
-        }
+            @Override
+            public void connected() {
+            }
 
-        @Override
-        public void connectionFailed() {
-        }
+            @Override
+            public void connectionFailed() {
+            }
 
-        @Override
-        public void disconnected() {
-          testExtraFakeKurento = null;
-        }
+            @Override
+            public void disconnected() {
+              testExtraFakeKurento = null;
+            }
 
-        @Override
-        public void reconnected(boolean sameServer) {
-        }
-      });
+            @Override
+            public void reconnected(boolean sameServer) {
+            }
+          });
     }
 
     return testExtraFakeKurento;

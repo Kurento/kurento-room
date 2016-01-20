@@ -42,6 +42,7 @@ import org.kurento.test.config.BrowserScope;
 import org.kurento.test.config.Protocol;
 import org.kurento.test.docker.Docker;
 import org.kurento.test.services.FakeKmsService;
+import org.kurento.test.services.KmsService;
 import org.kurento.test.services.Service;
 import org.kurento.test.services.WebServerService;
 import org.kurento.test.utils.Shell;
@@ -54,12 +55,12 @@ import org.kurento.test.utils.Shell;
  */
 public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBrowserTest<W> {
 
+  public static @Service(3) KmsService fakeKms = new FakeKmsService();
+
   public static long JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 30;
   public static long ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS = 180;
   public static long ROOM_ACTIVITY_IN_SECONDS = 120;
   public static long LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 10;
-
-  public static @Service(3) FakeKmsService fakeKms = new FakeKmsService();
 
   public static String testFiles = KurentoTest.getTestFilesPath();
 

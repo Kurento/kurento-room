@@ -49,11 +49,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.kurento</groupId>
-			<artifactId>kurento-jsonrpc-server</artifactId>
+			<artifactId>kurento-jsonrpc-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-server</artifactId>
+			<artifactId>kurento-room-sdk</artifactId>
 		</dependency>
 	</dependencies>
 

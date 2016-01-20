@@ -102,8 +102,6 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
 
   }
 
-  public static final int CATEGORY_WEBAPP_SERVICE = 99;
-
   public static long TASKS_TIMEOUT_IN_MINUTES = 15 * 60;
 
   public static int POLLING_LATENCY = 100;
@@ -139,14 +137,13 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
     }
   }
 
-  public static @Service(CATEGORY_WEBAPP_SERVICE) WebServerService webServer = new WebServerService(
-      webServerClass);
-
-  public WebPageType webPageType = WebPageType.ROOM;
+  public static @Service(99) WebServerService webServer = new WebServerService(webServerClass);
 
   public static int testTimeout;
 
   public static SecureRandom random = new SecureRandom();
+
+  public WebPageType webPageType = WebPageType.ROOM;
 
   public int PLAY_TIME = 5; // seconds
 
