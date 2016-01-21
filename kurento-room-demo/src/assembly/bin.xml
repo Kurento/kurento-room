@@ -11,17 +11,73 @@
 	<files>
 		<file>
 			<source>target/${project.artifactId}-${project.version}.jar</source>
-			<outputDirectory>lib</outputDirectory>
-			<!-- <destName>${project.artifactId}.jar</destName> -->
-			<destName>kroomdemo.jar</destName>
+			<outputDirectory>files</outputDirectory>
+			<destName>${project.artifactId}.jar</destName>
+		</file>
+		
+		<!-- system installation files -->
+		<file>
+			<source>package/sysfiles/application.conf</source>
+			<outputDirectory>sysfiles</outputDirectory>
+			<destName>${project.artifactId}.conf</destName>
+			<filtered>true</filtered>
+		</file>
+		<file>
+			<source>package/sysfiles/log4j.properties</source>
+			<outputDirectory>sysfiles</outputDirectory>
+			<destName>${project.artifactId}-log4j.properties</destName>
+			<filtered>true</filtered>
+		</file>
+		
+		<!-- run at user level -->
+		<file>
+			<source>package/files/application.conf</source>
+			<outputDirectory>files</outputDirectory>
+			<destName>${project.artifactId}.conf</destName>
+			<filtered>true</filtered>
+		</file>
+		<file>
+			<source>package/files/log4j.properties</source>
+			<outputDirectory>files</outputDirectory>
+			<destName>${project.artifactId}-log4j.properties</destName>
+			<filtered>true</filtered>
+		</file>
+		
+		<!-- shared files -->
+		<file>
+			<source>package/files/app.conf.json</source>
+			<outputDirectory>files</outputDirectory>
+			<destName>${project.artifactId}.conf.json</destName>
+			<filtered>true</filtered>
+		</file>
+		<file>
+			<source>package/files/keystore.jks</source>
+			<outputDirectory>files</outputDirectory>
+			<destName>keystore.jks</destName>
+			<filtered>false</filtered>
 		</file>
 	</files>
 
 	<fileSets>
 		<fileSet>
 			<directory>package</directory>
-			<!-- <filtered>true</filtered> -->
 			<outputDirectory></outputDirectory>
+			<excludes>
+				<exclude>sysfiles/application.conf</exclude>
+				<exclude>sysfiles/log4j.properties</exclude>
+				<exclude>files/application.conf</exclude>
+				<exclude>files/log4j.properties</exclude>
+				<exclude>files/app.conf.json</exclude>
+				<exclude>files/keystore.jks</exclude>
+			</excludes>
+			<filtered>true</filtered>
+		</fileSet>
+		<fileSet> <!-- empty dir -->
+			<directory>package</directory>
+			<outputDirectory>logs</outputDirectory>
+			<excludes>
+				<exclude>**/*</exclude>
+			</excludes>
 		</fileSet>
 	</fileSets>
 </assembly>

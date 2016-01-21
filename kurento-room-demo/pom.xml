@@ -70,6 +70,7 @@
 				<configuration>
 					<mainClass>${start-class}</mainClass>
 					<layout>ZIP</layout>
+					<executable>true</executable>
 				</configuration>
 				<executions>
 					<execution>

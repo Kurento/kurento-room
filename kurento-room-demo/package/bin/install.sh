@@ -1,53 +1,64 @@
-#!/bin/sh
+#!/bin/bash
 
-# Kurento Room Demo installer for Ubuntu 14.04
+# ${project.description} installer for Ubuntu >= 14.04
 if [ `id -u` -ne 0 ]; then
     echo ""
-    echo "Only root can start Kurento Room Demo server"
+    echo "Only root can start Kurento"
     echo ""
     exit 1
 fi
 
-KROOMDEMO_HOME=$(dirname $(dirname $(readlink -f $0)))
+APP_HOME=$(dirname $(dirname $(readlink -f $0)))
+APP_NAME=${project.artifactId}
 
-# Create directories
-mkdir -p /etc/kurento/
+useradd -d /var/kurento/ kurento
+
+SYSTEMD=$(pidof systemd && echo "systemd" || echo "other")
+
+# Install binaries
 mkdir -p /var/lib/kurento
-mkdir -p /var/log/kurento-media-server && chown nobody /var/log/kurento-media-server
+chown kurento /var/lib/kurento
+install -o kurento -g root $APP_HOME/files/$APP_NAME.jar /var/lib/kurento/
+install -o kurento -g root $APP_HOME/sysfiles/$APP_NAME.conf /var/lib/kurento/
+install -o kurento -g root $APP_HOME/files/keystore.jks /var/lib/kurento/
+sudo ln -s /var/lib/kurento/$APP_NAME.jar /etc/init.d/$APP_NAME
+mkdir -p /etc/kurento/
+install -o kurento -g root $APP_HOME/files/$APP_NAME.conf.json /etc/kurento/
+install -o kurento -g root $APP_HOME/sysfiles/$APP_NAME-log4j.properties /etc/kurento/
 
-# Install binary & config
-install -o root -g root -m 755 $KROOMDEMO_HOME/bin/start.sh /usr/bin/kroomdemo
-install -o root -g root $KROOMDEMO_HOME/lib/kroomdemo.jar /var/lib/kurento/kroomdemo.jar
-install -o root -g root $KROOMDEMO_HOME/config/kroomdemo.conf.json /etc/kurento/kroomdemo.conf.json
-install -o root -g root $KROOMDEMO_HOME/config/kroomdemo-log4j.properties /etc/kurento/kroomdemo-log4j.properties
+mkdir -p /var/log/kurento-media-server
+chown kurento /var/log/kurento-media-server
 
-DIST=$(lsb_release -i | awk '{print $3}')
-[ -z "$DIST" ] && { echo "Unable to get distribution information"; exit 1; } 
-case "$DIST" in
-    Ubuntu)
-        mkdir -p /etc/default
-        echo "# Defaults for KROOMDEMO initscript" > /etc/default/kroomdemo
-        echo "# sourced by /etc/init.d/kroomdemo" >> /etc/default/kroomdemo
-        echo "# installed at /etc/default/kroomdemo by the maintainer scripts" >> /etc/default/kroomdemo
-        echo "" >> /etc/default/kroomdemo
-        echo "#" >> /etc/default/kroomdemo
-        echo "# This is a POSIX shell fragment" >> /etc/default/kroomdemo
-        echo "#" >> /etc/default/kroomdemo  
-        echo "" >> /etc/default/kroomdemo
-        echo "# Commment next line to disable KROOMDEMO daemon" >> /etc/default/kroomdemo
-        echo "START_DAEMON=true" >> /etc/default/kroomdemo
-        echo "" >> /etc/default/kroomdemo
-        echo "# Whom the daemons should run as" >> /etc/default/kroomdemo
-        echo "DAEMON_USER=nobody" >> /etc/default/kroomdemo
-        
-        install -o root -g root -m 755 $KROOMDEMO_HOME/support-files/kroomdemo.sh /etc/init.d/kroomdemo
-        update-rc.d kroomdemo defaults
-        /etc/init.d/kroomdemo restart
-        ;;
-    CentOS)
-        install -o root -g root -m  644 $KROOMDEMO_HOME/support-files/kroomdemo.service /usr/lib/systemd/system/kroomdemo.service
-        systemctl daemon-reload
-        systemctl enable kroomdemo.service
-        systemctl restart kroomdemo
-        ;;
-esac
+
+if [[ "$SYSTEMD" != "other" ]]; then
+	install -o root -g root $APP_HOME/sysfiles/systemd.service /etc/systemd/system/$APP_NAME.service
+
+	sudo systemctl daemon-reload
+
+	# enable at startup
+	systemctl enable $APP_NAME
+
+	# start service
+	systemctl restart $APP_NAME
+else
+	# Create defaults
+	mkdir -p /etc/default
+	cat > /etc/default/$APP_NAME <<-EOF
+		# Defaults for $APP_NAME initscript
+		# sourced by /etc/init.d/$APP_NAME
+		# installed at /etc/default/$APP_NAME by the maintainer scripts
+
+		#
+		# This is a POSIX shell fragment
+		#
+
+		# Comment next line to disable $APP_NAME daemon
+		START_DAEMON=true
+
+		# Whom the daemons should run as
+		DAEMON_USER=nobody
+	EOF
+
+	update-rc.d $APP_NAME defaults
+	service $APP_NAME restart
+fi
