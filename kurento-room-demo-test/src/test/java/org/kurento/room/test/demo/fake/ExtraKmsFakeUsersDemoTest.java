@@ -23,7 +23,6 @@ import org.kurento.test.browser.WebPageType;
 /**
  * @see ExtraKmsFakeUsers
  * @author Radu Tom Vlad (rvlad@naevatec.com)
- * @since 6.0.0
  */
 public class ExtraKmsFakeUsersDemoTest extends ExtraKmsFakeUsers {
 

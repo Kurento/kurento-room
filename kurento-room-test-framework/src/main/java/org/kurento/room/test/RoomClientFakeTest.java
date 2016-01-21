@@ -57,11 +57,6 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
 
   public static @Service(3) KmsService fakeKms = new FakeKmsService();
 
-  public static long JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 30;
-  public static long ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS = 180;
-  public static long ROOM_ACTIVITY_IN_SECONDS = 120;
-  public static long LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 10;
-
   public static String testFiles = KurentoTest.getTestFilesDiskPath();
 
   // overwritten if running in Docker
@@ -74,8 +69,13 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
 
   // might get overwritten by custom room apps
   public static String appWsPath = "/room";
-  public URI appWsUrl;
 
+  public long JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 30;
+  public long ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS = 180;
+  public long ROOM_ACTIVITY_IN_SECONDS = 120;
+  public long LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 10;
+
+  public URI appWsUrl;
   public URI appBaseUrl;
   public URI appUrl;
 

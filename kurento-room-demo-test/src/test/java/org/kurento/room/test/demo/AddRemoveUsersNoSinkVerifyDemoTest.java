@@ -18,14 +18,14 @@ import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
-import org.kurento.room.test.browser.TwoUsersEqualLifetime;
+import org.kurento.room.test.browser.AddRemoveUsersNoSinkVerify;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * @see TwoUsersEqualLifetime
+ * @see AddRemoveUsersNoSinkVerify
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
-public class TwoUsersEqualLifetimeDemoTest extends TwoUsersEqualLifetime {
+public class AddRemoveUsersNoSinkVerifyDemoTest extends AddRemoveUsersNoSinkVerify {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {
@@ -38,5 +38,4 @@ public class TwoUsersEqualLifetimeDemoTest extends TwoUsersEqualLifetime {
     return localChromes(MethodHandles.lookup().lookupClass().getSimpleName(), NUM_USERS,
         WebPageType.ROOT);
   }
-
 }

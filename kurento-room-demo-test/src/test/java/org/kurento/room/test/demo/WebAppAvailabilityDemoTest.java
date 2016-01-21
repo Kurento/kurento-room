@@ -22,9 +22,8 @@ import org.kurento.room.test.browser.WebAppAvailability;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * Demo test.
- *
  * @author Radu Tom Vlad (rvlad@naevatec.com)
+ * @see WebAppAvailability
  */
 public class WebAppAvailabilityDemoTest extends WebAppAvailability {
 

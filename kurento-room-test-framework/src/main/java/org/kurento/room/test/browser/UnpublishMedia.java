@@ -25,7 +25,7 @@ import org.kurento.test.browser.WebPage;
  * Room browser test. Designed for the demo app.
  *
  * @author Radu Tom Vlad (rvlad@naevatec.com)
- * @since 6.2.1
+ * @since 6.0.0
  */
 public class UnpublishMedia extends RoomFunctionalBrowserTest<WebPage> {
 

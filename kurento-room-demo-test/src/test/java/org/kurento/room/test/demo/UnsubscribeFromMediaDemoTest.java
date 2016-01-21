@@ -22,9 +22,7 @@ import org.kurento.room.test.browser.UnsubscribeFromMedia;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * Room demo browser test.
- *
- * @since 6.0.0
+ * @see UnsubscribeFromMedia
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
 public class UnsubscribeFromMediaDemoTest extends UnsubscribeFromMedia {

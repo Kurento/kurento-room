@@ -22,8 +22,6 @@ import org.kurento.test.browser.WebPageType;
 
 /**
  * @see MixedUsers
- *
- * @since 6.0.0
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
 public class MixedUsersDemoTest extends MixedUsers {

@@ -1,11 +1,11 @@
 /*
  * (C) Copyright 2014 Kurento (http://kurento.org/)
- * 
+ *
  * All rights reserved. This program and the accompanying materials are made
  * available under the terms of the GNU Lesser General Public License (LGPL)
  * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- * 
+ *
  * This library is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
@@ -33,6 +33,14 @@ import org.springframework.context.annotation.Import;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+/**
+ * Demo application for Kurento Room, uses the Room Server and the Room Client JS libraries. The web
+ * client is built with AngularJS and lumx.
+ *
+ * @author Micael Gallego (micael.gallego@gmail.com)
+ * @author Radu Tom Vlad (rvlad@naevatec.com)
+ * @since 5.0.0
+ */
 @Import(KurentoRoomServerApp.class)
 public class KurentoRoomDemoApp {
 
@@ -83,10 +91,11 @@ public class KurentoRoomDemoApp {
     DemoJsonRpcUserControl uc = new DemoJsonRpcUserControl();
     String appServerUrl = System.getProperty("app.server.url", DEFAULT_APP_SERVER_URL);
     String hatUrl;
-    if (appServerUrl.endsWith("/"))
+    if (appServerUrl.endsWith("/")) {
       hatUrl = appServerUrl + IMG_FOLDER + DEMO_HAT_URL;
-    else
+    } else {
       hatUrl = appServerUrl + "/" + IMG_FOLDER + DEMO_HAT_URL;
+    }
     uc.setHatUrl(hatUrl);
     uc.setHatCoords(DEMO_HAT_COORDS);
     return uc;
@@ -96,8 +105,9 @@ public class KurentoRoomDemoApp {
 
     Object[] newSources = new Object[sources.length + 1];
     newSources[0] = KurentoRoomServerApp.class;
-    for (int i = 0; i < sources.length; i++)
+    for (int i = 0; i < sources.length; i++) {
       newSources[i + 1] = sources[i];
+    }
 
     SpringApplication application = new SpringApplication(newSources);
     context = application.run();

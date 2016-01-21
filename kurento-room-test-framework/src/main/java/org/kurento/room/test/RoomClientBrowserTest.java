@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.kurento.commons.PropertiesManager;
+import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.test.base.BrowserTest;
 import org.kurento.test.browser.Browser;
 import org.kurento.test.browser.BrowserType;
@@ -63,6 +64,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import com.google.gson.JsonArray;
 
 /**
  * Base for Kurento Room tests with browsers.
@@ -122,14 +125,31 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
   public static Class<?> webServerClass;
 
   static {
-    String appClassName = getProperty(ROOM_APP_CLASSNAME_PROP, ROOM_APP_CLASSNAME_DEFAULT);
-    log.info("Loading class '{}' as the test's web server service", appClassName);
-    try {
-      webServerClass = Class.forName(appClassName);
-    } catch (ClassNotFoundException e) {
-      log.error("Couldn't load web server class '{}'", appClassName, e);
-      Assert.fail(e.getMessage());
+    List<String> auxList = JsonUtils.toStringList(PropertiesManager.getPropertyJson(
+        ROOM_APP_CLASSNAME_PROP, ROOM_APP_CLASSNAME_DEFAULT, JsonArray.class));
+
+    for (String aux : auxList) {
+      log.info("Loading class '{}' as the test's web server service", aux);
+      try {
+        webServerClass = Class.forName(aux);
+      } catch (ClassNotFoundException e) {
+        log.warn("Couldn't load web server class '{}': {}", aux, e.getMessage());
+        log.debug("Couldn't load web server class '{}'", aux, e);
+      }
     }
+
+    if (webServerClass == null) {
+      Assert.fail("Unable to load any of the provided classnames: " + auxList);
+    }
+
+    // String appClassName = getProperty(ROOM_APP_CLASSNAME_PROP, ROOM_APP_CLASSNAME_DEFAULT);
+    // log.info("Loading class '{}' as the test's web server service", appClassName);
+    // try {
+    // webServerClass = Class.forName(appClassName);
+    // } catch (ClassNotFoundException e) {
+    // log.error("Couldn't load web server class '{}'", appClassName, e);
+    // Assert.fail(e.getMessage());
+    // }
 
     String scopeProp = PropertiesManager.getProperty(SELENIUM_SCOPE_PROPERTY);
     if (scopeProp != null) {

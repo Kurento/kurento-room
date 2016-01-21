@@ -22,8 +22,7 @@ import org.kurento.room.test.browser.SeqNUsersEqualLifetime;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * Room demo integration test (demo version).
- *
+ * @see SeqNUsersEqualLifetime
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
 public class SeqNUsersEqualLifetimeDemoTest extends SeqNUsersEqualLifetime {

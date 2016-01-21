@@ -8,15 +8,14 @@
 		<version>6.2.1-SNAPSHOT</version>
 		<relativePath>../</relativePath>
 	</parent>
-
 	<artifactId>kurento-room-test</artifactId>
 	<packaging>jar</packaging>
 
-	<name>Kurento Room Test</name>
+	<name>Kurento Room Basic App</name>
 	<description>
-			Kurento Room Integration Tests for Basic Room App 
+			Kurento Room Basic application 
 
-			This project contains tests for a small kurento-room demo application 
+			This project contains a lighter kurento-room demo application 
 	</description>
 	<url>http://www.kurento.org/docs/${project.version}</url>
 
@@ -51,71 +50,24 @@
 
 	<properties>
 		<!-- Main class -->
-		<start-class>org.kurento.room.KurentoRoomTestApp</start-class>
+		<start-class>org.kurento.room.KurentoRoomBasicApp</start-class>
 	</properties>
-
-	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-server</artifactId>
-			<optional>true</optional>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-client-js</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-client</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.kurento</groupId>
-			<artifactId>kurento-commons</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.kurento</groupId>
-			<artifactId>kurento-test</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-log4j</artifactId>
-		</dependency>
-	</dependencies>
-
 
 	<build>
 		<resources>
 			<resource>
-				<directory>src/test/resources</directory>
+				<directory>src/main/resources</directory>
 				<filtering>false</filtering>
 			</resource>
 			<resource>
-				<directory>src/test/resources</directory>
+				<directory>src/main/resources</directory>
 				<filtering>true</filtering>
 				<includes>
 					<include>banner.txt</include>
 				</includes>
 			</resource>
 		</resources>
-
+		
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -149,37 +101,34 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration> <!-- skip unit test execution -->
-					<skipTests>true</skipTests>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-failsafe-plugin</artifactId>
+				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
-					<skipTests>true</skipTests> <!-- skip integration test execution -->
-					<!-- execute IT tests only from suites -->
-					<!--
-						<excludes> 
-							<exclude>**/*Test.java</exclude> 
-						</excludes>
-						<includes>
-							<include>**/RoomBasicTestSuite.java</include> 
-						</includes>
-					-->
-					<!-- execute IT tests directly from test classes -->
-					<!-- <includes>
-						<include>**/*Test.java</include>
-					</includes> -->
+					<descriptor>src/assembly/bin.xml</descriptor>
+					<finalName>${project.artifactId}-${project.version}</finalName>
+					<appendAssemblyId>false</appendAssemblyId>
 				</configuration>
 				<executions>
 					<execution>
-						<id>integration-test</id>
+						<phase>package</phase>
 						<goals>
-							<goal>integration-test</goal>
-							<goal>verify</goal>
+							<goal>single</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<configuration>
+							<tasks>
+								<copy
+									file="${project.build.directory}/target/${project.artifactId}-${project.version}-bin.zip"
+									tofile="${project.build.directory}/target/${project.artifactId}-${project.version}.zip" />
+							</tasks>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
@@ -241,4 +190,35 @@
 			</plugins>
 		</pluginManagement>
 	</build>
+	
+	<dependencies>
+		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-server</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.commons</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-client-js</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-log4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-test-framework</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	
 </project>

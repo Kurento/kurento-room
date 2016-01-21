@@ -22,8 +22,7 @@ import org.kurento.room.test.browser.SeqAddRemoveUser;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * Room demo integration test (demo version).
- *
+ * @see SeqAddRemoveUser
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
 public class SeqAddRemoveUserDemoTest extends SeqAddRemoveUser {

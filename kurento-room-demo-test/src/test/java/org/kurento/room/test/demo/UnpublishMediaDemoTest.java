@@ -22,10 +22,8 @@ import org.kurento.room.test.browser.UnpublishMedia;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * Room demo browser test.
- *
+ * @see UnpublishMedia
  * @author Radu Tom Vlad (rvlad@naevatec.com)
- * @since 6.0.0
  */
 public class UnpublishMediaDemoTest extends UnpublishMedia {
 

@@ -22,8 +22,7 @@ import org.kurento.room.test.browser.NUsersEqualLifetime;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * Room demo integration test (demo version).
- *
+ * @see NUsersEqualLifetime
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
 public class NUsersEqualLifetimeDemoTest extends NUsersEqualLifetime {

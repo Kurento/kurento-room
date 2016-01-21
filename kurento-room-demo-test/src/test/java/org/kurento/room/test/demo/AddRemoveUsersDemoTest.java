@@ -22,8 +22,7 @@ import org.kurento.room.test.browser.AddRemoveUsers;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * Room demo integration test (demo version).
- *
+ * @see AddRemoveUsers
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
 public class AddRemoveUsersDemoTest extends AddRemoveUsers {

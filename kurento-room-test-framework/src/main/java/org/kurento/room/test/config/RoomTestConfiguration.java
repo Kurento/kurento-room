@@ -24,9 +24,9 @@ import static org.kurento.test.config.TestConfiguration.KMS_WS_URI_PROP;
  */
 public class RoomTestConfiguration {
 
-  public static final String ROOM_APP_CLASSNAME_PROP = "room.app.classname";
-  // TODO change to KurentoRoomLightdemoApp (basic app)
-  public static final String ROOM_APP_CLASSNAME_DEFAULT = "org.kurento.room.demo.KurentoRoomDemoApp";
+  public static final String ROOM_APP_CLASSNAME_PROP = "room.app.classnames";
+  public static final String ROOM_APP_CLASSNAME_DEFAULT = "[org.kurento.room.KurentoRoomBasicApp,"
+      + "org.kurento.room.demo.KurentoRoomDemoApp]";
 
   public static final String EXTRA_KMS_WS_URI_PROP = KMS_WS_URI_PROP + ".extra";
   public static final String EXTRA_KMS_WS_URI_DEFAULT = KMS_WS_URI_DEFAULT;

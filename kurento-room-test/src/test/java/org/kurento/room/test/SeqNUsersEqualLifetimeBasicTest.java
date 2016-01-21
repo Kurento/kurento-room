@@ -12,31 +12,31 @@
  * details.
  */
 
-package org.kurento.room.test.demo;
+package org.kurento.room.test;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
-import org.kurento.room.test.browser.TwoUsersEqualLifetime;
+import org.kurento.room.test.browser.SeqNUsersEqualLifetime;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * @see TwoUsersEqualLifetime
+ * @see SeqNUsersEqualLifetime
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
-public class TwoUsersEqualLifetimeDemoTest extends TwoUsersEqualLifetime {
+public class SeqNUsersEqualLifetimeBasicTest extends SeqNUsersEqualLifetime {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {
-    webPageType = WebPageType.ROOT;
+    webPageType = WebPageType.ROOM;
     super.setupBrowserTest();
   }
 
   @Parameters(name = "{index}: {0}")
   public static Collection<Object[]> data() {
     return localChromes(MethodHandles.lookup().lookupClass().getSimpleName(), NUM_USERS,
-        WebPageType.ROOT);
+        WebPageType.ROOM);
   }
 
 }

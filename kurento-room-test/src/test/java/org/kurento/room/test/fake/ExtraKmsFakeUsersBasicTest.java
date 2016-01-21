@@ -11,32 +11,31 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
-
-package org.kurento.room.test.demo;
+package org.kurento.room.test.fake;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
-import org.kurento.room.test.browser.TwoUsersEqualLifetime;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * @see TwoUsersEqualLifetime
+ * @see ExtraKmsFakeUsers
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
-public class TwoUsersEqualLifetimeDemoTest extends TwoUsersEqualLifetime {
+public class ExtraKmsFakeUsersBasicTest extends ExtraKmsFakeUsers {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {
-    webPageType = WebPageType.ROOT;
+    webPageType = WebPageType.ROOM;
+    ROOM_ACTIVITY_IN_SECONDS = 20; // shorter idle period
     super.setupBrowserTest();
   }
 
   @Parameters(name = "{index}: {0}")
   public static Collection<Object[]> data() {
     return localChromes(MethodHandles.lookup().lookupClass().getSimpleName(), NUM_USERS,
-        WebPageType.ROOT);
+        WebPageType.ROOM);
   }
 
 }

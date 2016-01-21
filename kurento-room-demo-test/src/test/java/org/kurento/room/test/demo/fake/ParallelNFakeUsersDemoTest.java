@@ -22,9 +22,7 @@ import org.kurento.test.browser.WebPageType;
 
 /**
  * @see ParallelNFakeUsers
- *
  * @author Radu Tom Vlad (rvlad@naevatec.com)
- * @since 6.0.0
  */
 public class ParallelNFakeUsersDemoTest extends ParallelNFakeUsers {
 
