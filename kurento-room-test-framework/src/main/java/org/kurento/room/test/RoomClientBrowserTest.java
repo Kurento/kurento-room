@@ -125,31 +125,10 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
   public static Class<?> webServerClass;
 
   static {
-    List<String> auxList = JsonUtils.toStringList(PropertiesManager.getPropertyJson(
-        ROOM_APP_CLASSNAME_PROP, ROOM_APP_CLASSNAME_DEFAULT, JsonArray.class));
-
-    for (String aux : auxList) {
-      log.info("Loading class '{}' as the test's web server service", aux);
-      try {
-        webServerClass = Class.forName(aux);
-      } catch (ClassNotFoundException e) {
-        log.warn("Couldn't load web server class '{}': {}", aux, e.getMessage());
-        log.debug("Couldn't load web server class '{}'", aux, e);
-      }
-    }
-
+    loadWebServerClass();
     if (webServerClass == null) {
-      Assert.fail("Unable to load any of the provided classnames: " + auxList);
+      Assert.fail("Unable to load any of the provided classnames for the web server test service");
     }
-
-    // String appClassName = getProperty(ROOM_APP_CLASSNAME_PROP, ROOM_APP_CLASSNAME_DEFAULT);
-    // log.info("Loading class '{}' as the test's web server service", appClassName);
-    // try {
-    // webServerClass = Class.forName(appClassName);
-    // } catch (ClassNotFoundException e) {
-    // log.error("Couldn't load web server class '{}'", appClassName, e);
-    // Assert.fail(e.getMessage());
-    // }
 
     String scopeProp = PropertiesManager.getProperty(SELENIUM_SCOPE_PROPERTY);
     if (scopeProp != null) {
@@ -200,14 +179,14 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
       for (final String browserKey : testScenario.getBrowserMap().keySet()) {
         Browser browser = getPage(browserKey).getBrowser();
         browser.getWebDriver().manage().window()
-        .setSize(new Dimension(WEB_TEST_BROWSER_WIDTH, WEB_TEST_BROWSER_HEIGHT));
+            .setSize(new Dimension(WEB_TEST_BROWSER_WIDTH, WEB_TEST_BROWSER_HEIGHT));
         browser
-        .getWebDriver()
-        .manage()
-        .window()
-        .setPosition(
-            new Point(col * WEB_TEST_BROWSER_WIDTH + WEB_TEST_LEFT_BAR_WIDTH, row
-                * WEB_TEST_BROWSER_HEIGHT + WEB_TEST_TOP_BAR_WIDTH));
+            .getWebDriver()
+            .manage()
+            .window()
+            .setPosition(
+                new Point(col * WEB_TEST_BROWSER_WIDTH + WEB_TEST_LEFT_BAR_WIDTH, row
+                    * WEB_TEST_BROWSER_HEIGHT + WEB_TEST_TOP_BAR_WIDTH));
         col++;
         if (col * WEB_TEST_BROWSER_WIDTH + WEB_TEST_LEFT_BAR_WIDTH > WEB_TEST_MAX_WIDTH) {
           col = 0;
@@ -233,6 +212,78 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
     log.debug("{}: Num browsers: {}, webPageType: {}, test scope: {}, Browsers map keySet: {}",
         caller, browsers, pageType, testScope.toString(), test.getBrowserMap().keySet());
     return Arrays.asList(new Object[][] { { test } });
+  }
+
+  public static void loadWebServerClass() {
+    try {
+      List<String> auxList = JsonUtils.toStringList(PropertiesManager.getPropertyJson(
+          ROOM_APP_CLASSNAME_PROP, ROOM_APP_CLASSNAME_DEFAULT, JsonArray.class));
+
+      for (String aux : auxList) {
+        log.info("Loading class '{}' as the test's web server service", aux);
+        try {
+          webServerClass = Class.forName(aux);
+          break;
+        } catch (Exception e) {
+          log.warn("Couldn't load web server class '{}': {}", aux, e.getMessage());
+          log.debug("Couldn't load web server class '{}'", aux, e);
+        }
+      }
+    } catch (Exception e) {
+      log.error("Incorrect value for property '{}'", ROOM_APP_CLASSNAME_PROP, e);
+    }
+  }
+
+  public static void sleep(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      log.warn("Interrupted while sleeping {}ms", millis, e);
+    }
+  }
+
+  public static String getBrowserKey(int index) {
+    return USER_BROWSER_PREFIX + index;
+  }
+
+  public static String getBrowserStreamName(int index) {
+    return getBrowserKey(index) + "_webcam";
+  }
+
+  public static String getBrowserVideoStreamName(int index) {
+    return "video-" + getBrowserStreamName(index);
+  }
+
+  public static String getBrowserNativeStreamName(int index) {
+    return "native-" + getBrowserVideoStreamName(index);
+  }
+
+  public static String getFakeKey(int index) {
+    return USER_FAKE_PREFIX + index;
+  }
+
+  public static String getFakeStreamName(int index) {
+    return getFakeKey(index) + "_webcam";
+  }
+
+  public static String getFakeStreamName(String userName) {
+    return userName + "_webcam";
+  }
+
+  public static String getFakeVideoStreamName(int index) {
+    return "video-" + getFakeStreamName(index);
+  }
+
+  public static String getFakeNativeStreamName(int index) {
+    return "native-" + getFakeVideoStreamName(index);
+  }
+
+  public static CountDownLatch[] createCdl(int numLatches, int numUsers) {
+    final CountDownLatch[] cdl = new CountDownLatch[numLatches];
+    for (int i = 0; i < numLatches; i++) {
+      cdl[i] = new CountDownLatch(numUsers);
+    }
+    return cdl;
   }
 
   public void iterParallelUsers(int numUsers, int iterations, final UserLifecycle user)
@@ -363,7 +414,9 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
   public void selectVideoTag(int pageIndex, String targetVideoTagId) {
     WebDriver userWebDriver = getPage(getBrowserKey(pageIndex)).getBrowser().getWebDriver();
     try {
-      userWebDriver.findElement(By.id(targetVideoTagId)).click();
+      WebElement element = userWebDriver.findElement(By.id(targetVideoTagId));
+      Actions actions = new Actions(userWebDriver);
+      actions.moveToElement(element).click().perform();
     } catch (ElementNotVisibleException e) {
       String msg = "Video tag '" + targetVideoTagId + "' is not visible, thus not selectable.";
       log.warn(msg);
@@ -415,7 +468,7 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
       browser.setTimeout(5);
       browser.changeTimeout(5);
       (new WebDriverWait(browser.getWebDriver(), testTimeout, POLLING_LATENCY))
-      .until(ExpectedConditions.invisibilityOfElementLocated(By.id(id)));
+          .until(ExpectedConditions.invisibilityOfElementLocated(By.id(id)));
     } catch (org.openqa.selenium.TimeoutException e) {
       log.warn("Timeout when waiting for element {} to disappear in browser {}", id, label, e);
       throw new TimeoutException("Element with id='" + id + "' is present in page after "
@@ -542,58 +595,6 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
       }
       log.debug("OK - element {} is missing from browser of {}", videoElementId, chromeName);
     }
-  }
-
-  public static void sleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException e) {
-      log.warn("Interrupted while sleeping {}ms", millis, e);
-    }
-  }
-
-  public static String getBrowserKey(int index) {
-    return USER_BROWSER_PREFIX + index;
-  }
-
-  public static String getBrowserStreamName(int index) {
-    return getBrowserKey(index) + "_webcam";
-  }
-
-  public static String getBrowserVideoStreamName(int index) {
-    return "video-" + getBrowserStreamName(index);
-  }
-
-  public static String getBrowserNativeStreamName(int index) {
-    return "native-" + getBrowserVideoStreamName(index);
-  }
-
-  public static String getFakeKey(int index) {
-    return USER_FAKE_PREFIX + index;
-  }
-
-  public static String getFakeStreamName(int index) {
-    return getFakeKey(index) + "_webcam";
-  }
-
-  public static String getFakeStreamName(String userName) {
-    return userName + "_webcam";
-  }
-
-  public static String getFakeVideoStreamName(int index) {
-    return "video-" + getFakeStreamName(index);
-  }
-
-  public static String getFakeNativeStreamName(int index) {
-    return "native-" + getFakeVideoStreamName(index);
-  }
-
-  public static CountDownLatch[] createCdl(int numLatches, int numUsers) {
-    final CountDownLatch[] cdl = new CountDownLatch[numLatches];
-    for (int i = 0; i < numLatches; i++) {
-      cdl[i] = new CountDownLatch(numUsers);
-    }
-    return cdl;
   }
 
   public void failWithExceptions() {
