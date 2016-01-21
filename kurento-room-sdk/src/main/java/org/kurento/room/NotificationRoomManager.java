@@ -169,11 +169,11 @@ public class NotificationRoomManager {
 		String sdpAnswer = null;
 		try {
 			userName = internalManager.getParticipantName(pid);
-			participants = internalManager
-					.getParticipants(internalManager.getRoomName(pid));
 			sdpAnswer = internalManager.publishMedia(request.getParticipantId(),
 					isOffer, sdp, loopbackAlternativeSrc,
 					loopbackConnectionType, doLoopback, mediaElements);
+			participants = internalManager
+					.getParticipants(internalManager.getRoomName(pid));
 		} catch (RoomException e) {
 			log.warn("PARTICIPANT {}: Error publishing media", userName, e);
 			notificationRoomHandler.onPublishMedia(request, null, null, null,

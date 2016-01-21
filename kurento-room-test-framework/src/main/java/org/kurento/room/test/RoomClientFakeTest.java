@@ -62,7 +62,7 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
   public static long ROOM_ACTIVITY_IN_SECONDS = 120;
   public static long LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 10;
 
-  public static String testFiles = KurentoTest.getTestFilesPath();
+  public static String testFiles = KurentoTest.getTestFilesDiskPath();
 
   // overwritten if running in Docker
   public static String serverAddress = PropertiesManager.getProperty(TEST_HOST_PROPERTY,

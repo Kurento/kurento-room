@@ -70,6 +70,17 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-jsonrpc-server</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-test-framework</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
