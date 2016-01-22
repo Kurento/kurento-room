@@ -179,14 +179,14 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
       for (final String browserKey : testScenario.getBrowserMap().keySet()) {
         Browser browser = getPage(browserKey).getBrowser();
         browser.getWebDriver().manage().window()
-            .setSize(new Dimension(WEB_TEST_BROWSER_WIDTH, WEB_TEST_BROWSER_HEIGHT));
+        .setSize(new Dimension(WEB_TEST_BROWSER_WIDTH, WEB_TEST_BROWSER_HEIGHT));
         browser
-            .getWebDriver()
-            .manage()
-            .window()
-            .setPosition(
-                new Point(col * WEB_TEST_BROWSER_WIDTH + WEB_TEST_LEFT_BAR_WIDTH, row
-                    * WEB_TEST_BROWSER_HEIGHT + WEB_TEST_TOP_BAR_WIDTH));
+        .getWebDriver()
+        .manage()
+        .window()
+        .setPosition(
+            new Point(col * WEB_TEST_BROWSER_WIDTH + WEB_TEST_LEFT_BAR_WIDTH, row
+                * WEB_TEST_BROWSER_HEIGHT + WEB_TEST_TOP_BAR_WIDTH));
         col++;
         if (col * WEB_TEST_BROWSER_WIDTH + WEB_TEST_LEFT_BAR_WIDTH > WEB_TEST_MAX_WIDTH) {
           col = 0;
@@ -435,8 +435,8 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
 
   public WebElement findElement(String label, Browser browser, String id) {
     try {
-      return (new WebDriverWait(browser.getWebDriver(), testTimeout, POLLING_LATENCY))
-          .until(ExpectedConditions.presenceOfElementLocated(By.id(id)));
+      return new WebDriverWait(browser.getWebDriver(), testTimeout, POLLING_LATENCY)
+      .until(ExpectedConditions.presenceOfElementLocated(By.id(id)));
     } catch (TimeoutException e) {
       log.warn("Timeout when waiting for element {} to exist in browser {}", id, label);
       int originalTimeout = 60;
@@ -467,8 +467,8 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
       log.debug("Original browser timeout (s): {}, set to 5", originalTimeout);
       browser.setTimeout(5);
       browser.changeTimeout(5);
-      (new WebDriverWait(browser.getWebDriver(), testTimeout, POLLING_LATENCY))
-          .until(ExpectedConditions.invisibilityOfElementLocated(By.id(id)));
+      new WebDriverWait(browser.getWebDriver(), testTimeout, POLLING_LATENCY)
+      .until(ExpectedConditions.invisibilityOfElementLocated(By.id(id)));
     } catch (org.openqa.selenium.TimeoutException e) {
       log.warn("Timeout when waiting for element {} to disappear in browser {}", id, label, e);
       throw new TimeoutException("Element with id='" + id + "' is present in page after "
@@ -569,8 +569,8 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
     }
     long endTime = System.nanoTime();
     double duration = ((double) endTime - startTime) / 1_000_000;
-    log.debug("Checked active users: [{}] {} - in {} millis", sb, (activeFakeUsers != null
-        && !activeFakeUsers.isEmpty() ? "& " + activeFakeUsers : ""), duration);
+    log.debug("Checked active users: [{}] {} - in {} millis", sb, activeFakeUsers != null
+        && !activeFakeUsers.isEmpty() ? "& " + activeFakeUsers : "", duration);
   }
 
   private void verifyVideoInBrowser(Browser browser, String browserLabel, String chromeName,

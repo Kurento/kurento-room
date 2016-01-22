@@ -17,8 +17,8 @@ package org.kurento.room.kms;
 
 public interface LoadManager {
 
-	double calculateLoad(Kms kms);
+  double calculateLoad(Kms kms);
 
-	boolean allowMoreElements(Kms kms);
+  boolean allowMoreElements(Kms kms);
 
 }

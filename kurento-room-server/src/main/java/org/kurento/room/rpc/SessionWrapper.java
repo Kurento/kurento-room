@@ -25,35 +25,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SessionWrapper {
-	private static final Logger log = LoggerFactory
-			.getLogger(SessionWrapper.class);
+  private static final Logger log = LoggerFactory.getLogger(SessionWrapper.class);
 
-	private Session session;
-	private ConcurrentMap<Integer, Transaction> transactions = new ConcurrentHashMap<Integer, Transaction>();
+  private Session session;
+  private ConcurrentMap<Integer, Transaction> transactions = new ConcurrentHashMap<Integer, Transaction>();
 
-	public SessionWrapper(Session session) {
-		this.session = session;
-	}
+  public SessionWrapper(Session session) {
+    this.session = session;
+  }
 
-	public Session getSession() {
-		return session;
-	}
+  public Session getSession() {
+    return session;
+  }
 
-	public Transaction getTransaction(Integer requestId) {
-		return transactions.get(requestId);
-	}
+  public Transaction getTransaction(Integer requestId) {
+    return transactions.get(requestId);
+  }
 
-	public void addTransaction(Integer requestId, Transaction t) {
-		Transaction oldT = transactions.putIfAbsent(requestId, t);
-		if (oldT != null)
-			log.error("Found an existing transaction for the key {}", requestId);
-	}
+  public void addTransaction(Integer requestId, Transaction t) {
+    Transaction oldT = transactions.putIfAbsent(requestId, t);
+    if (oldT != null) {
+      log.error("Found an existing transaction for the key {}", requestId);
+    }
+  }
 
-	public void removeTransaction(Integer requestId) {
-		transactions.remove(requestId);
-	}
+  public void removeTransaction(Integer requestId) {
+    transactions.remove(requestId);
+  }
 
-	public Collection<Transaction> getTransactions() {
-		return transactions.values();
-	}
+  public Collection<Transaction> getTransactions() {
+    return transactions.values();
+  }
 }

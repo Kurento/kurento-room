@@ -42,7 +42,7 @@ public class ExtraKmsFakeUsers extends RoomFunctionalFakeTest<WebPage> {
   public final static int NUM_USERS = 0;
 
   public static String[] relativeUris = { "/video/filter/fiwarecut.webm",
-      "/video/filter/fiwarecut_30.webm", "/video/filter/street.webm" };
+    "/video/filter/fiwarecut_30.webm", "/video/filter/street.webm" };
 
   public static String[] extraRelativeUris = { "/video/filter/plates.webm" };
 
@@ -79,23 +79,23 @@ public class ExtraKmsFakeUsers extends RoomFunctionalFakeTest<WebPage> {
     if (testExtraFakeKurento == null) {
       testExtraFakeKurento = KurentoClient.create(testExtraFakeKmsWsUri,
           new KurentoConnectionListener() {
-            @Override
-            public void connected() {
-            }
+        @Override
+        public void connected() {
+        }
 
-            @Override
-            public void connectionFailed() {
-            }
+        @Override
+        public void connectionFailed() {
+        }
 
-            @Override
-            public void disconnected() {
-              testExtraFakeKurento = null;
-            }
+        @Override
+        public void disconnected() {
+          testExtraFakeKurento = null;
+        }
 
-            @Override
-            public void reconnected(boolean sameServer) {
-            }
-          });
+        @Override
+        public void reconnected(boolean sameServer) {
+        }
+      });
     }
 
     return testExtraFakeKurento;

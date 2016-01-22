@@ -31,7 +31,7 @@ import org.kurento.test.browser.WebPage;
 public class MixedUsers extends RoomFunctionalFakeTest<WebPage> {
 
   public static String[] relativeUris = { "/video/filter/fiwarecut.webm",
-      "/video/filter/fiwarecut_30.webm" };
+  "/video/filter/fiwarecut_30.webm" };
 
   public final static int CHROME_SPINNER_USERS = 1;
 

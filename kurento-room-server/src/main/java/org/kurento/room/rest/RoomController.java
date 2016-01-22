@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class RoomController {
 
-	@Autowired
-	private NotificationRoomManager roomManager;
+  @Autowired
+  private NotificationRoomManager roomManager;
 
-	@RequestMapping("/getAllRooms")
-	public Set<String> getAllRooms() {
-		return roomManager.getRooms();
-	}
+  @RequestMapping("/getAllRooms")
+  public Set<String> getAllRooms() {
+    return roomManager.getRooms();
+  }
 }

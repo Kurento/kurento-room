@@ -17,50 +17,51 @@ package org.kurento.room.rpc;
 
 /**
  * Participant information that should be stored in the WebSocket session.
- * 
+ *
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
 public class ParticipantSession {
-	public static final String SESSION_KEY = "participant";
+  public static final String SESSION_KEY = "participant";
 
-	private String participantName;
-	private String roomName;
+  private String participantName;
+  private String roomName;
 
-	public ParticipantSession() {
-	}
+  public ParticipantSession() {
+  }
 
-	public ParticipantSession(String participantName, String roomName) {
-		super();
-		this.participantName = participantName;
-		this.roomName = roomName;
-	}
+  public ParticipantSession(String participantName, String roomName) {
+    super();
+    this.participantName = participantName;
+    this.roomName = roomName;
+  }
 
-	public String getParticipantName() {
-		return participantName;
-	}
+  public String getParticipantName() {
+    return participantName;
+  }
 
-	public void setParticipantName(String participantName) {
-		this.participantName = participantName;
-	}
+  public void setParticipantName(String participantName) {
+    this.participantName = participantName;
+  }
 
-	public String getRoomName() {
-		return roomName;
-	}
+  public String getRoomName() {
+    return roomName;
+  }
 
-	public void setRoomName(String roomName) {
-		this.roomName = roomName;
-	}
+  public void setRoomName(String roomName) {
+    this.roomName = roomName;
+  }
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("[");
-		if (participantName != null)
-			builder.append("participantName=").append(participantName)
-					.append(", ");
-		if (roomName != null)
-			builder.append("roomName=").append(roomName);
-		builder.append("]");
-		return builder.toString();
-	}
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("[");
+    if (participantName != null) {
+      builder.append("participantName=").append(participantName).append(", ");
+    }
+    if (roomName != null) {
+      builder.append("roomName=").append(roomName);
+    }
+    builder.append("]");
+    return builder.toString();
+  }
 }

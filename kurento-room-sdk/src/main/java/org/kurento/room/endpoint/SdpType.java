@@ -16,5 +16,5 @@
 package org.kurento.room.endpoint;
 
 public enum SdpType {
-	OFFER, ANSWER;
+  OFFER, ANSWER;
 }

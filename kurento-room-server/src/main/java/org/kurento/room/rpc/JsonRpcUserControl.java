@@ -1,11 +1,11 @@
 /*
  * (C) Copyright 2015 Kurento (http://kurento.org/)
- * 
+ *
  * All rights reserved. This program and the accompanying materials are made
  * available under the terms of the GNU Lesser General Public License (LGPL)
  * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- * 
+ *
  * This library is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
@@ -32,202 +32,161 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.gson.JsonObject;
 
 /**
- * Controls the user interactions by delegating her JSON-RPC requests to the
- * room API.
- * 
+ * Controls the user interactions by delegating her JSON-RPC requests to the room API.
+ *
  * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
  */
 public class JsonRpcUserControl {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(JsonRpcUserControl.class);
+  private static final Logger log = LoggerFactory.getLogger(JsonRpcUserControl.class);
 
-	@Autowired
-	protected NotificationRoomManager roomManager;
+  @Autowired
+  protected NotificationRoomManager roomManager;
 
-	public void joinRoom(Transaction transaction, Request<JsonObject> request,
-			ParticipantRequest participantRequest) throws IOException,
-			InterruptedException, ExecutionException {
-		String roomName =
-				getStringParam(request,
-						ProtocolElements.JOINROOM_ROOM_PARAM);
-		String userName =
-				getStringParam(request,
-						ProtocolElements.JOINROOM_USER_PARAM);
+  public void joinRoom(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) throws IOException, InterruptedException,
+      ExecutionException {
+    String roomName = getStringParam(request, ProtocolElements.JOINROOM_ROOM_PARAM);
+    String userName = getStringParam(request, ProtocolElements.JOINROOM_USER_PARAM);
 
-		ParticipantSession participantSession =
-				getParticipantSession(transaction);
-		participantSession.setParticipantName(userName);
-		participantSession.setRoomName(roomName);
+    ParticipantSession participantSession = getParticipantSession(transaction);
+    participantSession.setParticipantName(userName);
+    participantSession.setRoomName(roomName);
 
-		roomManager.joinRoom(userName, roomName, true, participantRequest);
-	}
+    roomManager.joinRoom(userName, roomName, true, participantRequest);
+  }
 
-	public void publishVideo(Transaction transaction,
-			Request<JsonObject> request, ParticipantRequest participantRequest) {
-		String sdpOffer =
-				getStringParam(request,
-						ProtocolElements.PUBLISHVIDEO_SDPOFFER_PARAM);
-		boolean doLoopback =
-				getBooleanParam(request,
-						ProtocolElements.PUBLISHVIDEO_DOLOOPBACK_PARAM);
+  public void publishVideo(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) {
+    String sdpOffer = getStringParam(request, ProtocolElements.PUBLISHVIDEO_SDPOFFER_PARAM);
+    boolean doLoopback = getBooleanParam(request, ProtocolElements.PUBLISHVIDEO_DOLOOPBACK_PARAM);
 
-		roomManager.publishMedia(participantRequest, sdpOffer, doLoopback);
-	}
+    roomManager.publishMedia(participantRequest, sdpOffer, doLoopback);
+  }
 
-	public void unpublishVideo(Transaction transaction,
-			Request<JsonObject> request, ParticipantRequest participantRequest) {
-		roomManager.unpublishMedia(participantRequest);
-	}
+  public void unpublishVideo(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) {
+    roomManager.unpublishMedia(participantRequest);
+  }
 
-	public void receiveVideoFrom(final Transaction transaction,
-			final Request<JsonObject> request,
-			ParticipantRequest participantRequest) {
+  public void receiveVideoFrom(final Transaction transaction, final Request<JsonObject> request,
+      ParticipantRequest participantRequest) {
 
-		String senderName =
-				getStringParam(request,
-						ProtocolElements.RECEIVEVIDEO_SENDER_PARAM);
-		senderName = senderName.substring(0, senderName.indexOf("_"));
+    String senderName = getStringParam(request, ProtocolElements.RECEIVEVIDEO_SENDER_PARAM);
+    senderName = senderName.substring(0, senderName.indexOf("_"));
 
-		String sdpOffer =
-				getStringParam(request,
-						ProtocolElements.RECEIVEVIDEO_SDPOFFER_PARAM);
+    String sdpOffer = getStringParam(request, ProtocolElements.RECEIVEVIDEO_SDPOFFER_PARAM);
 
-		roomManager.subscribe(senderName, sdpOffer, participantRequest);
-	}
+    roomManager.subscribe(senderName, sdpOffer, participantRequest);
+  }
 
-	public void unsubscribeFromVideo(Transaction transaction,
-			Request<JsonObject> request, ParticipantRequest participantRequest) {
+  public void unsubscribeFromVideo(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) {
 
-		String senderName =
-				getStringParam(request,
-						ProtocolElements.UNSUBSCRIBEFROMVIDEO_SENDER_PARAM);
-		senderName = senderName.substring(0, senderName.indexOf("_"));
+    String senderName = getStringParam(request, ProtocolElements.UNSUBSCRIBEFROMVIDEO_SENDER_PARAM);
+    senderName = senderName.substring(0, senderName.indexOf("_"));
 
-		roomManager.unsubscribe(senderName, participantRequest);
-	}
+    roomManager.unsubscribe(senderName, participantRequest);
+  }
 
-	public void leaveRoomAfterConnClosed(String sessionId) {
-		try {
-			roomManager.evictParticipant(sessionId);
-			log.info("Evicted participant with sessionId {}", sessionId);
-		} catch (RoomException e) {
-			log.warn("Unable to evict: {}", e.getMessage());
-			log.trace("Unable to evict user", e);
-		}
-	}
+  public void leaveRoomAfterConnClosed(String sessionId) {
+    try {
+      roomManager.evictParticipant(sessionId);
+      log.info("Evicted participant with sessionId {}", sessionId);
+    } catch (RoomException e) {
+      log.warn("Unable to evict: {}", e.getMessage());
+      log.trace("Unable to evict user", e);
+    }
+  }
 
-	public void leaveRoom(Transaction transaction, Request<JsonObject> request,
-			ParticipantRequest participantRequest) {
-		boolean exists = false;
-		String pid = participantRequest.getParticipantId();
-		// trying with room info from session
-		String roomName = null;
-		if (transaction != null)
-			roomName = getParticipantSession(transaction).getRoomName();
-		if (roomName == null) { // null when afterConnectionClosed
-			log.warn(
-					"No room information found for participant with session Id {}. "
-							+ "Using the admin method to evict the user.", pid);
-			leaveRoomAfterConnClosed(pid);
-		} else {
-			// sanity check, don't call leaveRoom unless the id checks out
-			for (UserParticipant part : roomManager.getParticipants(roomName))
-				if (part.getParticipantId().equals(
-						participantRequest.getParticipantId())) {
-					exists = true;
-					break;
-				}
-			if (exists) {
-				log.debug("Participant with sessionId {} is leaving room {}",
-						pid, roomName);
-				roomManager.leaveRoom(participantRequest);
-				log.info("Participant with sessionId {} has left room {}", pid,
-						roomName);
-			} else {
-				log.warn(
-						"Participant with session Id {} not found in room {}. "
-								+ "Using the admin method to evict the user.",
-						pid, roomName);
-				leaveRoomAfterConnClosed(pid);
-			}
-		}
-	}
+  public void leaveRoom(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) {
+    boolean exists = false;
+    String pid = participantRequest.getParticipantId();
+    // trying with room info from session
+    String roomName = null;
+    if (transaction != null) {
+      roomName = getParticipantSession(transaction).getRoomName();
+    }
+    if (roomName == null) { // null when afterConnectionClosed
+      log.warn("No room information found for participant with session Id {}. "
+          + "Using the admin method to evict the user.", pid);
+      leaveRoomAfterConnClosed(pid);
+    } else {
+      // sanity check, don't call leaveRoom unless the id checks out
+      for (UserParticipant part : roomManager.getParticipants(roomName)) {
+        if (part.getParticipantId().equals(participantRequest.getParticipantId())) {
+          exists = true;
+          break;
+        }
+      }
+      if (exists) {
+        log.debug("Participant with sessionId {} is leaving room {}", pid, roomName);
+        roomManager.leaveRoom(participantRequest);
+        log.info("Participant with sessionId {} has left room {}", pid, roomName);
+      } else {
+        log.warn("Participant with session Id {} not found in room {}. "
+            + "Using the admin method to evict the user.", pid, roomName);
+        leaveRoomAfterConnClosed(pid);
+      }
+    }
+  }
 
-	public void onIceCandidate(Transaction transaction,
-			Request<JsonObject> request, ParticipantRequest participantRequest) {
-		String endpointName =
-				getStringParam(request,
-						ProtocolElements.ONICECANDIDATE_EPNAME_PARAM);
-		String candidate =
-				getStringParam(request,
-						ProtocolElements.ONICECANDIDATE_CANDIDATE_PARAM);
-		String sdpMid =
-				getStringParam(request,
-						ProtocolElements.ONICECANDIDATE_SDPMIDPARAM);
-		int sdpMLineIndex =
-				getIntParam(request,
-						ProtocolElements.ONICECANDIDATE_SDPMLINEINDEX_PARAM);
+  public void onIceCandidate(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) {
+    String endpointName = getStringParam(request, ProtocolElements.ONICECANDIDATE_EPNAME_PARAM);
+    String candidate = getStringParam(request, ProtocolElements.ONICECANDIDATE_CANDIDATE_PARAM);
+    String sdpMid = getStringParam(request, ProtocolElements.ONICECANDIDATE_SDPMIDPARAM);
+    int sdpMLineIndex = getIntParam(request, ProtocolElements.ONICECANDIDATE_SDPMLINEINDEX_PARAM);
 
-		roomManager.onIceCandidate(endpointName, candidate, sdpMLineIndex,
-				sdpMid, participantRequest);
-	}
+    roomManager.onIceCandidate(endpointName, candidate, sdpMLineIndex, sdpMid, participantRequest);
+  }
 
-	public void sendMessage(Transaction transaction,
-			Request<JsonObject> request, ParticipantRequest participantRequest) {
-		String userName =
-				getStringParam(request,
-						ProtocolElements.SENDMESSAGE_USER_PARAM);
-		String roomName =
-				getStringParam(request,
-						ProtocolElements.SENDMESSAGE_ROOM_PARAM);
-		String message =
-				getStringParam(request,
-						ProtocolElements.SENDMESSAGE_MESSAGE_PARAM);
+  public void sendMessage(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) {
+    String userName = getStringParam(request, ProtocolElements.SENDMESSAGE_USER_PARAM);
+    String roomName = getStringParam(request, ProtocolElements.SENDMESSAGE_ROOM_PARAM);
+    String message = getStringParam(request, ProtocolElements.SENDMESSAGE_MESSAGE_PARAM);
 
-		log.debug("Message from {} in room {}: '{}'", userName, roomName,
-				message);
+    log.debug("Message from {} in room {}: '{}'", userName, roomName, message);
 
-		roomManager
-				.sendMessage(message, userName, roomName, participantRequest);
-	}
+    roomManager.sendMessage(message, userName, roomName, participantRequest);
+  }
 
-	public void customRequest(Transaction transaction,
-			Request<JsonObject> request, ParticipantRequest participantRequest) {
-		throw new RuntimeException("Unsupported method");
-	}
+  public void customRequest(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) {
+    throw new RuntimeException("Unsupported method");
+  }
 
-	public ParticipantSession getParticipantSession(Transaction transaction) {
-		Session session = transaction.getSession();
-		ParticipantSession participantSession =
-				(ParticipantSession) session.getAttributes().get(
-						ParticipantSession.SESSION_KEY);
-		if (participantSession == null) {
-			participantSession = new ParticipantSession();
-			session.getAttributes().put(ParticipantSession.SESSION_KEY,
-					participantSession);
-		}
-		return participantSession;
-	}
+  public ParticipantSession getParticipantSession(Transaction transaction) {
+    Session session = transaction.getSession();
+    ParticipantSession participantSession = (ParticipantSession) session.getAttributes().get(
+        ParticipantSession.SESSION_KEY);
+    if (participantSession == null) {
+      participantSession = new ParticipantSession();
+      session.getAttributes().put(ParticipantSession.SESSION_KEY, participantSession);
+    }
+    return participantSession;
+  }
 
-	protected String getStringParam(Request<JsonObject> request, String key) {
-		if (request.getParams() == null || request.getParams().get(key) == null)
-			throw new RuntimeException("Request element '" + key
-					+ "' is missing");
-		return request.getParams().get(key).getAsString();
-	}
+  protected String getStringParam(Request<JsonObject> request, String key) {
+    if (request.getParams() == null || request.getParams().get(key) == null) {
+      throw new RuntimeException("Request element '" + key + "' is missing");
+    }
+    return request.getParams().get(key).getAsString();
+  }
 
-	protected int getIntParam(Request<JsonObject> request, String key) {
-		if (request.getParams() == null || request.getParams().get(key) == null)
-			throw new RuntimeException("Request element '" + key
-					+ "' is missing");
-		return request.getParams().get(key).getAsInt();
-	}
+  protected int getIntParam(Request<JsonObject> request, String key) {
+    if (request.getParams() == null || request.getParams().get(key) == null) {
+      throw new RuntimeException("Request element '" + key + "' is missing");
+    }
+    return request.getParams().get(key).getAsInt();
+  }
 
-	protected boolean getBooleanParam(Request<JsonObject> request, String key) {
-		if (request.getParams() == null || request.getParams().get(key) == null)
-			throw new RuntimeException("Request element '" + key
-					+ "' is missing");
-		return request.getParams().get(key).getAsBoolean();
-	}
+  protected boolean getBooleanParam(Request<JsonObject> request, String key) {
+    if (request.getParams() == null || request.getParams().get(key) == null) {
+      throw new RuntimeException("Request element '" + key + "' is missing");
+    }
+    return request.getParams().get(key).getAsBoolean();
+  }
 }

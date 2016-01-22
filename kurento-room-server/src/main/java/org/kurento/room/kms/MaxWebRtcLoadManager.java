@@ -33,7 +33,7 @@ public class MaxWebRtcLoadManager implements LoadManager {
     if (numWebRtcs > maxWebRtcPerKms) {
       return 1;
     } else {
-      return numWebRtcs / ((double) maxWebRtcPerKms);
+      return numWebRtcs / (double) maxWebRtcPerKms;
     }
   }
 

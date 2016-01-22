@@ -1,11 +1,11 @@
 /*
  * (C) Copyright 2014 Kurento (http://kurento.org/)
- * 
+ *
  * All rights reserved. This program and the accompanying materials are made
  * available under the terms of the GNU Lesser General Public License (LGPL)
  * version 2.1 which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-2.1.html
- * 
+ *
  * This library is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
@@ -45,80 +45,74 @@ import com.google.gson.JsonArray;
 @SpringBootApplication
 public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
-	public static final String KMSS_URIS_PROPERTY = "kms.uris";
-	public static final String KMSS_URIS_DEFAULT = "[ \"ws://localhost:8888/kurento\" ]";
+  public static final String KMSS_URIS_PROPERTY = "kms.uris";
+  public static final String KMSS_URIS_DEFAULT = "[ \"ws://localhost:8888/kurento\" ]";
 
-	private static final Logger log = LoggerFactory
-			.getLogger(KurentoRoomServerApp.class);
+  private static final Logger log = LoggerFactory.getLogger(KurentoRoomServerApp.class);
 
-	private static JsonRpcNotificationService userNotificationService = new JsonRpcNotificationService();
+  private static JsonRpcNotificationService userNotificationService = new JsonRpcNotificationService();
 
-	@Bean
-	@ConditionalOnMissingBean
-	public KurentoClientProvider kmsManager() {
+  @Bean
+  @ConditionalOnMissingBean
+  public KurentoClientProvider kmsManager() {
 
-		JsonArray kmsUris = getPropertyJson(KMSS_URIS_PROPERTY,
-				KMSS_URIS_DEFAULT, JsonArray.class);
-		List<String> kmsWsUris = JsonUtils.toStringList(kmsUris);
+    JsonArray kmsUris = getPropertyJson(KMSS_URIS_PROPERTY, KMSS_URIS_DEFAULT, JsonArray.class);
+    List<String> kmsWsUris = JsonUtils.toStringList(kmsUris);
 
-		if (kmsWsUris.isEmpty()) {
-			throw new IllegalArgumentException(KMSS_URIS_PROPERTY
-					+ " should contain at least one kms url");
-		}
+    if (kmsWsUris.isEmpty()) {
+      throw new IllegalArgumentException(KMSS_URIS_PROPERTY
+          + " should contain at least one kms url");
+    }
 
-		String firstKmsWsUri = kmsWsUris.get(0);
+    String firstKmsWsUri = kmsWsUris.get(0);
 
-		if (firstKmsWsUri.equals("autodiscovery")) {
+    if (firstKmsWsUri.equals("autodiscovery")) {
 
-			log.info(
-					"Using autodiscovery rules to locate KMS on every pipeline");
+      log.info("Using autodiscovery rules to locate KMS on every pipeline");
 
-			return new AutodiscoveryKurentoClientProvider();
+      return new AutodiscoveryKurentoClientProvider();
 
-		} else {
+    } else {
 
-			log.info(
-					"Configuring Kurento Room Server to use first of the following kmss: "
-							+ kmsWsUris);
+      log.info("Configuring Kurento Room Server to use first of the following kmss: " + kmsWsUris);
 
-			return new FixedOneKmsManager(firstKmsWsUri);
-		}
-	}
+      return new FixedOneKmsManager(firstKmsWsUri);
+    }
+  }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public JsonRpcNotificationService notificationService() {
-		return userNotificationService;
-	}
+  @Bean
+  @ConditionalOnMissingBean
+  public JsonRpcNotificationService notificationService() {
+    return userNotificationService;
+  }
 
-	@Bean
-	public NotificationRoomManager roomManager() {
-		return new NotificationRoomManager(userNotificationService,
-				kmsManager());
-	}
+  @Bean
+  public NotificationRoomManager roomManager() {
+    return new NotificationRoomManager(userNotificationService, kmsManager());
+  }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public JsonRpcUserControl userControl() {
-		return new JsonRpcUserControl();
-	}
+  @Bean
+  @ConditionalOnMissingBean
+  public JsonRpcUserControl userControl() {
+    return new JsonRpcUserControl();
+  }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public RoomJsonRpcHandler roomHandler() {
-		return new RoomJsonRpcHandler();
-	}
+  @Bean
+  @ConditionalOnMissingBean
+  public RoomJsonRpcHandler roomHandler() {
+    return new RoomJsonRpcHandler();
+  }
 
-	@Override
-	public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
-		registry.addHandler(roomHandler(), "/room");
-	}
+  @Override
+  public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
+    registry.addHandler(roomHandler(), "/room");
+  }
 
-	public static void main(String[] args) throws Exception {
-		start(args);
-	}
+  public static void main(String[] args) throws Exception {
+    start(args);
+  }
 
-	public static ConfigurableApplicationContext start(String[] args) {
-		return SpringApplication.run(KurentoRoomServerApp.class, args);
-	}
+  public static ConfigurableApplicationContext start(String[] args) {
+    return SpringApplication.run(KurentoRoomServerApp.class, args);
+  }
 }

@@ -19,12 +19,13 @@ import org.kurento.client.KurentoClient;
 
 public class FixedOneKmsManager extends KmsManager {
 
-	public FixedOneKmsManager(String kmsWsUri) {
-		this(kmsWsUri, 1);
-	}
+  public FixedOneKmsManager(String kmsWsUri) {
+    this(kmsWsUri, 1);
+  }
 
-	public FixedOneKmsManager(String kmsWsUri, int numKmss) {
-		for (int i = 0; i < numKmss; i++)
-			this.addKms(new Kms(KurentoClient.create(kmsWsUri), kmsWsUri));
-	}
+  public FixedOneKmsManager(String kmsWsUri, int numKmss) {
+    for (int i = 0; i < numKmss; i++) {
+      this.addKms(new Kms(KurentoClient.create(kmsWsUri), kmsWsUri));
+    }
+  }
 }
