@@ -157,6 +157,11 @@
 			<artifactId>kurento-room-client-js</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.kurento</groupId>
+			<artifactId>kurento-room-test-framework</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-log4j</artifactId>
 		</dependency>

@@ -46,7 +46,7 @@ public class KurentoRoomDemoApp {
 
   private static final Logger log = LoggerFactory.getLogger(KurentoRoomDemoApp.class);
 
-  public final static String KROOMDEMO_CFG_FILENAME = "kurento-room-demo.conf";
+  public final static String KROOMDEMO_CFG_FILENAME = "kurento-room-demo.conf.json";
 
   private static JsonObject DEFAULT_HAT_COORDS = new JsonObject();
 

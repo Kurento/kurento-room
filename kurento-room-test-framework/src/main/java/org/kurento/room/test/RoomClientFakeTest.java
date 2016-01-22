@@ -72,7 +72,7 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
 
   public long JOIN_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 30;
   public long ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS = 180;
-  public long ROOM_ACTIVITY_IN_SECONDS = 120;
+  public long ROOM_ACTIVITY_IN_SECONDS = 30;
   public long LEAVE_ROOM_TOTAL_TIMEOUT_IN_SECONDS = 10;
 
   public URI appWsUrl;
