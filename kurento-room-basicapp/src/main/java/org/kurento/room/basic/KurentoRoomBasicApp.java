@@ -11,9 +11,10 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
-package org.kurento.room;
+package org.kurento.room.basic;
 
 import org.kurento.commons.ConfigFileManager;
+import org.kurento.room.KurentoRoomServerApp;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Import;
 

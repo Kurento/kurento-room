@@ -11,25 +11,25 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
-
-package org.kurento.room.test;
+package org.kurento.room.test.basic.fake;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
-import org.kurento.room.test.browser.SeqNUsersEqualLifetime;
+import org.kurento.room.test.fake.ParallelNFakeUsers;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * @see SeqNUsersEqualLifetime
+ * @see ParallelNFakeUsers
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
-public class SeqNUsersEqualLifetimeBasicTest extends SeqNUsersEqualLifetime {
+public class ParallelNFakeUsersBasicTest extends ParallelNFakeUsers {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {
     webPageType = WebPageType.ROOM;
+    ROOM_ACTIVITY_IN_SECONDS = 20; // shorter idle period
     super.setupBrowserTest();
   }
 
@@ -38,5 +38,4 @@ public class SeqNUsersEqualLifetimeBasicTest extends SeqNUsersEqualLifetime {
     return localChromes(MethodHandles.lookup().lookupClass().getSimpleName(), NUM_USERS,
         WebPageType.ROOM);
   }
-
 }

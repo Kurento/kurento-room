@@ -12,20 +12,20 @@
  * details.
  */
 
-package org.kurento.room.test;
+package org.kurento.room.test.basic;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
-import org.kurento.room.test.browser.WebAppAvailability;
+import org.kurento.room.test.browser.AddRemoveUsers;
 import org.kurento.test.browser.WebPageType;
 
 /**
+ * @see AddRemoveUsers
  * @author Radu Tom Vlad (rvlad@naevatec.com)
- * @see WebAppAvailability
  */
-public class WebAppAvailabilityBasicTest extends WebAppAvailability {
+public class AddRemoveUsersBasicTest extends AddRemoveUsers {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {

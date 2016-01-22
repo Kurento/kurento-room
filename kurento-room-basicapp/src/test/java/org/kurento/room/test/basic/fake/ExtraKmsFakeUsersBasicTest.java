@@ -11,12 +11,13 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
-package org.kurento.room.test.fake;
+package org.kurento.room.test.basic.fake;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
+import org.kurento.room.test.fake.ExtraKmsFakeUsers;
 import org.kurento.test.browser.WebPageType;
 
 /**

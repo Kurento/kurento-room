@@ -2,10 +2,10 @@
 
 Copyright © 2013-2016 [Kurento]. Licensed under [LGPL v2.1 License].
 
-kurento-room-test
+kurento-room-basicapp
 ==========
 
-Integration tests for Kurento Room. It uses the Selenium framework.
+This project contains a lighter or more basic Kurento Room demo application.
 
 What is Kurento
 ---------------

@@ -12,20 +12,20 @@
  * details.
  */
 
-package org.kurento.room.test;
+package org.kurento.room.test.basic;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
-import org.kurento.room.test.browser.AddRemoveUsersNoSinkVerify;
+import org.kurento.room.test.browser.SeqAddRemoveUser;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * @see AddRemoveUsersNoSinkVerify
+ * @see SeqAddRemoveUser
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
-public class AddRemoveUsersNoSinkVerifyBasicTest extends AddRemoveUsersNoSinkVerify {
+public class SeqAddRemoveUserBasicTest extends SeqAddRemoveUser {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {
@@ -38,4 +38,5 @@ public class AddRemoveUsersNoSinkVerifyBasicTest extends AddRemoveUsersNoSinkVer
     return localChromes(MethodHandles.lookup().lookupClass().getSimpleName(), NUM_USERS,
         WebPageType.ROOM);
   }
+
 }

@@ -12,20 +12,20 @@
  * details.
  */
 
-package org.kurento.room.test;
+package org.kurento.room.test.basic;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
-import org.kurento.room.test.browser.SeqAddRemoveUser;
+import org.kurento.room.test.browser.NUsersEqualLifetime;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * @see SeqAddRemoveUser
+ * @see NUsersEqualLifetime
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
-public class SeqAddRemoveUserBasicTest extends SeqAddRemoveUser {
+public class NUsersEqualLifetimeBasicTest extends NUsersEqualLifetime {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {

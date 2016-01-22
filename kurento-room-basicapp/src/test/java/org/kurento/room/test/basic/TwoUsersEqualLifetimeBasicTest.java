@@ -12,7 +12,7 @@
  * details.
  */
 
-package org.kurento.room.test;
+package org.kurento.room.test.basic;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;

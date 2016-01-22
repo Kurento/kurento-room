@@ -11,24 +11,25 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
-package org.kurento.room.test.fake;
+
+package org.kurento.room.test.basic;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
+import org.kurento.room.test.browser.WebAppAvailability;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * @see ParallelNFakeUsers
  * @author Radu Tom Vlad (rvlad@naevatec.com)
+ * @see WebAppAvailability
  */
-public class ParallelNFakeUsersBasicTest extends ParallelNFakeUsers {
+public class WebAppAvailabilityBasicTest extends WebAppAvailability {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {
     webPageType = WebPageType.ROOM;
-    ROOM_ACTIVITY_IN_SECONDS = 20; // shorter idle period
     super.setupBrowserTest();
   }
 

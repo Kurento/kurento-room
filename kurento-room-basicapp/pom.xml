@@ -8,14 +8,14 @@
 		<version>6.2.1-SNAPSHOT</version>
 		<relativePath>../</relativePath>
 	</parent>
-	<artifactId>kurento-room-test</artifactId>
+	<artifactId>kurento-room-basicapp</artifactId>
 	<packaging>jar</packaging>
 
 	<name>Kurento Room Basic App</name>
 	<description>
 			Kurento Room Basic application 
 
-			This project contains a lighter kurento-room demo application 
+			This project contains a lighter kurento-room demo application. 
 	</description>
 	<url>http://www.kurento.org/docs/${project.version}</url>
 
@@ -50,7 +50,7 @@
 
 	<properties>
 		<!-- Main class -->
-		<start-class>org.kurento.room.KurentoRoomBasicApp</start-class>
+		<start-class>org.kurento.room.basic.KurentoRoomBasicApp</start-class>
 	</properties>
 
 	<build>

@@ -12,20 +12,20 @@
  * details.
  */
 
-package org.kurento.room.test;
+package org.kurento.room.test.basic;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
-import org.kurento.room.test.browser.NUsersEqualLifetime;
+import org.kurento.room.test.browser.SeqNUsersEqualLifetime;
 import org.kurento.test.browser.WebPageType;
 
 /**
- * @see NUsersEqualLifetime
+ * @see SeqNUsersEqualLifetime
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
-public class NUsersEqualLifetimeBasicTest extends NUsersEqualLifetime {
+public class SeqNUsersEqualLifetimeBasicTest extends SeqNUsersEqualLifetime {
 
   @Override
   public void setupBrowserTest() throws InterruptedException {
