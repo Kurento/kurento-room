@@ -21,9 +21,11 @@ chown kurento /var/lib/kurento
 install -o kurento -g root $APP_HOME/files/$APP_NAME.jar /var/lib/kurento/
 install -o kurento -g root $APP_HOME/sysfiles/$APP_NAME.conf /var/lib/kurento/
 install -o kurento -g root $APP_HOME/files/keystore.jks /var/lib/kurento/
+sudo rm /etc/init.d/$APP_NAME
 sudo ln -s /var/lib/kurento/$APP_NAME.jar /etc/init.d/$APP_NAME
 mkdir -p /etc/kurento/
 install -o kurento -g root $APP_HOME/files/$APP_NAME.conf.json /etc/kurento/
+install -o kurento -g root $APP_HOME/files/$APP_NAME.properties /etc/kurento/
 install -o kurento -g root $APP_HOME/sysfiles/$APP_NAME-log4j.properties /etc/kurento/
 
 mkdir -p /var/log/kurento-media-server
