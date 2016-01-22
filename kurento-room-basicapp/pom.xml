@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.kurento</groupId>
 		<artifactId>kurento-room</artifactId>
-		<version>6.2.1-SNAPSHOT</version>
+		<version>6.3.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 	<artifactId>kurento-room-basicapp</artifactId>
@@ -13,9 +13,9 @@
 
 	<name>Kurento Room Basic App</name>
 	<description>
-			Kurento Room Basic application 
+			Kurento Room Basic application
 
-			This project contains a lighter kurento-room demo application. 
+			This project contains a lighter kurento-room demo application.
 	</description>
 	<url>http://www.kurento.org/docs/${project.version}</url>
 
@@ -67,7 +67,7 @@
 				</includes>
 			</resource>
 		</resources>
-		
+
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -136,7 +136,7 @@
 
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings 
+				<!--This plugin's configuration is used to store Eclipse m2e settings
 					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
@@ -190,7 +190,7 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>org.kurento</groupId>
@@ -220,5 +220,5 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
 </project>
