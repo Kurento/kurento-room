@@ -9,23 +9,22 @@ Kurento Room is composed by several modules to offer group communications by
 means of WebRTC. These modules are:
 
   * `kurento-room-sdk` - module that provides a management interface for 
-    developers of multimedia conferences (rooms) applications in Java 
-  * `kurento-room-server` - Kurento’s own implementation of a room API, it 
-    provides the WebSockets API for the communications between room clients and 
-    the server.
+    developers of multimedia conferences (rooms) applications in Java.
+  * `kurento-room-server` - Kurento’s own implementation of server-side room
+    management. It provides a WebSockets API for the communications between room 
+    clients and the server.
   * `kurento-room-client` - Java library that uses WebSockets and JSON-RPC to 
-    interact with the server-side of the Room API. Can be used to implement the 
-    client-side of a room application.
+    interact with the Room Server. Can be used to implement the client-side of a 
+    room application based on our server.
   * `kurento-room-client-js` - Javascript library that acts as wrapper for several 
     JS APIs (WebRTC, WebSockets, Kurento Utils). Can be used to implement the 
-    client-side of a room application.
+    client-side of a room application based on our server.
+  * `kurento-room-test` - integration and functionality tests for the room 
+    server applications (demo & basic).
   * `kurento-room-demo` - demonstration project, contains the client-side 
-    implementation (HTML, Javascript, graphic resources) and embeds the room 
-    server to provide the functionality required for group communications
-  * `kurento-room-test` - integration and functionality tests for the basic room 
-    server application
-  * `kurento-room-demo-test` - integration and functionality tests for the demo 
-    application.
+    implementation (HTML, Javascript, graphic resources) and embeds the Room 
+    Server to provide the functionality required for group communications.
+  * `kurento-room-basicapp` - lighter demonstration project.
 
 There is extensive [documentation][doc-kurento-room] on each of these components 
 together with a tutorial based on the Room demo. These docs are generated from a

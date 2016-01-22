@@ -216,7 +216,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.kurento</groupId>
-			<artifactId>kurento-room-test-framework</artifactId>
+			<artifactId>kurento-room-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

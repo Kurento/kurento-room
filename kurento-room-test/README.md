@@ -2,7 +2,7 @@
 
 Copyright © 2013-2016 [Kurento]. Licensed under [LGPL v2.1 License].
 
-kurento-room-test-framework
+kurento-room-test
 ===========================
 
 Integration tests framework for Kurento Room. It is based on the test framework

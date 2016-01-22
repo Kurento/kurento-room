@@ -66,7 +66,7 @@
 				<module>kurento-room-server</module>
 				<module>kurento-room-client</module>
 				<module>kurento-room-client-js</module>
-				<module>kurento-room-test-framework</module>
+				<module>kurento-room-test</module>
 				<module>kurento-room-demo</module>
 				<module>kurento-room-basicapp</module>
 			</modules>
@@ -78,7 +78,7 @@
 				<module>kurento-room-server</module>
                 <module>kurento-room-client</module>
 				<module>kurento-room-client-js</module>
-				<module>kurento-room-test-framework</module>
+				<module>kurento-room-test</module>
 			</modules>
 		</profile>
 	</profiles>
@@ -107,17 +107,17 @@
 			</dependency>
 			<dependency>
 				<groupId>org.kurento</groupId>
+				<artifactId>kurento-room-test</artifactId>
+				<version>${version.kurento.room}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.kurento</groupId>
 				<artifactId>kurento-room-demo</artifactId>
 				<version>${version.kurento.room}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.kurento</groupId>
-				<artifactId>kurento-room-test-framework</artifactId>
-				<version>${version.kurento.room}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.kurento</groupId>
-				<artifactId>kurento-room-test</artifactId>
+				<artifactId>kurento-room-basicapp</artifactId>
 				<version>${version.kurento.room}</version>
 			</dependency>
 		</dependencies>

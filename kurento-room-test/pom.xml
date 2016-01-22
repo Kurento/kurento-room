@@ -8,10 +8,10 @@
 		<version>6.2.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>kurento-room-test-framework</artifactId>
+	<artifactId>kurento-room-test</artifactId>
 	<packaging>jar</packaging>
 
-	<name>Kurento Room Test Framework</name>
+	<name>Kurento Room Test</name>
 	<description>
 			Kurento Room Tests Framework
 
