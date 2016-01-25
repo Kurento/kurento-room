@@ -53,11 +53,6 @@
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>false</filtering>
-				<excludes>
-					<exclude>log4j.properties</exclude>
-					<exclude>application.properties</exclude>
-					<exclude>kurento-room-demo.conf.json</exclude>
-				</excludes>
 			</resource>
 			<resource>
 				<directory>src/main/resources</directory>
