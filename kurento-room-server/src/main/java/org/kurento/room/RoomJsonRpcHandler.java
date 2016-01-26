@@ -13,6 +13,9 @@
  */
 package org.kurento.room;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.kurento.jsonrpc.DefaultJsonRpcHandler;
 import org.kurento.jsonrpc.Session;
 import org.kurento.jsonrpc.Transaction;
@@ -44,6 +47,11 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 
   @Autowired
   private JsonRpcNotificationService notificationService;
+
+  @Override
+  public List<String> allowedOrigins() {
+    return Arrays.asList("*");
+  }
 
   @Override
   public final void handleRequest(Transaction transaction, Request<JsonObject> request)
@@ -122,7 +130,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
   public void handleTransportError(Session session, Throwable exception) throws Exception {
     log.debug("Transport error for session id {}", session != null
         ? session.getSessionId()
-            : "NULL_SESSION", exception);
+        : "NULL_SESSION", exception);
   }
 
   private void updateThreadName(String name) {
