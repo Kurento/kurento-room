@@ -234,11 +234,11 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
     }
   }
 
-  public static void sleep(long millis) {
+  public static void sleep(long seconds) {
     try {
-      Thread.sleep(millis);
+      Thread.sleep(seconds * 1000);
     } catch (InterruptedException e) {
-      log.warn("Interrupted while sleeping {}ms", millis, e);
+      log.warn("Interrupted while sleeping {}seconds", seconds, e);
     }
   }
 
@@ -323,7 +323,6 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
             throw e;
           }
         }
-        log.debug("it#{}: Closed {} WebDrivers", it, numUsers);
         log.info("it#{}: Finished execution of {} users", it, numUsers);
       }
     } finally {
@@ -363,7 +362,7 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
         }
       }
     } finally {
-      threadPool.shutdownNow();
+      threadPool.shutdown();
       try {
         threadPool.awaitTermination(TASKS_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES);
       } catch (InterruptedException e) {

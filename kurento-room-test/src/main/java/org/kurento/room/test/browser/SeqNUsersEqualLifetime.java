@@ -51,7 +51,7 @@ public class SeqNUsersEqualLifetime extends RoomFunctionalBrowserTest<WebPage> {
     }
 
     // Guard time to see application in action
-    sleep(PLAY_TIME * 1000);
+    sleep(PLAY_TIME);
 
     for (int i = 0; i < NUM_USERS; i++) {
       String userName = getBrowserKey(i);

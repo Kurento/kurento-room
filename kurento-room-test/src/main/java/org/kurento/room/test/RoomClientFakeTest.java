@@ -172,6 +172,21 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
     return s;
   }
 
+  public void closeSession(String room) {
+    FakeSession session = sessions.get(room);
+    if (session != null) {
+      try {
+        session.close();
+      } catch (IOException e) {
+        log.warn("Error closing session", e);
+      }
+    }
+  }
+
+  public FakeSession removeSession(String room) {
+    return sessions.remove(room);
+  }
+
   public CountDownLatch parallelJoinFakeUsers(final List<String> relativePaths, final String room,
       final KurentoClient kurento) {
     if (relativePaths == null || relativePaths.isEmpty()) {
@@ -277,7 +292,7 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
     failWithExceptions();
     log.info("\n-----------------\n" + "Wait for {} concluded in '{}'" + "\n-----------------\n"
         + "Waiting {} seconds", previousAction, room, ROOM_ACTIVITY_IN_SECONDS);
-    sleep(ROOM_ACTIVITY_IN_SECONDS * 1000);
+    sleep(ROOM_ACTIVITY_IN_SECONDS);
     log.info("\n-----------------\n" + "{} in '{}'" + "\n-----------------\n", nextAction, room);
   }
 

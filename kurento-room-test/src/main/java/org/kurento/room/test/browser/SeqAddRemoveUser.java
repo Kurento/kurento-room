@@ -27,7 +27,7 @@ import org.kurento.test.browser.WebPage;
  */
 public class SeqAddRemoveUser extends RoomFunctionalBrowserTest<WebPage> {
 
-  private static final int WAIT_TIME = 500;
+  private static final int WAIT_TIME = 1;
 
   public static final int NUM_USERS = 2;
 
@@ -57,7 +57,7 @@ public class SeqAddRemoveUser extends RoomFunctionalBrowserTest<WebPage> {
       }
 
       // Guard time to see application in action
-      sleep(PLAY_TIME * 1000);
+      sleep(PLAY_TIME);
 
       // Stop application by caller
       for (int i = 0; i < NUM_USERS; i++) {

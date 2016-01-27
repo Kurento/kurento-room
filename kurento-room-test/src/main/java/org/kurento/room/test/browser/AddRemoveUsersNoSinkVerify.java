@@ -40,7 +40,7 @@ public class AddRemoveUsersNoSinkVerify extends RoomFunctionalBrowserTest<WebPag
         joinToRoom(numUser, userName, roomName);
         log.info("User '{}' joined room '{}'", userName, roomName);
 
-        sleep(PLAY_TIME * 1000);
+        sleep(PLAY_TIME);
 
         log.info("User '{}' is exiting from room '{}'", userName, roomName);
         exitFromRoom(numUser, userName);

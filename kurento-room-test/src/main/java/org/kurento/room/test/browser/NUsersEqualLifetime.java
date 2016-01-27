@@ -75,7 +75,7 @@ public class NUsersEqualLifetime extends RoomFunctionalBrowserTest<WebPage> {
         });
         publishCdl[iteration].await(PLAY_TIME * 5000L, TimeUnit.MILLISECONDS);
 
-        sleep(PLAY_TIME * 1000);
+        sleep(PLAY_TIME);
 
         log.info("User '{}' is exiting from room '{}'", userName, roomName);
         synchronized (browsersLock) {

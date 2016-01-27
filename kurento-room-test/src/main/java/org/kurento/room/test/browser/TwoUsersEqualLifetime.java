@@ -54,7 +54,7 @@ public class TwoUsersEqualLifetime extends RoomFunctionalBrowserTest<WebPage> {
     log.debug("Received media from '{}' in '{}'", user1Name, user1Name);
 
     // Guard time to see application in action
-    sleep(PLAY_TIME * 1000);
+    sleep(PLAY_TIME);
 
     // Stop application by caller
     exitFromRoom(0, user0Name);
