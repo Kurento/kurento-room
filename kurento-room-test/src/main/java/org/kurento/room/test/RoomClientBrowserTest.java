@@ -99,8 +99,10 @@ public abstract class RoomClientBrowserTest<W extends WebPage> extends BrowserTe
     @Override
     public void start() {
       super.start();
-      System.setProperty("kms.uris", "[\"" + kms.getWsUri() + "\"]");
-      log.debug("Set system property 'kms.uris' to {}", kms.getWsUri());
+      String uri = kms.getWsUri();
+      System.setProperty("kms.uris", "[\"" + uri + "\"]");
+      System.setProperty("kms.uri", uri);
+      log.debug("Set system properties 'kms.uri' to {} & 'kms.uris' to [{}] ", uri, uri);
     }
 
   }

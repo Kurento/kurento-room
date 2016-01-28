@@ -205,26 +205,7 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
         try {
           String userName = getFakeKey(numTask);
           FakeSession s = createSession(room);
-          String relativePath = relativePaths.get(numTask);
-          if (relativePath == null) {
-            throw new Exception("Null play path for user " + userName);
-          }
-
-          String basePath = testFiles;
-          if (!basePath.startsWith("http://") && !basePath.startsWith("https://")
-              && !basePath.startsWith("file://")) {
-            basePath = "file://" + basePath;
-          }
-          URI playerUri = null;
-          try {
-            playerUri = new URI(basePath + relativePath);
-          } catch (URISyntaxException e) {
-            throw new Exception("Unable to construct player URI for user " + userName
-                + " from base path " + basePath + " and file " + relativePath);
-          }
-          String fullPlayPath = playerUri.toString();
-          log.debug("Fake user '{}': using play URI {}", userName, fullPlayPath);
-
+          String fullPlayPath = getPlaySourcePath(userName, relativePaths.get(numTask));
           if (kurento == null) {
             s.newParticipant(userName, fullPlayPath, true, true);
           } else {
@@ -294,6 +275,31 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
         + "Waiting {} seconds", previousAction, room, ROOM_ACTIVITY_IN_SECONDS);
     sleep(ROOM_ACTIVITY_IN_SECONDS);
     log.info("\n-----------------\n" + "{} in '{}'" + "\n-----------------\n", nextAction, room);
+  }
+
+  public static String getPlaySourcePath(String userName, String relativePath) throws Exception {
+    return getPlaySourcePath(userName, relativePath, testFiles);
+  }
+
+  public static String getPlaySourcePath(String userName, String relativePath, String basePath)
+      throws Exception {
+    if (relativePath == null) {
+      throw new Exception("Null play path for user " + userName);
+    }
+    if (!basePath.startsWith("http://") && !basePath.startsWith("https://")
+        && !basePath.startsWith("file://")) {
+      basePath = "file://" + basePath;
+    }
+    URI playerUri = null;
+    try {
+      playerUri = new URI(basePath + relativePath);
+    } catch (URISyntaxException e) {
+      throw new Exception("Unable to construct player URI for user " + userName
+          + " from base path " + basePath + " and file " + relativePath);
+    }
+    String fullPlayPath = playerUri.toString();
+    log.debug("Fake user '{}': using play URI {}", userName, fullPlayPath);
+    return fullPlayPath;
   }
 
   // use fake.kms.ws.uri instead
