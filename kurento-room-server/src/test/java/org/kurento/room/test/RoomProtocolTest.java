@@ -13,28 +13,54 @@
  */
 package org.kurento.room.test;
 
-import static org.hamcrest.core.StringContains.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.client.JsonRpcClientLocal;
-import org.kurento.room.NotificationRoomManager;
+import org.kurento.jsonrpc.message.Request;
 import org.kurento.room.RoomJsonRpcHandler;
+import org.kurento.room.api.pojo.ParticipantRequest;
+import org.kurento.room.api.pojo.UserParticipant;
 import org.kurento.room.client.KurentoRoomClient;
 import org.kurento.room.client.ServerJsonRpcHandler;
-import org.kurento.room.exception.RoomException;
-import org.kurento.room.exception.RoomException.Code;
+import org.kurento.room.client.internal.Notification;
+import org.kurento.room.client.internal.Notification.Method;
+import org.kurento.room.client.internal.ParticipantJoinedInfo;
+import org.kurento.room.internal.DefaultNotificationRoomHandler;
+import org.kurento.room.internal.ProtocolElements;
 import org.kurento.room.rpc.JsonRpcNotificationService;
 import org.kurento.room.rpc.JsonRpcUserControl;
-import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonObject;
 
 /**
  * Integration tests for the room server protocol.
@@ -45,46 +71,132 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class RoomProtocolTest {
 
-  @Mock
-  private NotificationRoomManager roomManager;
-  @Mock
+  private final Logger log = LoggerFactory.getLogger(RoomProtocolTest.class);
+
   private JsonRpcNotificationService notificationService;
 
-  @InjectMocks
+  private DefaultNotificationRoomHandler roomEventHandler;
+
+  @Mock
   private JsonRpcUserControl userControl;
-  @InjectMocks
+
   private RoomJsonRpcHandler roomJsonRpcHandler;
 
-  private JsonRpcClientLocal localClient;
+  private JsonRpcClientLocal localClient0;
+  private KurentoRoomClient client0;
+  private ServerJsonRpcHandler serverHandler0;
 
-  private KurentoRoomClient client;
-  private ServerJsonRpcHandler serverHandler;
+  private JsonRpcClientLocal localClient1;
+  private KurentoRoomClient client1;
+  private ServerJsonRpcHandler serverHandler1;
 
   @Before
   public void init() {
-    MockitoAnnotations.initMocks(this);
-
-    // FIXME dependencies are not correctly autowired
-
-    // userControl = new JsonRpcUserControl();
-    // roomJsonRpcHandler = new RoomJsonRpcHandler();
-
-    localClient = new JsonRpcClientLocal(roomJsonRpcHandler);
-
-    serverHandler = new ServerJsonRpcHandler();
-    client = new KurentoRoomClient(localClient, serverHandler);
+    notificationService = new JsonRpcNotificationService();
+    roomEventHandler = new DefaultNotificationRoomHandler(notificationService);
+    roomJsonRpcHandler = new RoomJsonRpcHandler(userControl, notificationService);
   }
 
-  @Ignore
   @Test
-  public void joinRoom() {
-    doThrow(new RoomException(Code.USER_GENERIC_ERROR_CODE, "Join error")).when(roomManager)
-    .joinRoom("user", "room", true, null);
-    try {
-      client.joinRoom("room", "user");
-      fail("RoomException should be thrown");
-    } catch (Exception e) {
-      assertThat(e.getMessage(), containsString("Join error"));
-    }
+  public void joinRoom() throws IOException, InterruptedException, ExecutionException {
+    final Map<String, List<String>> expectedEmptyPeersList = new HashMap<String, List<String>>();
+
+    final Map<String, List<String>> expectedPeersList = new HashMap<String, List<String>>();
+    List<String> user0Streams = new ArrayList<String>();
+    user0Streams.add("webcam");
+    expectedPeersList.put("user0", user0Streams);
+
+    final Set<UserParticipant> existingParticipants = new HashSet<UserParticipant>();
+
+    doAnswer(new Answer<Void>() {
+      @Override
+      public Void answer(InvocationOnMock invocation) throws Throwable {
+        Request<?> argsRequest = invocation.getArgumentAt(1, Request.class);
+        Request<JsonObject> request = new Request<JsonObject>(argsRequest.getSessionId(),
+            argsRequest.getId(), argsRequest.getMethod(), (JsonObject) argsRequest.getParams());
+
+        String roomName = JsonRpcUserControl.getStringParam(request,
+            ProtocolElements.JOINROOM_ROOM_PARAM);
+        String userName = JsonRpcUserControl.getStringParam(request,
+            ProtocolElements.JOINROOM_USER_PARAM);
+
+        ParticipantRequest preq = invocation.getArgumentAt(2, ParticipantRequest.class);
+
+        log.debug("joinRoom -> {} to {}, preq: {}", userName, roomName, preq);
+
+        roomEventHandler.onParticipantJoined(preq, roomName, userName, existingParticipants, null);
+
+        if (userName.equalsIgnoreCase("user0")) {
+          existingParticipants.add(new UserParticipant(preq.getParticipantId(), "user0", true));
+        }
+
+        return null;
+      }
+
+    }).when(userControl).joinRoom(any(Transaction.class), Matchers.<Request<JsonObject>> any(),
+        any(ParticipantRequest.class));
+
+    // controls the join order
+    final CountDownLatch joinCdl = new CountDownLatch(1);
+
+    ExecutorService threadPool = Executors.newCachedThreadPool();
+    ExecutorCompletionService<Void> exec = new ExecutorCompletionService<>(threadPool);
+
+    exec.submit(new Callable<Void>() {
+      @Override
+      public Void call() throws Exception {
+        String thname = Thread.currentThread().getName();
+        Thread.currentThread().setName("user0");
+
+        localClient0 = new JsonRpcClientLocal(roomJsonRpcHandler);
+        localClient0.setSessionId("session0");
+        serverHandler0 = new ServerJsonRpcHandler();
+        client0 = new KurentoRoomClient(localClient0, serverHandler0);
+        try {
+          Map<String, List<String>> emptyPeersList = client0.joinRoom("room", "user0");
+          assertThat(emptyPeersList.entrySet(), equalTo(expectedEmptyPeersList.entrySet()));
+        } catch (IOException e) {
+          log.error("Unable to join room", e);
+          fail("Unable to join room: " + e.getMessage());
+        } finally {
+          joinCdl.countDown();
+        }
+        Thread.currentThread().setName(thname);
+        return null;
+      }
+    });
+
+    exec.submit(new Callable<Void>() {
+      @Override
+      public Void call() throws Exception {
+        String thname = Thread.currentThread().getName();
+        Thread.currentThread().setName("user1");
+
+        localClient1 = new JsonRpcClientLocal(roomJsonRpcHandler);
+        localClient1.setSessionId("session1");
+        serverHandler1 = new ServerJsonRpcHandler();
+        client1 = new KurentoRoomClient(localClient1, serverHandler1);
+        joinCdl.await();
+        try {
+          Map<String, List<String>> peersList = client1.joinRoom("room", "user1");
+          assertThat(peersList, is(expectedPeersList));
+        } catch (IOException e) {
+          log.error("Unable to join room", e);
+          fail("Unable to join room: " + e.getMessage());
+        }
+        Thread.currentThread().setName(thname);
+        return null;
+      }
+    });
+
+    exec.take().get();
+    exec.take().get();
+
+    threadPool.shutdown();
+
+    Notification notif = serverHandler0.getNotification();
+    assertThat(notif.getMethod(), is(Method.PARTICIPANTJOINED_METHOD));
+    ParticipantJoinedInfo joinedNotif = (ParticipantJoinedInfo) notif;
+    assertThat(joinedNotif.getId(), is("user1"));
   }
 }

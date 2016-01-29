@@ -26,23 +26,19 @@ import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
- * Demo application for Kurento Room, uses the Room Server and the Room Client JS libraries. The web
- * client is built with AngularJS and lumx.
+ * Demo application for Kurento Room, extends the Room Server application class. Uses the Room
+ * Client JS library for the web client, which is built with AngularJS and lumx.
  *
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  * @since 5.0.0
  */
-@Import(KurentoRoomServerApp.class)
-public class KurentoRoomDemoApp {
+public class KurentoRoomDemoApp extends KurentoRoomServerApp {
 
   private static final Logger log = LoggerFactory.getLogger(KurentoRoomDemoApp.class);
 
@@ -71,9 +67,7 @@ public class KurentoRoomDemoApp {
   private final JsonObject DEMO_HAT_COORDS = PropertiesManager.getPropertyJson("demo.hatCoords",
       DEFAULT_HAT_COORDS.toString(), JsonObject.class);
 
-  private static ConfigurableApplicationContext context;
-
-  @Bean
+  @Override
   public KmsManager kmsManager() {
     JsonArray kmsUris = getPropertyJson(KurentoRoomServerApp.KMSS_URIS_PROPERTY,
         KurentoRoomServerApp.KMSS_URIS_DEFAULT, JsonArray.class);
@@ -83,12 +77,13 @@ public class KurentoRoomDemoApp {
 
     FixedNKmsManager fixedKmsManager = new FixedNKmsManager(kmsWsUris, DEMO_KMS_NODE_LIMIT);
     fixedKmsManager.setAuthRegex(DEMO_AUTH_REGEX);
+    log.debug("Authorization regex for new rooms: {}", DEMO_AUTH_REGEX);
     return fixedKmsManager;
   }
 
-  @Bean
+  @Override
   public JsonRpcUserControl userControl() {
-    DemoJsonRpcUserControl uc = new DemoJsonRpcUserControl();
+    DemoJsonRpcUserControl uc = new DemoJsonRpcUserControl(roomManager());
     String appServerUrl = System.getProperty("app.server.url", DEFAULT_APP_SERVER_URL);
     String hatUrl;
     if (appServerUrl.endsWith("/")) {
@@ -101,24 +96,7 @@ public class KurentoRoomDemoApp {
     return uc;
   }
 
-  public static ConfigurableApplicationContext start(Object... sources) {
-
-    Object[] newSources = new Object[sources.length + 1];
-    newSources[0] = KurentoRoomServerApp.class;
-    for (int i = 0; i < sources.length; i++) {
-      newSources[i + 1] = sources[i];
-    }
-
-    SpringApplication application = new SpringApplication(newSources);
-    context = application.run();
-    return context;
-  }
-
   public static void main(String[] args) throws Exception {
     SpringApplication.run(KurentoRoomDemoApp.class, args);
-  }
-
-  public static void stop() {
-    context.stop();
   }
 }

@@ -20,6 +20,7 @@ import org.kurento.client.FaceOverlayFilter;
 import org.kurento.client.MediaElement;
 import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
+import org.kurento.room.NotificationRoomManager;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
@@ -30,9 +31,10 @@ import com.google.gson.JsonObject;
 /**
  * User control that applies a face overlay filter when publishing video.
  *
- * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
+ * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
 public class DemoJsonRpcUserControl extends JsonRpcUserControl {
+
   private static final String SESSION_ATTRIBUTE_HAT_FILTER = "hatFilter";
 
   private static final String CUSTOM_REQUEST_HAT_PARAM = "hat";
@@ -45,6 +47,10 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
   private float offsetYPercent;
   private float widthPercent;
   private float heightPercent;
+
+  public DemoJsonRpcUserControl(NotificationRoomManager roomManager) {
+    super(roomManager);
+  }
 
   public void setHatUrl(String hatUrl) {
     this.hatUrl = hatUrl;

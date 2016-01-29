@@ -42,11 +42,16 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
 
   private static final String HANDLER_THREAD_NAME = "handler";
 
-  @Autowired
   private JsonRpcUserControl userControl;
 
-  @Autowired
   private JsonRpcNotificationService notificationService;
+
+  @Autowired
+  public RoomJsonRpcHandler(JsonRpcUserControl userControl,
+      JsonRpcNotificationService notificationService) {
+    this.userControl = userControl;
+    this.notificationService = notificationService;
+  }
 
   @Override
   public List<String> allowedOrigins() {
@@ -130,7 +135,7 @@ public class RoomJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
   public void handleTransportError(Session session, Throwable exception) throws Exception {
     log.debug("Transport error for session id {}", session != null
         ? session.getSessionId()
-        : "NULL_SESSION", exception);
+            : "NULL_SESSION", exception);
   }
 
   private void updateThreadName(String name) {

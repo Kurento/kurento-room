@@ -37,8 +37,11 @@ import org.springframework.context.annotation.Import;
 import com.google.gson.JsonArray;
 
 /**
+ * Room server application.
+ * 
  * @author Ivan Gracia (izanmail@gmail.com)
  * @author Micael Gallego (micael.gallego@gmail.com)
+ * @author Radu Tom Vlad (rvlad@naevatec.com)
  * @since 1.0.0
  */
 @Import(JsonRpcConfiguration.class)
@@ -49,8 +52,6 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
   public static final String KMSS_URIS_DEFAULT = "[ \"ws://localhost:8888/kurento\" ]";
 
   private static final Logger log = LoggerFactory.getLogger(KurentoRoomServerApp.class);
-
-  private static JsonRpcNotificationService userNotificationService = new JsonRpcNotificationService();
 
   @Bean
   @ConditionalOnMissingBean
@@ -67,15 +68,10 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
     String firstKmsWsUri = kmsWsUris.get(0);
 
     if (firstKmsWsUri.equals("autodiscovery")) {
-
       log.info("Using autodiscovery rules to locate KMS on every pipeline");
-
       return new AutodiscoveryKurentoClientProvider();
-
     } else {
-
       log.info("Configuring Kurento Room Server to use first of the following kmss: " + kmsWsUris);
-
       return new FixedOneKmsManager(firstKmsWsUri);
     }
   }
@@ -83,24 +79,25 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
   @Bean
   @ConditionalOnMissingBean
   public JsonRpcNotificationService notificationService() {
-    return userNotificationService;
+    return new JsonRpcNotificationService();
   }
 
   @Bean
+  @ConditionalOnMissingBean
   public NotificationRoomManager roomManager() {
-    return new NotificationRoomManager(userNotificationService, kmsManager());
+    return new NotificationRoomManager(notificationService(), kmsManager());
   }
 
   @Bean
   @ConditionalOnMissingBean
   public JsonRpcUserControl userControl() {
-    return new JsonRpcUserControl();
+    return new JsonRpcUserControl(roomManager());
   }
 
   @Bean
   @ConditionalOnMissingBean
   public RoomJsonRpcHandler roomHandler() {
-    return new RoomJsonRpcHandler();
+    return new RoomJsonRpcHandler(userControl(), notificationService());
   }
 
   @Override

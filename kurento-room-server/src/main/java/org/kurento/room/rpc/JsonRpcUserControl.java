@@ -34,14 +34,18 @@ import com.google.gson.JsonObject;
 /**
  * Controls the user interactions by delegating her JSON-RPC requests to the room API.
  *
- * @author <a href="mailto:rvlad@naevatec.com">Radu Tom Vlad</a>
+ * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
 public class JsonRpcUserControl {
 
   private static final Logger log = LoggerFactory.getLogger(JsonRpcUserControl.class);
 
-  @Autowired
   protected NotificationRoomManager roomManager;
+
+  @Autowired
+  public JsonRpcUserControl(NotificationRoomManager roomManager) {
+    this.roomManager = roomManager;
+  }
 
   public void joinRoom(Transaction transaction, Request<JsonObject> request,
       ParticipantRequest participantRequest) throws IOException, InterruptedException,
@@ -169,21 +173,21 @@ public class JsonRpcUserControl {
     return participantSession;
   }
 
-  protected String getStringParam(Request<JsonObject> request, String key) {
+  public static String getStringParam(Request<JsonObject> request, String key) {
     if (request.getParams() == null || request.getParams().get(key) == null) {
       throw new RuntimeException("Request element '" + key + "' is missing");
     }
     return request.getParams().get(key).getAsString();
   }
 
-  protected int getIntParam(Request<JsonObject> request, String key) {
+  public static int getIntParam(Request<JsonObject> request, String key) {
     if (request.getParams() == null || request.getParams().get(key) == null) {
       throw new RuntimeException("Request element '" + key + "' is missing");
     }
     return request.getParams().get(key).getAsInt();
   }
 
-  protected boolean getBooleanParam(Request<JsonObject> request, String key) {
+  public static boolean getBooleanParam(Request<JsonObject> request, String key) {
     if (request.getParams() == null || request.getParams().get(key) == null) {
       throw new RuntimeException("Request element '" + key + "' is missing");
     }

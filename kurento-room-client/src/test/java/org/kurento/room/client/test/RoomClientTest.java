@@ -37,7 +37,7 @@ import com.google.gson.JsonObject;
 
 /**
  * Unit tests for the room client protocol.
- * 
+ *
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  * @since 6.3.1
  */

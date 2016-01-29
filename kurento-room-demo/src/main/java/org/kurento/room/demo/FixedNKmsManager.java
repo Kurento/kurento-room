@@ -31,6 +31,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+/**
+ * KMS manager for the room demo app.
+ *
+ * @author Radu Tom Vlad (rvlad@naevatec.com)
+ * @since 6.0.0
+ */
 public class FixedNKmsManager extends KmsManager {
   private static final Logger log = LoggerFactory.getLogger(FixedNKmsManager.class);
 

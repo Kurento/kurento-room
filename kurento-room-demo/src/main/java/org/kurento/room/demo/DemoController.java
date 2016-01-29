@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Rest controller for the room demo app.
+ *
+ * @author Radu Tom Vlad (rvlad@naevatec.com)
+ * @since 6.0.0
+ */
 @RestController
 public class DemoController {
 

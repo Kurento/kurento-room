@@ -62,7 +62,7 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
     for (UserParticipant participant : existingParticipants) {
       JsonObject participantJson = new JsonObject();
       participantJson
-      .addProperty(ProtocolElements.JOINROOM_PEERID_PARAM, participant.getUserName());
+          .addProperty(ProtocolElements.JOINROOM_PEERID_PARAM, participant.getUserName());
       if (participant.isStreaming()) {
         JsonObject stream = new JsonObject();
         stream.addProperty(ProtocolElements.JOINROOM_PEERSTREAMID_PARAM, "webcam");

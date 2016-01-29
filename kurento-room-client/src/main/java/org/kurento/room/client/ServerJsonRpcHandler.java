@@ -87,19 +87,22 @@ public class ServerJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
           notif = participantSendMessage(transaction, request);
           break;
         default :
-          log.error("Unrecognized request {}", request);
-          break;
+          throw new Exception("Unrecognized request " + request.getMethod());
       }
     } catch (Exception e) {
       log.error("Exception processing request {}", request, e);
       transaction.sendError(e);
+      return;
     }
-    try {
-      notifications.put(notif);
-      log.debug("Enqueued notification {}", notif);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+    if (notif != null) {
+      try {
+        notifications.put(notif);
+        log.debug("Enqueued notification {}", notif);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
+    transaction.sendVoidResponse();
   }
 
   private Notification participantSendMessage(Transaction transaction, Request<JsonObject> request) {
