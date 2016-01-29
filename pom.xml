@@ -79,9 +79,16 @@
 			<modules>
 				<module>kurento-room-sdk</module>
 				<module>kurento-room-server</module>
-                <module>kurento-room-client</module>
+				<module>kurento-room-client</module>
 				<module>kurento-room-client-js</module>
 				<module>kurento-room-test</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>integration</id>
+			<modules>
+				<module>kurento-room-demo</module>
+				<module>kurento-room-basicapp</module>
 			</modules>
 		</profile>
 	</profiles>
