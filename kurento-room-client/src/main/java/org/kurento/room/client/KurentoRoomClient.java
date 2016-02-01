@@ -95,6 +95,11 @@ public class KurentoRoomClient {
       @Override
       public void connected() {
       }
+
+      @Override
+      public void reconnecting() {
+        log.warn("JsonRpcWebsocket connection: is reconnecting");
+      }
     }, new SslContextFactory(true)));
   }
 
