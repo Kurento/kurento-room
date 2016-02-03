@@ -19,6 +19,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -301,6 +302,10 @@ public class FakeParticipant implements Closeable {
       peerEndpoints.remove(remoteName);
       peerLatches.remove(remoteName);
     }
+  }
+
+  public Set<String> getPeers() {
+    return peerStreams.keySet();
   }
 
   private String createWebRtcForParticipant() throws URISyntaxException {
