@@ -30,4 +30,14 @@ public class RoomTestConfiguration {
 
   public static final String EXTRA_KMS_WS_URI_PROP = KMS_WS_URI_PROP + ".extra";
   public static final String EXTRA_KMS_WS_URI_DEFAULT = KMS_WS_URI_DEFAULT;
+
+  public static final String ROOM_PREFIX = "room";
+  public static final String USER_BROWSER_PREFIX = "browser";
+  public static final String USER_FAKE_PREFIX = "user";
+  public static final String DEFAULT_ROOM = ROOM_PREFIX;
+
+  public final static int DEFAULT_ROOM_INOUT_AWAIT_TIME_IN_SECONDS = 60;
+  public final static int DEFAULT_ACTIVE_LIVE_TOTAL_TIMEOUT_IN_SECONDS = 60;
+  public final static int DEFAULT_PLAY_TIME_IN_SECONDS = 30;
+  public static final int TASKS_TIMEOUT_IN_MINUTES = 15;
 }
