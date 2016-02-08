@@ -99,10 +99,9 @@ public class ServerJsonRpcHandler extends DefaultJsonRpcHandler<JsonObject> {
         notifications.put(notif);
         log.debug("Enqueued notification {}", notif);
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        log.warn("Interrupted when enqueuing notification {}", notif, e);
       }
     }
-    transaction.sendVoidResponse();
   }
 
   private Notification participantSendMessage(Transaction transaction, Request<JsonObject> request) {
