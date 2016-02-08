@@ -15,21 +15,23 @@ import org.kurento.test.browser.WebPage;
  *
  * @since 6.3.2
  */
-public abstract class OneWebOneRoom extends RoomTest<WebPage> {
+public abstract class OneWebManyRoom extends RoomTest<WebPage> {
 
-  public final static Lifecycle[] USERS = { new WebLifecycle(0, DEFAULT_ROOM) };
+  public final static Lifecycle[] USERS = { new WebLifecycle(0, DEFAULT_ROOM + "0"),
+      new WebLifecycle(0, DEFAULT_ROOM + "1"), new WebLifecycle(0, DEFAULT_ROOM + "2"),
+      new WebLifecycle(0, DEFAULT_ROOM + "3") };
 
   @Override
   public void setupBrowserTest() throws InterruptedException {
     super.setupBrowserTest();
-    ITERATIONS = 3;
+    ITERATIONS = 2;
     PLAY_TIME = 5;
   }
 
   /**
    * Test scenario:
    * <ol>
-   * <li>join 1 browser</li>
+   * <li>join 4 browsers, each in a different room</li>
    * <li>play</li>
    * <li>exit room</li>
    * <li>repeat...</li>
