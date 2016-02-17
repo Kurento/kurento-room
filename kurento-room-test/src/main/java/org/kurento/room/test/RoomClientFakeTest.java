@@ -63,7 +63,7 @@ public abstract class RoomClientFakeTest<W extends WebPage> extends RoomClientBr
   public static String serverAddress = PropertiesManager.getProperty(TEST_HOST_PROPERTY,
       getProperty(TEST_PUBLIC_IP_PROPERTY, TEST_PUBLIC_IP_DEFAULT));
   public static int serverPort = getProperty(TEST_PORT_PROPERTY,
-      getProperty(TEST_PUBLIC_PORT_PROPERTY, WebServerService.getAppHttpPort()));
+      getProperty(TEST_PUBLIC_PORT_PROPERTY, WebServerService.getAppHttpsPort()));
   public static Protocol protocol = Protocol.valueOf(getProperty(TEST_PROTOCOL_PROPERTY,
       TEST_PROTOCOL_DEFAULT).toUpperCase());
 
