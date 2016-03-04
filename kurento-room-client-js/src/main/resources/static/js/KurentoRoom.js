@@ -113,6 +113,28 @@ function Room(kurento, options) {
         }
     } 
     
+    this.onParticipantUnpublished = function (msg) {
+        var participant = participants[msg.name];
+
+        if (participant !== undefined) {
+            ee.emitEvent('participant-unpublished', [{
+                participant: participant
+            }]);
+
+            var streams = participant.getStreams();
+            for (var key in streams) {
+                ee.emitEvent('stream-removed', [{
+                    stream: streams[key]
+                }]);
+            }
+           participant.dispose();
+        } else {
+            console.warn("Participant " + msg.name
+                        + " unknown. Participants: "
+                        + JSON.stringify(participants));
+       }
+    }
+
     this.onParticipantJoined = function (msg) {
         var participant = new Participant(kurento, false, that, msg);
         var pid = participant.getID();
@@ -766,9 +788,7 @@ function KurentoRoom(wsUri, callback) {
                 onParticipantPublished(request.params);
                 break;
             case 'participantUnpublished':
-            	//TODO use a different method, don't delete 
-            	// the participant for future reconnection?
-            	onParticipantLeft(request.params);
+            	onParticipantUnpublished(request.params);
                 break;
             case 'participantLeft':
                 onParticipantLeft(request.params);
@@ -803,6 +823,12 @@ function KurentoRoom(wsUri, callback) {
     function onParticipantPublished(msg) {
         if (room !== undefined) {
             room.onParticipantPublished(msg);
+        }
+    }
+
+    function onParticipantUnpublished(msg) {
+        if (room !== undefined) {
+            room.onParticipantUnpublished(msg);
         }
     }
 
