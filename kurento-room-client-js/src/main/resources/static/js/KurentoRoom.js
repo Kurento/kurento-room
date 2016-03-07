@@ -711,8 +711,17 @@ function Stream(kurento, local, room, options) {
 	            })
         	}
         }
-    	
-    	console.log(that.getGlobalID() + ": Stream '" + id + "' unpublished");
+
+        kurento.sendRequest('unpublishVideo', function (error, response) {
+            if (error) {
+                console.error(error);
+            } else {
+                that.room.emitEvent('stream-unpublished', [{
+                  stream: that
+                }]);
+                console.log(that.getGlobalID() + ": Stream '" + id + "' unpublished");
+            }
+        });
     }
     
     this.dispose = function () {
