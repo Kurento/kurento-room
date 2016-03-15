@@ -242,10 +242,16 @@ function Participants() {
 //        console.log(user);
 
         var ul = document.getElementsByClassName("list");
-        console.log(ul);
-        console.log(localParticipant.videoElement.innerText);
-        console.log(localParticipant.videoElement.innerText.replace("_webcam", ""));
-        var localUser = localParticipant.videoElement.innerText.replace("_webcam", "");
+
+        var chatDiv = document.getElementById('chatDiv');
+        var messages = $("#messages");
+        var updateScroll = true;
+
+        if (messages.outerHeight() - chatDiv.scrollTop > chatDiv.offsetHeight) {
+        	updateScroll = false;
+        }
+        console.log(localParticipant)
+        var localUser = localParticipant.thumbnailId.replace("_webcam", "").replace("video-", "");
         if (room === roomName && user === localUser) { //me
 
             var li = document.createElement('li');
@@ -313,6 +319,10 @@ function Participants() {
 //                            <span>.............................</span>
 //                        </div>
 //                    </li>
+        }
+        
+        if (updateScroll) {
+        	chatDiv.scrollTop = messages.outerHeight();
         }
     };
 
