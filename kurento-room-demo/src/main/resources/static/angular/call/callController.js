@@ -36,6 +36,20 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
             Fullscreen.all();
 
     };
+    
+    $scope.disableMainSpeaker = function (value) {
+
+    	var element = document.getElementById("buttonMainSpeaker");
+        if (element.classList.contains("md-person")) { //on
+            element.classList.remove("md-person");
+            element.classList.add("md-recent-actors");
+            ServiceParticipant.enableMainSpeaker();
+        } else { //off
+            element.classList.remove("md-recent-actors");
+            element.classList.add("md-person");
+            ServiceParticipant.disableMainSpeaker();
+        }
+    }
 
     $scope.onOffVolume = function () {
         var localStream = ServiceRoom.getLocalStream();

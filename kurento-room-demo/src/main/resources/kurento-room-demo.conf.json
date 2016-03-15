@@ -34,5 +34,7 @@
       },
       "authRegex": ".*",
       "kmsLimit": 1000
-   }
+   },
+   "updateSpeakerInterval": 1800,
+   "thresholdSpeaker": -50
 }

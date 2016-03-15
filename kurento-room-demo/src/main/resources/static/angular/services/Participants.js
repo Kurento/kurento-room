@@ -53,10 +53,19 @@ function AppParticipant(stream) {
         buttonVideo.style.left = "75%";
         buttonVideo.style.top = "60%";
         buttonVideo.style.zIndex = "100";
-        that.videoElement.appendChild(buttonVideo);      
+        that.videoElement.appendChild(buttonVideo);
+        
+        var speakerSpeakingVolumen = document.createElement('div');
+        speakerSpeakingVolumen.setAttribute("id","speaker" + that.thumbnailId);
+        speakerSpeakingVolumen.className = 'btn--m btn--green btn--fab mdi md-volume-up blinking';
+        speakerSpeakingVolumen.style.position = "absolute";
+        speakerSpeakingVolumen.style.left = "3%";
+        speakerSpeakingVolumen.style.top = "60%";
+        speakerSpeakingVolumen.style.zIndex = "100";
+        speakerSpeakingVolumen.style.display = "none";
+        that.videoElement.appendChild(speakerSpeakingVolumen);
 
         document.getElementById("participants").appendChild(that.videoElement);
-        
         that.stream.playThumbnail(that.thumbnailId);
     }
 
@@ -73,6 +82,7 @@ function Participants() {
     var roomName;
     var that = this;
     var connected = true;
+    var mainSpeaker = true;
     
     this.isConnected = function() {
     	return connected;
@@ -208,6 +218,14 @@ function Participants() {
         return participants;
     };
 
+    this.enableMainSpeaker = function () {
+    	mainSpeaker = true;
+    }
+
+    this.disableMainSpeaker = function () {
+    	mainSpeaker = false;
+    }
+
     // Open the chat automatically when a message is received
     function autoOpenChat() {
         var selectedEffect = "slide";
@@ -328,4 +346,21 @@ function Participants() {
     	            }
     			});
 	};
+
+    this.streamSpeaking = function(participantId) {
+    	if (participants[participantId.participantId] != undefined)
+    		document.getElementById("speaker" + participants[participantId.participantId].thumbnailId).style.display='';
+    }
+
+    this.streamStoppedSpeaking = function(participantId) {
+    	if (participants[participantId.participantId] != undefined)
+    		document.getElementById("speaker" + participants[participantId.participantId].thumbnailId).style.display = "none";
+    }
+
+    this.updateMainSpeaker = function(participantId) {
+    	if (participants[participantId.participantId] != undefined) {
+    		if (mainSpeaker)
+    			updateMainParticipant(participants[participantId.participantId]);
+    	}
+    }
 }

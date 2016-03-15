@@ -15,9 +15,22 @@ function Room(kurento, options) {
     var ee = new EventEmitter();
     var streams = {};
     var participants = {};
+    var participantsSpeaking = [];
     var connected = false;
     var localParticipant;
     var subscribeToStreams = options.subscribeToStreams || true;
+    var updateSpeakerInterval = options.updateSpeakerInterval || 1500;
+    var thresholdSpeaker = options.thresholdSpeaker || -50;
+        
+    setInterval(updateMainSpeaker, updateSpeakerInterval);
+
+    function updateMainSpeaker() {
+  	  if (participantsSpeaking.length > 0) {
+  		ee.emitEvent('update-main-speaker', [{
+        	  participantId: participantsSpeaking[participantsSpeaking.length - 1]
+          }]);
+  	  }
+    }
 
     this.getLocalParticipant = function () {
         return localParticipant;
@@ -101,7 +114,6 @@ function Room(kurento, options) {
 
         var streams = participant.getStreams();
         for (var key in streams) {
-
             var stream = streams[key];
 
             if (subscribeToStreams) {
@@ -287,6 +299,24 @@ function Room(kurento, options) {
     this.getStreams = function () {
         return streams;
     }
+    
+    this.addParticipantSpeaking = function(participantId) {
+  	  participantsSpeaking.push(participantId);
+    }
+    
+    this.removeParticipantSpeaking = function(participantId) {
+  	  var pos = -1;
+  	  for (var i = 0; i < participantsSpeaking.length; i++) {
+            if (participantsSpeaking[i] == participantId) {
+                pos = i;
+                break;
+            }
+        }
+        if (pos != -1) {
+      	  participantsSpeaking.splice(pos, 1);
+        }
+    }
+    
 
     localParticipant = new Participant(kurento, true, that, {id: options.user});
     participants[options.user] = localParticipant;
@@ -390,6 +420,8 @@ function Stream(kurento, local, room, options) {
     var videoElements = [];
     var elements = [];
     var participant = options.participant;
+
+    var speechEvent;
 
     var recvVideo = options.recvVideo;
     this.getRecvVideo = function () {
@@ -647,6 +679,7 @@ function Stream(kurento, local, room, options) {
         });
         console.log(that.getGlobalID() + ": set peer connection with recvd SDP answer", 
         		sdpAnswer);
+        var participantId = that.getGlobalID();
         var pc = wp.peerConnection;
         pc.setRemoteDescription(answer, function () {
             // Avoids to subscribe to your own stream remotely 
@@ -654,6 +687,21 @@ function Stream(kurento, local, room, options) {
             if (!local || that.displayMyRemote()) {
                 wrStream = pc.getRemoteStreams()[0];
                 console.log("Peer remote stream", wrStream);
+                if (wrStream != undefined) {
+                	speechEvent = kurentoUtils.WebRtcPeer.hark(wrStream, {threshold:that.room.thresholdSpeaker});
+                    speechEvent.on('speaking', function () {
+                    	that.room.addParticipantSpeaking(participantId);
+                           that.room.emitEvent('stream-speaking', [{
+                        	   participantId: participantId
+                           }]);
+                    });
+                    speechEvent.on('stopped_speaking', function () {
+                    	that.room.removeParticipantSpeaking(participantId);
+                       that.room.emitEvent('stream-stopped-speaking', [{
+                    	   participantId: participantId
+                       }]);
+                    });
+                }
                 for (i = 0; i < videoElements.length; i++) {
                 	var thumbnailId = videoElements[i].thumb;
                 	var video = videoElements[i].video;
@@ -687,6 +735,7 @@ function Stream(kurento, local, room, options) {
 	            wrStream.getVideoTracks().forEach(function (track) {
 	                track.stop && track.stop()
 	            })
+                speechEvent.stop();
         	}
         }
     	

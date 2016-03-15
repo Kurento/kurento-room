@@ -1,5 +1,7 @@
 package org.kurento.room.rest;
 
+import static org.kurento.commons.PropertiesManager.getProperty;
+
 import java.util.Set;
 
 import org.kurento.room.NotificationRoomManager;
@@ -20,5 +22,15 @@ public class RoomController {
   @RequestMapping("/getAllRooms")
   public Set<String> getAllRooms() {
     return roomManager.getRooms();
+  }
+
+  @RequestMapping("/getUpdateSpeakerInterval")
+  public Integer getUpdateSpeakerInterval() {
+    return Integer.valueOf(getProperty("updateSpeakerInterval"));
+  }
+
+  @RequestMapping("/getThresholdSpeaker")
+  public Integer getThresholdSpeaker() {
+    return Integer.valueOf(getProperty("thresholdSpeaker"));
   }
 }

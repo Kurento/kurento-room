@@ -38,7 +38,7 @@ import com.google.gson.JsonArray;
 
 /**
  * Room server application.
- * 
+ *
  * @author Ivan Gracia (izanmail@gmail.com)
  * @author Micael Gallego (micael.gallego@gmail.com)
  * @author Radu Tom Vlad (rvlad@naevatec.com)

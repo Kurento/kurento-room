@@ -5,6 +5,7 @@
 
 kurento_room.controller('loginController', function ($scope, $http, ServiceParticipant, $window, ServiceRoom, LxNotificationService) {
 
+	var options;
 
     $http.get('/getAllRooms').
             success(function (data, status, headers, config) {
@@ -21,6 +22,20 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
              }).
              error(function (data, status, headers, config) {
              });
+    
+    $http.get('/getUpdateSpeakerInterval').
+	    success(function (data, status, headers, config) {
+	        $scope.updateSpeakerInterval = data
+	    }).
+	    error(function (data, status, headers, config) {
+	});
+
+    $http.get('/getThresholdSpeaker').
+    	success(function (data, status, headers, config) {
+    		$scope.thresholdSpeaker = data
+		}).
+		error(function (data, status, headers, config) {
+	});
     
     $scope.register = function (room) {
     	
@@ -51,7 +66,9 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
 
             room = kurento.Room({
                 room: $scope.roomName,
-                user: $scope.userName
+                user: $scope.userName,
+                updateSpeakerInterval: $scope.updateSpeakerInterval,
+                thresholdSpeaker: $scope.thresholdSpeaker 
             });
 
             var localStream = kurento.Stream(room, {
@@ -121,6 +138,18 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                 	}
                 });
                 
+                room.addEventListener("stream-stopped-speaking", function (participantId) {
+                    ServiceParticipant.streamStoppedSpeaking(participantId);
+                 });
+
+                 room.addEventListener("stream-speaking", function (participantId) {
+                    ServiceParticipant.streamSpeaking(participantId);
+                 });
+
+                 room.addEventListener("update-main-speaker", function (participantId) {
+                     ServiceParticipant.updateMainSpeaker(participantId);
+                  });
+
                 room.connect();
             });
 
