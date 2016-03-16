@@ -1,57 +1,53 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
-    <head>
-        <title>Kurento Room Demo</title>
-        <meta name="author" content="Raquel Díaz González">
-        <!-- Disable content caching -->
-        <!-- <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta http-equiv="Pragma" content="no-cache" />
-        <meta http-equiv="Expires" content="0" /> -->
+<head>
+<title>Kurento Room Demo</title>
+<meta name="author" content="kurento.org">
+<link rel="shortcut icon" href="img/kurento.png" type="image/png" />
 
-	<link rel="shortcut icon" href="img/kurento.png" type="image/png" />	
-        <!--css-->
-        <link type="text/css" rel="stylesheet" href="./css/googleapis-fonts.css">
-        <link type="text/css" rel="stylesheet" href="./css/jquery-ui.min.css">
-        <link type="text/css" rel="stylesheet" href="./css/room.css" />
-        <!--kurento-->
-        <script src="./bower_components/adapter.js/adapter.js"></script>
-        <script src="./js/kurento-utils.js"></script>
-        <script src="./js/kurento-jsonrpc.js"></script>
-        <script src="./js/EventEmitter.js"></script>
-        <script src="./js/KurentoRoom.js"></script>
-        <script src="./angular/services/Participants.js"></script>
-        <!--jquery-->
-        <script src="./js/jquery-2.1.1.min.js"></script>
-        <script src="./js/jquery-ui.min.js"></script>
-        <!--angularjs-->
-        <script src="./js/angular.min.js"></script>
-        <script src="./js/angular-route.js"></script>
-        <script src="./angular/app.js"></script>
-        <script src="./angular/call/callController.js"></script>
-        <script src="./angular/login/loginController.js"></script>
-        <script src="./angular/services/serviceParticipant.js"></script>
-        <script src="./angular/angular-fullscreen.js"></script>
-        <script src="./angular/services/serviceRoom.js"></script>
-        <!--lumx-->
-        <link rel="stylesheet" href="./angular/lumX/dist/css/lumx.css">
-        <link rel="stylesheet" href="./angular/lumX/material-design-iconic-font/css/material-design-iconic-font.min.css">
-        <link rel="stylesheet" href="./angular/lumX/dist/_bourbon.scss">
-        <link rel="stylesheet" href="./angular/lumX/dist/_neat.scss">
-        <script src="./angular/lumX/dist/velocity.js"></script>
-        <script src="./angular/lumX/dist/moment-with-locales.min.js"></script>
-        <script src="./angular/lumX/dist/js/lumx.js"></script>
-        <script src="./angular/lumX/dist/scss/core/_core.scss"></script>
-        <script src="./angular/lumX/dist/scss/main/_lumx.scss"></script>
-    </head>
+<!-- Bower CSS styles -->
+<link type="text/css" rel="stylesheet"
+	href="./bower_components/jquery-ui/themes/base/jquery-ui.min.css">
+<link type="text/css" rel="stylesheet"
+	href="./bower_components/material-design-iconic-font/css/material-design-iconic-font.min.css">
+<link type="text/css" rel="stylesheet"
+	href="./bower_components/lumx/dist/css/lumx.css">
 
-    <body ng-app="kurento_room">
+<!-- Custom CSS styles -->
+<link type="text/css" rel="stylesheet" href="./css/room.css" />
+<link type="text/css" rel="stylesheet" href="./css/googleapis-fonts.css">
 
-        <div ng-view>
-            <!--display the view (login/call) with route system-->
-        </div> 
+<!-- Bower JavaScript dependencies -->
+<script src="./bower_components/adapter.js/adapter.js"></script>
+<script src="./bower_components/jquery/dist/jquery.min.js"></script>
+<script src="./bower_components/jquery-ui/jquery-ui.min.js"></script>
+<script src="./bower_components/angular/angular.min.js"></script>
+<script src="./bower_components/angular-route/angular-route.js"></script>
+<script
+	src="./bower_components/angular-fullscreen/src/angular-fullscreen.js"></script>
+<script src="./bower_components/velocity/velocity.js"></script>
+<script src="./bower_components/moment/min/moment-with-locales.min.js"></script>
+<script src="./bower_components/lumx/dist/js/lumx.js"></script>
 
-    </body>
+<!-- Kurento JavaScript dependencies -->
+<script src="./js/kurento-utils.js"></script>
+<script src="./js/kurento-jsonrpc.js"></script>
+<script src="./js/EventEmitter.js"></script>
+<script src="./js/KurentoRoom.js"></script>
 
+<!-- Custom JavaScript dependencies -->
+<script src="./angular/app.js"></script>
+<script src="./angular/call/callController.js"></script>
+<script src="./angular/login/loginController.js"></script>
+<script src="./angular/services/Participants.js"></script>
+<script src="./angular/services/serviceParticipant.js"></script>
+<script src="./angular/services/serviceRoom.js"></script>
+</head>
+
+<body ng-app="kurento_room">
+	<div ng-view>
+		<!--display the view (login/call) with route system-->
+	</div>
+</body>
 </html>

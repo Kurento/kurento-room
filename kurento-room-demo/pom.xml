@@ -49,6 +49,7 @@
 	</properties>
 
 	<build>
+		<!-- Filtering resources (${label}) -->
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
@@ -59,6 +60,13 @@
 				<filtering>true</filtering>
 				<includes>
 					<include>banner.txt</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>.</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>bower.json</include>
 				</includes>
 			</resource>
 		</resources>
@@ -80,19 +88,38 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<!-- Call to bower install when compiling -->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
 				<executions>
 					<execution>
-						<id>java</id>
+						<phase>generate-sources</phase>
 						<goals>
-							<goal>java</goal>
+							<goal>exec</goal>
 						</goals>
 					</execution>
 				</executions>
 				<configuration>
+					<executable>bower</executable>
+					<arguments>
+						<argument>install</argument>
+						<argument>--allow-root</argument>
+					</arguments>
 					<mainClass>${start-class}</mainClass>
+				</configuration>
+			</plugin>
+
+			<!-- Remove bower artifacts on mvn clean -->
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>src/main/resources/static/bower_components</directory>
+						</fileset>
+					</filesets>
 				</configuration>
 			</plugin>
 

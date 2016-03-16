@@ -1,0 +1,32 @@
+{
+  "name": "${project.artifactId}",
+  "version": "${project.version}",
+  "description": "${project.description}",
+  "authors": [
+    "Kurento <info@kurento.org>"
+  ],
+  "main": "index.html",
+  "moduleType": [
+    "globals"
+  ],
+  "license": "LGPL",
+  "homepage": "http://www.kurento.org/",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "adapter.js": "v0.2.9",
+    "jquery": "~2.1.3",
+    "jquery-ui": "~1.11.0",
+    "angular": "~1.3.10",
+    "angular-route": "~1.3.10",
+    "angular-fullscreen": "~1.0.0",
+    "material-design-iconic-font": "~1.0.1",
+    "lumx": "~0.2.50"
+  }
+}

@@ -226,3 +226,11 @@ video {
     position: relative;
     padding: 0.4em;
 }
+
+.card__content {
+    padding: 16px;
+}
+
+.card__actions {
+	border-top-width: 0px;
+}
