@@ -1,15 +1,15 @@
 #!/bin/bash
 
+APP_HOME=$(dirname $(dirname $(readlink -f $0)))
+APP_NAME=${project.artifactId}
+
 # ${project.description} installer for Ubuntu >= 14.04
 if [ `id -u` -ne 0 ]; then
     echo ""
-    echo "Only root can start Kurento"
+    echo "Only root can start $APP_NAME"
     echo ""
     exit 1
 fi
-
-APP_HOME=$(dirname $(dirname $(readlink -f $0)))
-APP_NAME=${project.artifactId}
 
 useradd -d /var/kurento/ kurento
 
@@ -28,8 +28,8 @@ install -o kurento -g root $APP_HOME/files/$APP_NAME.conf.json /etc/kurento/
 install -o kurento -g root $APP_HOME/files/$APP_NAME.properties /etc/kurento/
 install -o kurento -g root $APP_HOME/sysfiles/$APP_NAME-log4j.properties /etc/kurento/
 
-mkdir -p /var/log/kurento-media-server
-chown kurento /var/log/kurento-media-server
+mkdir -p /var/log/kurento
+chown kurento /var/log/kurento
 
 
 if [[ "$SYSTEMD" != "other" ]]; then
@@ -58,7 +58,7 @@ else
 		START_DAEMON=true
 
 		# Whom the daemons should run as
-		DAEMON_USER=nobody
+		DAEMON_USER=kurento
 	EOF
 
 	update-rc.d $APP_NAME defaults

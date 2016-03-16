@@ -97,6 +97,8 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
   }
 
   public static void main(String[] args) throws Exception {
+    log.info("Using /dev/urandom for secure random generation");
+    System.setProperty("java.security.egd", "file:/dev/./urandom");
     SpringApplication.run(KurentoRoomDemoApp.class, args);
   }
 }

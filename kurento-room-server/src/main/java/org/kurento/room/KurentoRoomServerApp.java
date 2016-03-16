@@ -110,6 +110,8 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
   }
 
   public static ConfigurableApplicationContext start(String[] args) {
+    log.info("Using /dev/urandom for secure random generation");
+    System.setProperty("java.security.egd", "file:/dev/./urandom");
     return SpringApplication.run(KurentoRoomServerApp.class, args);
   }
 }
