@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class RoomController {
 
+  private static final int UPDATE_SPEAKER_INTERVAL_DEFAULT = 1800;
+  private static final int THRESHOLD_SPEAKER_DEFAULT = -50;
+
   @Autowired
   private NotificationRoomManager roomManager;
 
@@ -26,11 +29,11 @@ public class RoomController {
 
   @RequestMapping("/getUpdateSpeakerInterval")
   public Integer getUpdateSpeakerInterval() {
-    return Integer.valueOf(getProperty("updateSpeakerInterval"));
+    return Integer.valueOf(getProperty("updateSpeakerInterval", UPDATE_SPEAKER_INTERVAL_DEFAULT));
   }
 
   @RequestMapping("/getThresholdSpeaker")
   public Integer getThresholdSpeaker() {
-    return Integer.valueOf(getProperty("thresholdSpeaker"));
+    return Integer.valueOf(getProperty("thresholdSpeaker", THRESHOLD_SPEAKER_DEFAULT));
   }
 }
