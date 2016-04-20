@@ -77,11 +77,11 @@ function Participants() {
     var mainParticipant;
     var localParticipant;
     var mirrorParticipant;
-    
     var participants = {};
     var roomName;
     var that = this;
     var connected = true;
+    var displayingRelogin = false;
     var mainSpeaker = true;
     
     this.isConnected = function() {
@@ -206,8 +206,9 @@ function Participants() {
         updateVideoStyle();
     };
 
+    //only called when leaving the room
     this.removeParticipants = function () {
-
+    	connected = false;
         for (var index in participants) {
             var participant = participants[index];
             participant.remove();
@@ -237,10 +238,6 @@ function Participants() {
     };
 
     this.showMessage = function (room, user, message) {
-//        console.log(JSON.stringify(mainParticipant.videoElement));
-//        console.log(JSON.stringify(localParticipant.videoElement()));
-//        console.log(user);
-
         var ul = document.getElementsByClassName("list");
 
         var chatDiv = document.getElementById('chatDiv');
@@ -327,28 +324,42 @@ function Participants() {
     };
 
     this.showError = function ($window, LxNotificationService, e) {
+        if (displayingRelogin) {
+            console.warn('Already displaying an alert that leads to relogin');
+            return false;
+          }
+        displayingRelogin = true;
+        that.removeParticipants();
         LxNotificationService.alert('Error!', e.error.message, 'Reconnect', function(answer) {
-        	connected = false;
-            $window.location.href = '#/login';
+        	displayingRelogin = false;
+            $window.location.href = '/';
         });
     };
     
     this.forceClose = function ($window, LxNotificationService, msg) {
+        if (displayingRelogin) {
+            console.warn('Already displaying an alert that leads to relogin');
+            return false;
+          }
+        displayingRelogin = true;
+        that.removeParticipants();
         LxNotificationService.alert('Warning!', msg, 'Reload', function(answer) {
-        	that.removeParticipants();
-        	connected = false;
+        	displayingRelogin = false;
             $window.location.href = '/';
         });
     };
     
     this.alertMediaError = function ($window, LxNotificationService, msg, callback) {
-    	LxNotificationService.confirm('Warning!', 'Server media error: <<' + msg
-    			+ ">>. Please reconnect.", { cancel:'Disagree', ok:'Agree' }, 
+        if (displayingRelogin) {
+            console.warn('Already displaying an alert that leads to relogin');
+            return false;
+          }
+    	LxNotificationService.confirm('Warning!', 'Server media error: ' + msg
+    			+ ". Please reconnect.", { cancel:'Disagree', ok:'Agree' }, 
     			function(answer) {
     	            console.log("User agrees upon media error: " + answer);
     	            if (answer) {
     	            	that.removeParticipants();
-    	            	connected = false;
     	                $window.location.href = '/';
     	            }
     	            if (typeof callback === "function") {

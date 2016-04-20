@@ -102,7 +102,7 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
 
   @Override
   public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
-    registry.addHandler(roomHandler(), "/room");
+    registry.addHandler(roomHandler().withPingWatchdog(true), "/room");
   }
 
   public static void main(String[] args) throws Exception {

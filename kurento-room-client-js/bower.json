@@ -20,6 +20,7 @@
     "tests"
   ],
   "dependencies": {
-    "adapter.js": "v0.2.9"
+    "adapter.js": "v0.2.9",
+    "eventEmitter": "4.3.0"
   }
 }

@@ -138,6 +138,13 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                 	}
                 });
                 
+                room.addEventListener("lost-connection", function(msg) {
+                    kurento.close(true);
+                    ServiceParticipant.forceClose($window, LxNotificationService,
+                      'Lost connection with room "' + msg.room +
+                      '". Please try reloading the webpage...');
+                  });
+                
                 room.addEventListener("stream-stopped-speaking", function (participantId) {
                     ServiceParticipant.streamStoppedSpeaking(participantId);
                  });

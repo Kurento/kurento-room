@@ -51,10 +51,10 @@ function Room(kurento, options) {
             room: options.room
         }, function (error, response) {
             if (error) {
+            	console.warn('Unable to join room', error);
                 ee.emitEvent('error-room', [{
                     error: error
                 }]);
-                //console.error(error);
             } else {
 
                 connected = true;
@@ -123,8 +123,8 @@ function Room(kurento, options) {
                 }]);
             }
         }
-    } 
-    
+    }
+
     this.onParticipantJoined = function (msg) {
         var participant = new Participant(kurento, false, that, msg);
         var pid = participant.getID();
@@ -230,6 +230,24 @@ function Room(kurento, options) {
         	console.error("Room undefined in on room closed", msg);
         }
     }
+
+    this.onLostConnection = function() {
+
+        if (!connected) {
+          console.warn('Not connected to room, ignoring lost connection notification');
+          return false;
+        }
+
+        console.log('Lost connection in room ' + that.name);
+        var room = that.name;
+        if (room !== undefined) {
+          ee.emitEvent('lost-connection', [{
+            room: room
+          }]);
+        } else {
+          console.error('Room undefined when lost connection');
+        }
+      }
     
     this.onMediaError = function(params) {
     	console.error("Media error: " + JSON.stringify(params));
@@ -243,22 +261,30 @@ function Room(kurento, options) {
     	}
 	}
     
-    this.leave = function (forced) {
+    /*
+     * forced means the user was evicted, no need to send the 'leaveRoom' request
+     */
+    this.leave = function (forced, jsonRpcClient) {
     	forced = !!forced;
     	console.log("Leaving room (forced=" + forced + ")");
-        if (connected && !forced) {
-            kurento.sendRequest('leaveRoom', function (error, response) {
-                if (error) {
-                    console.error(error);
-                } else {
-                    connected = false;
-                }
-            });
-        }
-
-        for (var key in participants) {
-            participants[key].dispose();
-        }
+    	
+    	if (connected && !forced) {
+	      kurento.sendRequest('leaveRoom', function(error, response) {
+	        if (error) {
+	          console.error(error);
+	        }
+	        jsonRpcClient.close();
+	      });
+    	} else {
+    	  jsonRpcClient.close();
+    	}
+	    connected = false;
+	    if (participants) {
+	      for (var pid in participants) {
+	        participants[pid].dispose();
+	        delete participants[pid];
+	      }
+	    }
     }
     
     this.disconnect = function (stream) {
@@ -317,7 +343,6 @@ function Room(kurento, options) {
         }
     }
     
-
     localParticipant = new Participant(kurento, true, that, {id: options.user});
     participants[options.user] = localParticipant;
 }
@@ -738,8 +763,8 @@ function Stream(kurento, local, room, options) {
                 speechEvent.stop();
         	}
         }
-    	
-    	console.log(that.getGlobalID() + ": Stream '" + id + "' unpublished");
+
+        console.log(that.getGlobalID() + ": Stream '" + id + "' unpublished");
     }
     
     this.dispose = function () {
@@ -783,113 +808,127 @@ function KurentoRoom(wsUri, callback) {
 
     var that = this;
 
+    var room;
+    
     var userName;
 
+    var jsonRpcClient;
 
-    var ws = new WebSocket(wsUri);
+    function initJsonRpcClient() {
 
-    ws.onopen = function () {
-        callback(null, that);
-    }
+        var config = {
+          heartbeat: 3000,
+          sendCloseMessage: false,
+          ws: {
+            uri: wsUri,
+            useSockJS: false,
+            onconnected: connectCallback,
+            ondisconnect: disconnectCallback,
+            onreconnecting: reconnectingCallback,
+            onreconnected: reconnectedCallback
+          },
+          rpc: {
+            requestTimeout: 15000,
+            //notifications
+            participantJoined: onParticipantJoined,
+            participantPublished: onParticipantPublished,
+            participantLeft: onParticipantLeft,
+            participantEvicted: onParticipantEvicted,
+            sendMessage: onNewMessage,
+            iceCandidate: iceCandidateEvent,
+            mediaError: onMediaError
+          }
+        };
 
-    ws.onerror = function (evt) {
-        callback(evt.data);
-    }
-
-    ws.onclose = function () {
-        console.log("Connection Closed");
-    }
-
-    var options = {
-        request_timeout: 50000
-    };
-    var rpc = new RpcBuilder(RpcBuilder.packers.JsonRPC, options, ws, function (
-            request) {
-        console.info('Received request: ' + JSON.stringify(request));
-
-        switch (request.method) {
-            case 'participantJoined':
-                onParticipantJoined(request.params);
-                break;
-            case 'participantPublished':
-                onParticipantPublished(request.params);
-                break;
-            case 'participantUnpublished':
-            	//TODO use a different method, don't delete 
-            	// the participant for future reconnection?
-            	onParticipantLeft(request.params);
-                break;
-            case 'participantLeft':
-                onParticipantLeft(request.params);
-                break;
-            case 'participantEvicted':
-                onParticipantEvicted(request.params);
-                break;
-            case 'sendMessage':  //CHAT
-                onNewMessage(request.params);
-                break;
-            case 'iceCandidate':
-                iceCandidateEvent(request.params);
-                break;
-            case 'roomClosed':
-            	onRoomClosed(request.params);
-            	break;
-            case 'mediaError':
-            	onMediaError(request.params);
-            	break;
-            default:
-                console.error('Unrecognized request: ' + JSON.stringify(request));
+        jsonRpcClient = new RpcBuilder.clients.JsonRpcClient(config);
+      }
+    
+    function connectCallback(error) {
+        if (error) {
+          callback(error);
+        } else {
+          callback(null, that);
         }
-        ;
-    });
+      }
 
-    function onParticipantJoined(msg) {
-        if (room !== undefined) {
-            room.onParticipantJoined(msg);
+    function isRoomAvailable() {
+        if (room !== undefined && room instanceof Room) {
+          return true;
+        } else {
+          console.warn('Room instance not found');
+          return false;
         }
+      }
+
+      function disconnectCallback() {
+        console.log('Websocket connection lost');
+        if (isRoomAvailable()) {
+          room.onLostConnection();
+        } else {
+          alert('Connection error. Please reload page.');
+        }
+      }
+
+      function reconnectingCallback() {
+        console.log('Websocket connection lost (reconnecting)');
+        if (isRoomAvailable()) {
+          room.onLostConnection();
+        } else {
+          alert('Connection error. Please reload page.');
+        }
+      }
+
+      function reconnectedCallback() {
+        console.log('Websocket reconnected');
+      }
+
+      function onParticipantJoined(params) {
+    	    if (isRoomAvailable()) {
+    	      room.onParticipantJoined(params);
+    	    }
+    	  }
+
+      function onParticipantPublished(params) {
+    	    if (isRoomAvailable()) {
+    	      room.onParticipantPublished(params);
+    	    }
+    	  }
+
+      function onParticipantLeft(params) {
+    	    if (isRoomAvailable()) {
+    	      room.onParticipantLeft(params);
+    	    }
+    	  }
+
+      function onParticipantEvicted(params) {
+    	    if (isRoomAvailable()) {
+    	      room.onParticipantEvicted(params);
+    	    }
+    	  }
+
+      function onNewMessage(params) {
+    	    if (isRoomAvailable()) {
+    	      room.onNewMessage(params);
+    	    }
+    	  }
+
+    function iceCandidateEvent(params) {
+        if (isRoomAvailable()) {
+            room.recvIceCandidate(params);
+          }
     }
 
-    function onParticipantPublished(msg) {
-        if (room !== undefined) {
-            room.onParticipantPublished(msg);
-        }
-    }
-
-    function onParticipantLeft(msg) {
-        if (room !== undefined) {
-            room.onParticipantLeft(msg);
-        }
-    }
-
-    function onParticipantEvicted(msg) {
-        if (room !== undefined) {
-            room.onParticipantEvicted(msg);
-        }
-    }
-
-    function onNewMessage(msg) {
-        if (room !== undefined) {
-            room.onNewMessage(msg);
-        }
-    }
-
-    function iceCandidateEvent(msg) {
-        if (room !== undefined) {
-            room.recvIceCandidate(msg);
-        }
-    }
-
-    function onRoomClosed(msg) {
-        if (room !== undefined) {
-            room.onRoomClosed(msg);
+    function onRoomClosed(params) {
+    	if (isRoomAvailable()) {
+            room.onRoomClosed(params);
         }
     }
 
     function onMediaError(params) {
-        if (room !== undefined) {
-            room.onMediaError(params);
+        if (isRoomAvailable()) {
+          room.onMediaError(params);
         }
-    }
+      }
 
     var rpcParams;
 
@@ -898,27 +937,32 @@ function KurentoRoom(wsUri, callback) {
     }
 
     this.sendRequest = function (method, params, callback) {
+        if (params && params instanceof Function) {
+            callback = params;
+            params = undefined;
+          }
+          params = params || {};
+    	
     	if (rpcParams && rpcParams !== "null" && rpcParams !== "undefined") {
     		for(var index in rpcParams) {
     			if (rpcParams.hasOwnProperty(index)) {
     				params[index] = rpcParams[index];
+    				console.log('RPC param added to request {' + index + ': ' + rpcParams[index] + '}');
     			}
     		}
     	}
-        rpc.encode(method, params, callback);
-        console.log('Sent request: { method:"' + method + '", params: '
-                + JSON.stringify(params) + ' }');
+        console.log('Sending request: { method:"' + method + '", params: ' + JSON.stringify(params) + ' }');
+        jsonRpcClient.send(method, params, callback);
     };
 
     this.close = function (forced) {
-        if (room !== undefined) {
-            room.leave(forced);
-        }
-        ws.close();
+    	if (isRoomAvailable()) {
+    	      room.leave(forced, jsonRpcClient);
+    	    }
     };
 
     this.disconnectParticipant = function(stream) {
-    	if (room !== undefined) {
+    	if (isRoomAvailable()) {
     		room.disconnect(stream);
     	}
 	}
@@ -929,21 +973,15 @@ function KurentoRoom(wsUri, callback) {
     };
 
     this.Room = function (options) {
-        // FIXME Support more than one room
         room = new Room(that, options);
-        // FIXME Include name in stream, not in room
-        userName = options.userName;
         return room;
     };
 
     //CHAT
     this.sendMessage = function (room, user, message) {
-
         this.sendRequest('sendMessage', {message: message, userMessage: user, roomMessage: room}, function (error, response) {
             if (error) {
                 console.error(error);
-            } else {
-                connected = false;
             }
         });
     };
@@ -952,4 +990,6 @@ function KurentoRoom(wsUri, callback) {
         this.sendRequest('customRequest', params, callback);
     };    
 
+    initJsonRpcClient();
+    
 }

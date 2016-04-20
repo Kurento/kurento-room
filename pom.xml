@@ -50,7 +50,9 @@
 	<properties>
 		<!-- Kurento versions -->
 		<version.kurento.room>6.3.2-SNAPSHOT</version.kurento.room>
-
+		
+		<version.kurento.jsonrpc.js>5.1.2-SNAPSHOT</version.kurento.jsonrpc.js>
+		
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.source>1.8</maven.compiler.source>
 
@@ -129,6 +131,12 @@
 				<groupId>org.kurento</groupId>
 				<artifactId>kurento-room-basicapp</artifactId>
 				<version>${version.kurento.room}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>org.kurento</groupId>
+				<artifactId>kurento-jsonrpc-js</artifactId>
+				<version>${version.kurento.jsonrpc.js}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
