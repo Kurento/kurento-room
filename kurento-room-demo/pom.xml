@@ -100,27 +100,18 @@
 						<goals>
 							<goal>exec</goal>
 						</goals>
+						<configuration>
+							<executable>bower</executable>
+							<workingDirectory>${project.build.directory}/classes</workingDirectory>
+							<arguments>
+								<argument>install</argument>
+								<argument>--allow-root</argument>
+							</arguments>
+						</configuration>
 					</execution>
 				</executions>
 				<configuration>
-					<executable>bower</executable>
-					<workingDirectory>${project.build.directory}/classes</workingDirectory>
-					<arguments>
-						<argument>install</argument>
-						<argument>--allow-root</argument>
-					</arguments>
-				</configuration>
-			</plugin>
-
-			<!-- Remove bower artifacts on mvn clean -->
-			<plugin>
-				<artifactId>maven-clean-plugin</artifactId>
-				<configuration>
-					<filesets>
-						<fileset>
-							<directory>src/main/resources/static/bower_components</directory>
-						</fileset>
-					</filesets>
+					<mainClass>${start-class}</mainClass>
 				</configuration>
 			</plugin>
 
