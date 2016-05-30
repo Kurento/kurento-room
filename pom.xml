@@ -5,11 +5,11 @@
 	<parent>
 		<groupId>org.kurento</groupId>
 		<artifactId>kurento-parent-pom</artifactId>
-		<version>6.4.1-SNAPSHOT</version>
+		<version>6.5.0</version>
 	</parent>
 
 	<artifactId>kurento-room</artifactId>
-	<version>6.3.2-SNAPSHOT</version>
+	<version>6.5.0</version>
 	<packaging>pom</packaging>
 
 	<name>Kurento Room</name>
@@ -49,10 +49,10 @@
 
 	<properties>
 		<!-- Kurento versions -->
-		<version.kurento.room>6.3.2-SNAPSHOT</version.kurento.room>
-		
-		<version.kurento.jsonrpc.js>5.1.2-SNAPSHOT</version.kurento.jsonrpc.js>
-		
+		<version.kurento.room>6.5.0</version.kurento.room>
+
+		<version.kurento.jsonrpc.js>5.1.2</version.kurento.jsonrpc.js>
+
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.source>1.8</maven.compiler.source>
 
@@ -132,7 +132,7 @@
 				<artifactId>kurento-room-basicapp</artifactId>
 				<version>${version.kurento.room}</version>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>org.kurento</groupId>
 				<artifactId>kurento-jsonrpc-js</artifactId>
