@@ -848,6 +848,7 @@ function KurentoRoom(wsUri, callback) {
             //notifications
             participantJoined: onParticipantJoined,
             participantPublished: onParticipantPublished,
+            participantUnpublished: onParticipantLeft,
             participantLeft: onParticipantLeft,
             participantEvicted: onParticipantEvicted,
             sendMessage: onNewMessage,
