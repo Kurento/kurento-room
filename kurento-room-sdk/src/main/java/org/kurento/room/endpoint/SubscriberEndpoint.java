@@ -39,7 +39,7 @@ public class SubscriberEndpoint extends MediaEndpoint {
 
   public SubscriberEndpoint(boolean web, Participant owner, String endpointName,
       MediaPipeline pipeline) {
-    super(web, owner, endpointName, pipeline, log);
+    super(web, false, owner, endpointName, pipeline, log);
   }
 
   public synchronized String subscribe(String sdpOffer, PublisherEndpoint publisher) {

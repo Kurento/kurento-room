@@ -55,11 +55,18 @@ public class JsonRpcUserControl {
     String roomName = getStringParam(request, ProtocolElements.JOINROOM_ROOM_PARAM);
     String userName = getStringParam(request, ProtocolElements.JOINROOM_USER_PARAM);
 
+    boolean dataChannels = false;
+    if (request.getParams().has(ProtocolElements.JOINROOM_DATACHANNELS_PARAM)) {
+      dataChannels = request.getParams().get(ProtocolElements.JOINROOM_DATACHANNELS_PARAM)
+          .getAsBoolean();
+    }
+
     ParticipantSession participantSession = getParticipantSession(transaction);
     participantSession.setParticipantName(userName);
     participantSession.setRoomName(roomName);
+    participantSession.setDataChannels(dataChannels);
 
-    roomManager.joinRoom(userName, roomName, true, participantRequest);
+    roomManager.joinRoom(userName, roomName, dataChannels, true, participantRequest);
   }
 
   public void publishVideo(Transaction transaction, Request<JsonObject> request,

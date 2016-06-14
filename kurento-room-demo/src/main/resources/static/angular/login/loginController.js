@@ -74,7 +74,7 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
             var localStream = kurento.Stream(room, {
                 audio: true,
                 video: true,
-                data: true
+                data: false
             });
 
             localStream.addEventListener("access-accepted", function () {

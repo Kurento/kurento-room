@@ -194,7 +194,7 @@ public class FakeParticipant implements Closeable {
 
   public void joinRoom() {
     try {
-      addPeers(jsonRpcClient.joinRoom(room, name));
+      addPeers(jsonRpcClient.joinRoom(room, name, null));
       log.info("Joined room {}: {} peers", room, peerStreams);
       if (autoMedia) {
         log.debug("Automedia on, publishing and subscribing to as many as {} publishers",

@@ -48,6 +48,7 @@ public abstract class MediaEndpoint {
   private static Logger log;
 
   private boolean web = false;
+  private boolean dataChannels = false;
 
   private WebRtcEndpoint webEndpoint = null;
   private RtpEndpoint endpoint = null;
@@ -65,18 +66,22 @@ public abstract class MediaEndpoint {
   /**
    * Constructor to set the owner, the endpoint's name and the media pipeline.
    *
+   * @param web
+   * @param dataChannels
    * @param owner
    * @param endpointName
    * @param pipeline
+   * @param log
    */
-  public MediaEndpoint(boolean web, Participant owner, String endpointName, MediaPipeline pipeline,
-      Logger log) {
+  public MediaEndpoint(boolean web, boolean dataChannels, Participant owner, String endpointName,
+      MediaPipeline pipeline, Logger log) {
     if (log == null) {
       MediaEndpoint.log = LoggerFactory.getLogger(MediaEndpoint.class);
     } else {
       MediaEndpoint.log = log;
     }
     this.web = web;
+    this.dataChannels = dataChannels;
     this.owner = owner;
     this.setEndpointName(endpointName);
     this.setMediaPipeline(pipeline);
@@ -230,7 +235,11 @@ public abstract class MediaEndpoint {
    */
   protected void internalEndpointInitialization(final CountDownLatch endpointLatch) {
     if (this.isWeb()) {
-      new WebRtcEndpoint.Builder(pipeline).buildAsync(new Continuation<WebRtcEndpoint>() {
+      WebRtcEndpoint.Builder builder = new WebRtcEndpoint.Builder(pipeline);
+      if (this.dataChannels) {
+        builder.useDataChannels();
+      }
+      builder.buildAsync(new Continuation<WebRtcEndpoint>() {
         @Override
         public void onSuccess(WebRtcEndpoint result) throws Exception {
           webEndpoint = result;

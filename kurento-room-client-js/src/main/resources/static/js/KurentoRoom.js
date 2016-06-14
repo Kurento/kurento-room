@@ -61,11 +61,18 @@ function Room(kurento, options) {
     }
 
     this.connect = function () {
-
-        kurento.sendRequest('joinRoom', {
-            user: options.user,
-            room: options.room
-        }, function (error, response) {
+    	var joinParams = {
+    		user: options.user,
+    		room: options.room
+    	};
+    	if (localParticipant) {
+    		if (Object.keys(localParticipant.getStreams()).some(function (streamId) {
+    			return streams[streamId].isDataChannelEnabled();
+    		})) {
+    			joinParams.dataChannels = true;
+    		}
+    	}
+        kurento.sendRequest('joinRoom', joinParams, function (error, response) {
             if (error) {
             	console.warn('Unable to join room', error);
                 ee.emitEvent('error-room', [{
@@ -492,7 +499,43 @@ function Stream(kurento, local, room, options) {
     this.isLocalMirrored = function () {
     	return localMirrored;
     }
+
+    var chanId = 0;
+    function getChannelName () {
+    	return that.getGlobalID() + '_' + chanId++;
+    }
+
+    var dataChannel = options.data || false;
+    this.isDataChannelEnabled = function() {
+      return dataChannel;
+    }
+
+    var dataChannelOpened = false;
+    this.isDataChannelOpened = function() {
+    	return dataChannelOpened;
+    }
+
+    function onDataChannelOpen(event) {
+    	console.log('Data channel is opened');
+		dataChannelOpened = true;
+	}
+
+	function onDataChannelClosed(event) {
+		console.log('Data channel is closed');
+		dataChannelOpened = false;
+	}
     
+	this.sendData = function (data) {
+		if (wp === undefined) {
+			throw new Error('WebRTC peer has not been created yet');
+		}
+		if (!dataChannelOpened) {
+			throw new Error('Data channel is not opened');
+		}
+		console.log("Sending through data channel: " + data);
+		wp.send(data);
+	}
+	
     this.getWrStream = function () {
         return wrStream;
     }
@@ -651,8 +694,16 @@ function Stream(kurento, local, room, options) {
         if (local) {
         	 var options = {
         			videoStream: wrStream,
-             		onicecandidate: participant.sendIceCandidate.bind(participant)
+             		onicecandidate: participant.sendIceCandidate.bind(participant),
              }
+        	 if (dataChannel) {
+        		 options.dataChannelConfig = {
+     				id : getChannelName(),
+    				onopen : onDataChannelOpen,
+    				onclose : onDataChannelClosed
+        		 };
+        		 options.dataChannels = true;
+        	 }
         	if (that.displayMyRemote()) {
         		wp = new kurentoUtils.WebRtcPeer.WebRtcPeerSendrecv(options, function (error) {
                 	if(error) {

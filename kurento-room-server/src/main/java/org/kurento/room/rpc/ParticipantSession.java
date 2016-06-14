@@ -27,14 +27,9 @@ public class ParticipantSession {
 
   private String participantName;
   private String roomName;
+  private boolean dataChannels = false;
 
   public ParticipantSession() {
-  }
-
-  public ParticipantSession(String participantName, String roomName) {
-    super();
-    this.participantName = participantName;
-    this.roomName = roomName;
   }
 
   public String getParticipantName() {
@@ -53,6 +48,14 @@ public class ParticipantSession {
     this.roomName = roomName;
   }
 
+  public boolean useDataChannels() {
+    return dataChannels;
+  }
+
+  public void setDataChannels(boolean dataChannels) {
+    this.dataChannels = dataChannels;
+  }
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
@@ -61,8 +64,9 @@ public class ParticipantSession {
       builder.append("participantName=").append(participantName).append(", ");
     }
     if (roomName != null) {
-      builder.append("roomName=").append(roomName);
+      builder.append("roomName=").append(roomName).append(", ");
     }
+    builder.append("useDataChannels=").append(dataChannels);
     builder.append("]");
     return builder.toString();
   }

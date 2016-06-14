@@ -318,7 +318,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
         eq(ProtocolElements.PARTICIPANTJOINED_METHOD), Matchers.isA(JsonObject.class));
 
     for (Entry<String, String> userRoom : usersRooms.entrySet()) {
-      manager.joinRoom(userRoom.getKey(), userRoom.getValue(), true,
+      manager.joinRoom(userRoom.getKey(), userRoom.getValue(), false, true,
           usersParticipantRequests.get(userRoom.getKey()));
     }
     // verifies create media pipeline was called once for each new room
@@ -856,7 +856,7 @@ public class NotificationRoomManagerWithDefaultHandlerTest {
     }).when(notificationService).sendErrorResponse(Matchers.any(ParticipantRequest.class), any(),
         Matchers.any(RoomException.class));
 
-    manager.joinRoom(user, room, true, participantRequest);
+    manager.joinRoom(user, room, false, true, participantRequest);
 
     // verifies create media pipeline was called once
     verify(kurentoClient, times(1)).createMediaPipeline(kurentoClientCaptor.capture());

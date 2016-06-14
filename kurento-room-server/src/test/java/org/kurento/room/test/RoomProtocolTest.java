@@ -155,7 +155,7 @@ public class RoomProtocolTest {
         serverHandler0 = new ServerJsonRpcHandler();
         client0 = new KurentoRoomClient(localClient0, serverHandler0);
         try {
-          Map<String, List<String>> emptyPeersList = client0.joinRoom("room", "user0");
+          Map<String, List<String>> emptyPeersList = client0.joinRoom("room", "user0", null);
           assertThat(emptyPeersList.entrySet(), equalTo(expectedEmptyPeersList.entrySet()));
         } catch (IOException e) {
           log.error("Unable to join room", e);
@@ -180,7 +180,7 @@ public class RoomProtocolTest {
         client1 = new KurentoRoomClient(localClient1, serverHandler1);
         joinCdl.await();
         try {
-          Map<String, List<String>> peersList = client1.joinRoom("room", "user1");
+          Map<String, List<String>> peersList = client1.joinRoom("room", "user1", null);
           assertThat(peersList, is(expectedPeersList));
         } catch (IOException e) {
           log.error("Unable to join room", e);

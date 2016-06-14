@@ -53,9 +53,9 @@ public class PublisherEndpoint extends MediaEndpoint {
 
   private Map<String, ListenerSubscription> elementsErrorSubscriptions = new HashMap<String, ListenerSubscription>();
 
-  public PublisherEndpoint(boolean web, Participant owner, String endpointName,
-      MediaPipeline pipeline) {
-    super(web, owner, endpointName, pipeline, log);
+  public PublisherEndpoint(boolean web, boolean dataChannels, Participant owner,
+      String endpointName, MediaPipeline pipeline) {
+    super(web, dataChannels, owner, endpointName, pipeline, log);
   }
 
   @Override

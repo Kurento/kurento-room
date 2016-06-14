@@ -90,11 +90,14 @@ public class RoomManager {
    *          peer (from the client-side).
    * @param roomName
    *          name or identifier of the room
+   * @param dataChannels
+   *          enables data channels (if webParticipant)
    * @param webParticipant
    *          if <strong>true</strong>, the internal media endpoints will use the trickle ICE
    *          mechanism when establishing connections with external media peers (
    *          {@link WebRtcEndpoint}); if <strong>false</strong>, the media endpoint will be a
    *          {@link RtpEndpoint}, with no ICE implementation
+   * @param webParticipant
    * @param kcSessionInfo
    *          sessionInfo bean to be used to create the room in case it doesn't exist (if null, the
    *          room will not be created)
@@ -104,8 +107,9 @@ public class RoomManager {
    * @throws RoomException
    *           on error while joining (like the room is not found or is closing)
    */
-  public Set<UserParticipant> joinRoom(String userName, String roomName, boolean webParticipant,
-      KurentoClientSessionInfo kcSessionInfo, String participantId) throws RoomException {
+  public Set<UserParticipant> joinRoom(String userName, String roomName, boolean dataChannels,
+      boolean webParticipant, KurentoClientSessionInfo kcSessionInfo, String participantId)
+          throws RoomException {
     log.debug("Request [JOIN_ROOM] user={}, room={}, web={} " + "kcSessionInfo.room={} ({})",
         userName, roomName, webParticipant, kcSessionInfo != null
         ? kcSessionInfo.getRoomName()
@@ -126,7 +130,7 @@ public class RoomManager {
           + "' is trying to join room '" + roomName + "' but it is closing");
     }
     Set<UserParticipant> existingParticipants = getParticipants(roomName);
-    room.join(participantId, userName, webParticipant);
+    room.join(participantId, userName, dataChannels, webParticipant);
     return existingParticipants;
   }
 

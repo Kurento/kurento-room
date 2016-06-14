@@ -49,10 +49,10 @@ public class Participant {
 
   private static final Logger log = LoggerFactory.getLogger(Participant.class);
 
-  private boolean web = false;
-
   private String id;
   private String name;
+  private boolean web = false;
+  private boolean dataChannels = false;
 
   private final Room room;
 
@@ -66,13 +66,15 @@ public class Participant {
   private volatile boolean streaming = false;
   private volatile boolean closed;
 
-  public Participant(String id, String name, Room room, MediaPipeline pipeline, boolean web) {
-    this.web = web;
+  public Participant(String id, String name, Room room, MediaPipeline pipeline,
+      boolean dataChannels, boolean web) {
     this.id = id;
     this.name = name;
+    this.web = web;
+    this.dataChannels = dataChannels;
     this.pipeline = pipeline;
     this.room = room;
-    this.publisher = new PublisherEndpoint(web, this, name, pipeline);
+    this.publisher = new PublisherEndpoint(web, dataChannels, this, name, pipeline);
 
     for (Participant other : room.getParticipants()) {
       if (!other.getName().equals(this.name)) {
@@ -184,7 +186,7 @@ public class Participant {
     log.debug("PARTICIPANT {}: unpublishing media stream from room {}", this.name,
         this.room.getName());
     releasePublisherEndpoint();
-    this.publisher = new PublisherEndpoint(web, this, name, pipeline);
+    this.publisher = new PublisherEndpoint(web, dataChannels, this, name, pipeline);
     log.debug("PARTICIPANT {}: released publisher endpoint and left it "
         + "initialized (ready for future streaming)", this.name);
   }

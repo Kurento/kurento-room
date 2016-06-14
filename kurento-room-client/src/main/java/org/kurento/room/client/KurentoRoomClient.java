@@ -17,6 +17,7 @@
 package org.kurento.room.client;
 
 import static org.kurento.room.internal.ProtocolElements.CUSTOMREQUEST_METHOD;
+import static org.kurento.room.internal.ProtocolElements.JOINROOM_DATACHANNELS_PARAM;
 import static org.kurento.room.internal.ProtocolElements.JOINROOM_METHOD;
 import static org.kurento.room.internal.ProtocolElements.JOINROOM_PEERID_PARAM;
 import static org.kurento.room.internal.ProtocolElements.JOINROOM_PEERSTREAMID_PARAM;
@@ -121,10 +122,14 @@ public class KurentoRoomClient {
     this.client.close();
   }
 
-  public Map<String, List<String>> joinRoom(String roomName, String userName) throws IOException {
+  public Map<String, List<String>> joinRoom(String roomName, String userName, Boolean dataChannels)
+      throws IOException {
     JsonObject params = new JsonObject();
     params.addProperty(JOINROOM_ROOM_PARAM, roomName);
     params.addProperty(JOINROOM_USER_PARAM, userName);
+    if (dataChannels != null) {
+      params.addProperty(JOINROOM_DATACHANNELS_PARAM, dataChannels);
+    }
     JsonElement result = client.sendRequest(JOINROOM_METHOD, params);
     Map<String, List<String>> peers = new HashMap<String, List<String>>();
     JsonArray jsonPeers = JsonRoomUtils.getResponseProperty(result, "value", JsonArray.class);

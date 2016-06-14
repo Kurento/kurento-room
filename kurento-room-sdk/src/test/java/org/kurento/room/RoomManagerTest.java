@@ -510,7 +510,7 @@ public class RoomManagerTest {
     for (Entry<String, String> userRoom : usersRooms.entrySet()) {
       String user = userRoom.getKey();
       final String room = userRoom.getValue();
-      Set<UserParticipant> peers = manager.joinRoom(user, room, true,
+      Set<UserParticipant> peers = manager.joinRoom(user, room, false, true,
           new KurentoClientSessionInfo() {
         @Override
         public String getRoomName() {
@@ -1355,7 +1355,8 @@ public class RoomManagerTest {
       };
     }
 
-    Set<UserParticipant> existingPeers = manager.joinRoom(user, room, webParticipant, kcsi, pid);
+    Set<UserParticipant> existingPeers = manager.joinRoom(user, room, false, webParticipant, kcsi,
+        pid);
 
     // verifies create media pipeline was called once
     verify(kurentoClient, times(1)).createMediaPipeline(kurentoClientCaptor.capture());

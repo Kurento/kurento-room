@@ -91,22 +91,24 @@ public class NotificationRoomManager {
    * Calls {@link RoomManager#joinRoom(String, String, boolean, KurentoClientSessionInfo, String)}
    * with a {@link DefaultKurentoClientSessionInfo} bean as implementation of the
    * {@link KurentoClientSessionInfo}.
+   * 
+   * @param b
    *
    * @param request
    *          instance of {@link ParticipantRequest} POJO containing the participant's id and a
    *          request id (optional identifier of the request at the communications level, included
    *          when responding back to the client)
    *
-   * @see RoomManager#joinRoom(String, String, boolean, KurentoClientSessionInfo, String)
+   * @see RoomManager#joinRoom(String, String, boolean, boolean, KurentoClientSessionInfo, String)
    */
-  public void joinRoom(String userName, String roomName, boolean webParticipant,
-      ParticipantRequest request) {
+  public void joinRoom(String userName, String roomName, boolean dataChannels,
+      boolean webParticipant, ParticipantRequest request) {
     Set<UserParticipant> existingParticipants = null;
     try {
       KurentoClientSessionInfo kcSessionInfo = new DefaultKurentoClientSessionInfo(
           request.getParticipantId(), roomName);
-      existingParticipants = internalManager.joinRoom(userName, roomName, webParticipant,
-          kcSessionInfo, request.getParticipantId());
+      existingParticipants = internalManager.joinRoom(userName, roomName, dataChannels,
+          webParticipant, kcSessionInfo, request.getParticipantId());
     } catch (RoomException e) {
       log.warn("PARTICIPANT {}: Error joining/creating room {}", userName, roomName, e);
       notificationRoomHandler.onParticipantJoined(request, roomName, userName, null, e);

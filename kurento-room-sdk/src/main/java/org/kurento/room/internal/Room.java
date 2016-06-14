@@ -87,8 +87,8 @@ public class Room {
     return this.pipeline;
   }
 
-  public void join(String participantId, String userName, boolean webParticipant)
-      throws RoomException {
+  public void join(String participantId, String userName, boolean dataChannels,
+      boolean webParticipant) throws RoomException {
 
     checkClosed();
 
@@ -105,7 +105,7 @@ public class Room {
     createPipeline();
 
     participants.put(participantId, new Participant(participantId, userName, this, getPipeline(),
-        webParticipant));
+        dataChannels, webParticipant));
 
     log.info("ROOM {}: Added participant {}", name, userName);
   }
