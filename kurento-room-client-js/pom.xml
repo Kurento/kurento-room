@@ -51,23 +51,6 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>exec-bower-install</id>
-						<phase>compile</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>bower</executable>
-							<workingDirectory>${project.build.directory}/classes</workingDirectory>
-							<arguments>
-								<argument>install</argument>
-								<argument>--allow-root</argument>
-							</arguments>
-						</configuration>
-					</execution>
-				</executions>
 				<configuration>
 					<mainClass>${start-class}</mainClass>
 				</configuration>
@@ -78,13 +61,6 @@
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>false</filtering>
-			</resource>
-			<resource>
-				<directory>.</directory>
-				<filtering>true</filtering>
-				<includes>
-					<include>bower.json</include>
-				</includes>
 			</resource>
 		</resources>
 	</build>
@@ -97,6 +73,16 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-jsonrpc-js</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.webjars.bower</groupId>
+			<artifactId>adapter.js</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.webjars.bower</groupId>
+			<artifactId>EventEmitter.js</artifactId>
 		</dependency>
 	</dependencies>
 
