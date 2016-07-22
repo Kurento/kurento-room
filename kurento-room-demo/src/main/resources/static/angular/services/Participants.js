@@ -131,11 +131,13 @@ function Participants() {
     };
 
     function updateMainParticipant(participant) {
-        if (mainParticipant) {
-        	mainParticipant.removeMain();
+        if (!mainParticipant || (mainParticipant != participant)) {
+            if (mainParticipant) {
+                mainParticipant.removeMain();
+            }
+            mainParticipant = participant;
+            mainParticipant.setMain();
         }
-        mainParticipant = participant;
-        mainParticipant.setMain();
     }
 
     this.addLocalParticipant = function (stream) {
