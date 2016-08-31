@@ -5,9 +5,13 @@
 
 kurento_room.controller('loginController', function ($scope, $http, ServiceParticipant, $window, ServiceRoom, LxNotificationService) {
 
-	var options;
+   var options;
 
-    $http.get('/getAllRooms').
+   var contextpath = location.pathname;
+   if (contextpath == '/')
+       contextpath = '';
+
+    $http.get(contextpath + '/getAllRooms').
             success(function (data, status, headers, config) {
                 console.log(JSON.stringify(data));
                 $scope.listRooms = data;
@@ -15,47 +19,47 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
             error(function (data, status, headers, config) {
             });
 
-    $http.get('/getClientConfig').
+    $http.get(contextpath + '/getClientConfig').
              success(function (data, status, headers, config) {
             	console.log(JSON.stringify(data));
             	$scope.clientConfig = data;
              }).
              error(function (data, status, headers, config) {
              });
-    
-    $http.get('/getUpdateSpeakerInterval').
+
+    $http.get(contextpath + '/getUpdateSpeakerInterval').
 	    success(function (data, status, headers, config) {
 	        $scope.updateSpeakerInterval = data
 	    }).
 	    error(function (data, status, headers, config) {
 	});
 
-    $http.get('/getThresholdSpeaker').
+    $http.get(contextpath + '/getThresholdSpeaker').
     	success(function (data, status, headers, config) {
     		$scope.thresholdSpeaker = data
 		}).
 		error(function (data, status, headers, config) {
 	});
-    
+
     $scope.register = function (room) {
-    	
+
     	if (!room)
     		ServiceParticipant.showError($window, LxNotificationService, {
     			error: {
     				message:"Username and room fields are both required"
     			}
     		});
-    	
+
         $scope.userName = room.userName;
         $scope.roomName = room.roomName;
 
-        var wsUri = 'wss://' + location.host + '/room';
+        var wsUri = 'wss://' + location.host + contextpath + '/room';
 
         //show loopback stream from server
         var displayPublished = $scope.clientConfig.loopbackRemote || false;
         //also show local stream when display my remote
         var mirrorLocal = $scope.clientConfig.loopbackAndLocal || false;
-        
+
         var kurento = KurentoRoom(wsUri, function (error, kurento) {
 
             if (error)
@@ -101,7 +105,7 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                 		 ServiceParticipant.addLocalMirror(localVideo);
                 	 }
                 });
-                
+
                 room.addEventListener("stream-added", function (streamEvent) {
                     ServiceParticipant.addParticipant(streamEvent.stream);
                 });
@@ -126,7 +130,7 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                     	}
                     });
                 });
-                
+
                 room.addEventListener("room-closed", function (msg) {
                 	if (msg.room !== $scope.roomName) {
                 		console.error("Closed room name doesn't match this room's name", 
@@ -137,14 +141,14 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
                 			+ msg.room + ' has been forcibly closed from server');
                 	}
                 });
-                
+
                 room.addEventListener("lost-connection", function(msg) {
                     kurento.close(true);
                     ServiceParticipant.forceClose($window, LxNotificationService,
                       'Lost connection with room "' + msg.room +
                       '". Please try reloading the webpage...');
                   });
-                
+
                 room.addEventListener("stream-stopped-speaking", function (participantId) {
                     ServiceParticipant.streamStoppedSpeaking(participantId);
                  });
@@ -184,5 +188,3 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
         $scope.roomName = "";
     };
 });
-
-
