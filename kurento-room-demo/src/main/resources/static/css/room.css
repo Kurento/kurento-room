@@ -41,7 +41,7 @@ body {
 }
 
 #main-video video {
-    object-fit: cover;
+    object-fit: contain;
 }
 
 video {
