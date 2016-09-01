@@ -627,19 +627,19 @@ function Stream(kurento, local, room, options) {
 
     this.init = function () {
         participant.addStream(that);
+
         var constraints = {
             audio: true,
             video: {
-                mandatory: {
-                    maxWidth: 640
+                width: {
+                    ideal: 1280
                 },
-                optional: [
-                           {maxFrameRate: 15}, 
-                           {minFrameRate: 15}
-                           ]
+                frameRate: {
+                    ideal: 20
+                }
             }
         };
-        
+
         getUserMedia(constraints, function (userStream) {
             wrStream = userStream;
             ee.emitEvent('access-accepted', null);
