@@ -60,17 +60,6 @@ function AppParticipant(stream) {
         that.videoElement.setAttribute("id", that.thumbnailId);
         that.videoElement.className = "video";
 
-        var buttonVideo = document.createElement('button');
-        buttonVideo.className = 'action btn btn--m btn--orange btn--fab mdi md-desktop-mac';
-        //FIXME this won't work, Angular can't get to bind the directive ng-click nor lx-ripple
-        buttonVideo.setAttribute("ng-click", "disconnectStream();$event.stopPropagation();");
-        buttonVideo.setAttribute("lx-ripple", "");
-        buttonVideo.style.position = "absolute";
-        buttonVideo.style.left = "75%";
-        buttonVideo.style.top = "60%";
-        buttonVideo.style.zIndex = "100";
-        that.videoElement.appendChild(buttonVideo);
-        
         var speakerSpeakingVolumen = document.createElement('div');
         speakerSpeakingVolumen.setAttribute("id","speaker" + that.thumbnailId);
         speakerSpeakingVolumen.className = 'btn--m btn--green btn--fab mdi md-volume-up blinking';
