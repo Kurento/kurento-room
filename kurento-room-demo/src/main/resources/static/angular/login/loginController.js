@@ -176,6 +176,7 @@ kurento_room.controller('loginController', function ($scope, $rootScope, $http, 
         ServiceRoom.setKurento(kurento);
         ServiceRoom.setRoomName($scope.roomName);
         ServiceRoom.setUserName($scope.userName);
+        ServiceRoom.setFilterRequestParam($scope.clientConfig.filterRequestParam);
 
         $rootScope.isParticipant = true;
 

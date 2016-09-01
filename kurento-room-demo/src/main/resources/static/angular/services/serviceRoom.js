@@ -8,6 +8,7 @@ kurento_room.service('ServiceRoom', function () {
     var roomName;
     var userName;
     var localStream;
+    var filterRequestParam;
 
     this.getKurento = function () {
         return kurento;
@@ -47,5 +48,13 @@ kurento_room.service('ServiceRoom', function () {
        } else {
            console.log('KurentoRoom instance is not set');
        }
+    };
+
+    this.getFilterRequestParam = function () {
+        return filterRequestParam;
+    };
+
+    this.setFilterRequestParam = function (value) {
+        filterRequestParam = value;
     };
 });
