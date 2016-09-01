@@ -557,7 +557,7 @@ function Stream(kurento, local, room, options) {
 
     function hideSpinner(spinnerId) {
     	spinnerId = (typeof spinnerId === 'undefined') ? that.getGlobalID() : spinnerId;
-        $(jq('progress-' + spinnerId)).hide();
+        $(jq('progress-' + spinnerId)).remove();
     }
 
     this.playOnlyVideo = function (parentElement, thumbnailId) {
@@ -847,7 +847,9 @@ function Stream(kurento, local, room, options) {
         for (i = 0; i < videoElements.length; i++) {
             disposeElement(videoElements[i].video);
         }
-        
+
+        disposeElement("progress-" + that.getGlobalID());
+
         if (wp) {
         	wp.dispose();
         } else { 
