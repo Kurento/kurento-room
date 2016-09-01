@@ -50,6 +50,8 @@ public class DemoController {
     config = new ClientConfig();
     config.setLoopbackRemote(DEMO_LOOPBACK_REMOTE);
     config.setLoopbackAndLocal(DEMO_LOOPBACK_AND_LOCAL);
+    config.setFilterRequestParam(
+        KmsFilterType.parseType(KurentoRoomDemoApp.DEMO_FILTER_TYPE).getCustomRequestParam());
     log.info("Set client config: {}", config);
   }
 

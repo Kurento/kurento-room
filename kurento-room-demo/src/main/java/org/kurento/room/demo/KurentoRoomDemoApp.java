@@ -63,9 +63,12 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
 
   private final Integer DEMO_KMS_NODE_LIMIT = PropertiesManager.getProperty("demo.kmsLimit", 1000);
   private final String DEMO_AUTH_REGEX = PropertiesManager.getProperty("demo.authRegex");
+
+  public final static String DEMO_FILTER_TYPE =
+      PropertiesManager.getProperty("demo.filterType", "hat");
+
   private final String DEMO_HAT_URL = PropertiesManager.getProperty("demo.hatUrl",
       "mario-wings.png");
-
   private final JsonObject DEMO_HAT_COORDS = PropertiesManager.getPropertyJson("demo.hatCoords",
       DEFAULT_HAT_COORDS.toString(), JsonObject.class);
 
@@ -75,7 +78,7 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
         KurentoRoomServerApp.KMSS_URIS_DEFAULT, JsonArray.class);
     List<String> kmsWsUris = JsonUtils.toStringList(kmsUris);
 
-    log.info("Configuring Kurento Room Server to use the following kmss: " + kmsWsUris);
+    log.info("Configuring Kurento Room Server to use the following kmss: {}", kmsWsUris);
 
     FixedNKmsManager fixedKmsManager = new FixedNKmsManager(kmsWsUris, DEMO_KMS_NODE_LIMIT);
     fixedKmsManager.setAuthRegex(DEMO_AUTH_REGEX);
@@ -86,15 +89,30 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
   @Override
   public JsonRpcUserControl userControl() {
     DemoJsonRpcUserControl uc = new DemoJsonRpcUserControl(roomManager());
+
     String appServerUrl = System.getProperty("app.server.url", DEFAULT_APP_SERVER_URL);
-    String hatUrl;
-    if (appServerUrl.endsWith("/")) {
-      hatUrl = appServerUrl + IMG_FOLDER + DEMO_HAT_URL;
-    } else {
-      hatUrl = appServerUrl + "/" + IMG_FOLDER + DEMO_HAT_URL;
+
+    KmsFilterType type = KmsFilterType.parseType(DEMO_FILTER_TYPE);
+    log.info("Configuring demo with filter type: {} (parsed is {})", DEMO_FILTER_TYPE, type);
+
+    uc.setFilterType(type);
+
+    switch (type) {
+      case MARKER:
+
+        break;
+      case HAT:
+      default:
+        String hatUrl;
+        if (appServerUrl.endsWith("/")) {
+          hatUrl = appServerUrl + IMG_FOLDER + DEMO_HAT_URL;
+        } else {
+          hatUrl = appServerUrl + "/" + IMG_FOLDER + DEMO_HAT_URL;
+        }
+        uc.setHatUrl(hatUrl);
+        uc.setHatCoords(DEMO_HAT_COORDS);
     }
-    uc.setHatUrl(hatUrl);
-    uc.setHatCoords(DEMO_HAT_COORDS);
+
     return uc;
   }
 

@@ -22,6 +22,7 @@ import org.kurento.client.FaceOverlayFilter;
 import org.kurento.client.MediaElement;
 import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
+import org.kurento.module.markerdetector.ArMarkerdetector;
 import org.kurento.room.NotificationRoomManager;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.rpc.JsonRpcUserControl;
@@ -37,11 +38,12 @@ import com.google.gson.JsonObject;
  */
 public class DemoJsonRpcUserControl extends JsonRpcUserControl {
 
-  private static final String SESSION_ATTRIBUTE_HAT_FILTER = "hatFilter";
 
-  private static final String CUSTOM_REQUEST_HAT_PARAM = "hat";
+  private static final String SESSION_ATTRIBUTE_FILTER = "customFilter";
 
   private static final Logger log = LoggerFactory.getLogger(DemoJsonRpcUserControl.class);
+
+  private KmsFilterType filterType = KmsFilterType.HAT;
 
   private String hatUrl;
 
@@ -52,6 +54,10 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
 
   public DemoJsonRpcUserControl(NotificationRoomManager roomManager) {
     super(roomManager);
+  }
+
+  public void setFilterType(KmsFilterType type) {
+    this.filterType = type;
   }
 
   public void setHatUrl(String hatUrl) {
@@ -80,32 +86,35 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
   @Override
   public void customRequest(Transaction transaction, Request<JsonObject> request,
       ParticipantRequest participantRequest) {
+
+    log.error(filterType + " filter already on");
+
     try {
-      if (request.getParams() == null || request.getParams().get(CUSTOM_REQUEST_HAT_PARAM) == null) {
-        throw new RuntimeException("Request element '" + CUSTOM_REQUEST_HAT_PARAM + "' is missing");
+      if (request.getParams() == null
+          || request.getParams().get(filterType.getCustomRequestParam()) == null) {
+        throw new RuntimeException(
+            "Request element '" + filterType.getCustomRequestParam() + "' is missing");
       }
-      boolean hatOn = request.getParams().get(CUSTOM_REQUEST_HAT_PARAM).getAsBoolean();
+      boolean filterOn = request.getParams().get(filterType.getCustomRequestParam()).getAsBoolean();
       String pid = participantRequest.getParticipantId();
-      if (hatOn) {
-        if (transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_HAT_FILTER)) {
-          throw new RuntimeException("Hat filter already on");
+      if (filterOn) {
+        if (transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_FILTER)) {
+          throw new RuntimeException(filterType + " filter already on");
         }
-        log.info("Applying face overlay filter to session {}", pid);
-        FaceOverlayFilter faceOverlayFilter = new FaceOverlayFilter.Builder(
-            roomManager.getPipeline(pid)).build();
-        faceOverlayFilter.setOverlayedImage(this.hatUrl, this.offsetXPercent, this.offsetYPercent,
-            this.widthPercent, this.heightPercent);
-        roomManager.addMediaElement(pid, faceOverlayFilter);
-        transaction.getSession().getAttributes()
-        .put(SESSION_ATTRIBUTE_HAT_FILTER, faceOverlayFilter);
+        log.info("Applying {} filter to session {}", filterType, pid);
+
+        MediaElement filter = createFilter(pid);
+
+        roomManager.addMediaElement(pid, filter);
+        transaction.getSession().getAttributes().put(SESSION_ATTRIBUTE_FILTER, filter);
       } else {
-        if (!transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_HAT_FILTER)) {
-          throw new RuntimeException("This user has no hat filter yet");
+        if (!transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_FILTER)) {
+          throw new RuntimeException("This user has no " + filterType + " filter yet");
         }
-        log.info("Removing face overlay filter from session {}", pid);
+        log.info("Removing {} filter from session {}", filterType, pid);
         roomManager.removeMediaElement(pid, (MediaElement) transaction.getSession().getAttributes()
-            .get(SESSION_ATTRIBUTE_HAT_FILTER));
-        transaction.getSession().getAttributes().remove(SESSION_ATTRIBUTE_HAT_FILTER);
+            .get(SESSION_ATTRIBUTE_FILTER));
+        transaction.getSession().getAttributes().remove(SESSION_ATTRIBUTE_FILTER);
       }
       transaction.sendResponse(new JsonObject());
     } catch (Exception e) {
@@ -115,6 +124,31 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
       } catch (IOException e1) {
         log.warn("Unable to send error response", e1);
       }
+    }
+  }
+
+  private MediaElement createFilter(String pid) {
+    switch (filterType) {
+      case MARKER:
+        ArMarkerdetector armFilter =
+            new ArMarkerdetector.Builder(roomManager.getPipeline(pid)).build();
+        armFilter.setShowDebugLevel(0);
+        armFilter.setOverlayText("Huuhaa");
+        armFilter.setOverlayImage(
+            "http://www.dplkbumiputera.com/slider_image/sym/root/proc/self/cwd/usr/share/zenity/clothes/hawaii-shirt.png");
+        armFilter.addMarkerCountListener(event -> {
+          String evResult = String.format("Marker %d count:%d (diff:%d): {}", event.getMarkerId(),
+              event.getMarkerCount(), event.getMarkerCountDiff());
+          log.debug(evResult, event);
+        });
+        return armFilter;
+      case HAT:
+      default:
+        FaceOverlayFilter fofilter =
+        new FaceOverlayFilter.Builder(roomManager.getPipeline(pid)).build();
+        fofilter.setOverlayedImage(this.hatUrl, this.offsetXPercent, this.offsetYPercent,
+            this.widthPercent, this.heightPercent);
+        return fofilter;
     }
   }
 }

@@ -19,6 +19,7 @@ package org.kurento.room.demo;
 class ClientConfig {
   private boolean loopbackRemote;
   private boolean loopbackAndLocal;
+  private String filterRequestParam;
 
   public boolean isLoopbackRemote() {
     return loopbackRemote;
@@ -36,11 +37,19 @@ class ClientConfig {
     this.loopbackAndLocal = loopbackAndLocal;
   }
 
+  public String getFilterRequestParam() {
+    return filterRequestParam;
+  }
+
+  public void setFilterRequestParam(String filterRequestParam) {
+    this.filterRequestParam = filterRequestParam;
+  }
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("Loopback [remote=").append(loopbackRemote).append(", andLocal=")
-    .append(loopbackAndLocal).append("]");
+        .append(loopbackAndLocal).append("], filterRequestParam=").append(filterRequestParam);
     return builder.toString();
   }
 }

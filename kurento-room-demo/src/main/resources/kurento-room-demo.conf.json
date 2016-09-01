@@ -12,6 +12,9 @@
       }
    },
    "demo": {
+      //marker or hat
+      "filterType" : "hat",
+
       //mario-wings.png or wizard.png
       "hatUrl": "mario-wings.png",
       "hatCoords": {
