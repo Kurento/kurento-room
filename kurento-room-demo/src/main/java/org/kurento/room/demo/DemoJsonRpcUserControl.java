@@ -46,11 +46,12 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
   private KmsFilterType filterType = KmsFilterType.HAT;
 
   private String hatUrl;
-
   private float offsetXPercent;
   private float offsetYPercent;
   private float widthPercent;
   private float heightPercent;
+
+  private String markerUrl;
 
   public DemoJsonRpcUserControl(NotificationRoomManager roomManager) {
     super(roomManager);
@@ -63,6 +64,11 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
   public void setHatUrl(String hatUrl) {
     this.hatUrl = hatUrl;
     log.info("Hat URL: {}", hatUrl);
+  }
+
+  public void setMarkerUrl(String markerUrl) {
+    this.markerUrl = markerUrl;
+    log.info("Marker URL: {}", markerUrl);
   }
 
   public void setHatCoords(JsonObject hatCoords) {
@@ -86,9 +92,6 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
   @Override
   public void customRequest(Transaction transaction, Request<JsonObject> request,
       ParticipantRequest participantRequest) {
-
-    log.error(filterType + " filter already on");
-
     try {
       if (request.getParams() == null
           || request.getParams().get(filterType.getCustomRequestParam()) == null) {
@@ -133,19 +136,13 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
         ArMarkerdetector armFilter =
             new ArMarkerdetector.Builder(roomManager.getPipeline(pid)).build();
         armFilter.setShowDebugLevel(0);
-        armFilter.setOverlayText("Huuhaa");
-        armFilter.setOverlayImage(
-            "http://www.dplkbumiputera.com/slider_image/sym/root/proc/self/cwd/usr/share/zenity/clothes/hawaii-shirt.png");
-        armFilter.addMarkerCountListener(event -> {
-          String evResult = String.format("Marker %d count:%d (diff:%d): {}", event.getMarkerId(),
-              event.getMarkerCount(), event.getMarkerCountDiff());
-          log.debug(evResult, event);
-        });
+        // armFilter.setOverlayText("Huuhaa");
+        armFilter.setOverlayImage(markerUrl);
         return armFilter;
       case HAT:
       default:
         FaceOverlayFilter fofilter =
-        new FaceOverlayFilter.Builder(roomManager.getPipeline(pid)).build();
+            new FaceOverlayFilter.Builder(roomManager.getPipeline(pid)).build();
         fofilter.setOverlayedImage(this.hatUrl, this.offsetXPercent, this.offsetYPercent,
             this.widthPercent, this.heightPercent);
         return fofilter;

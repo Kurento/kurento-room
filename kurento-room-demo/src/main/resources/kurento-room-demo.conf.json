@@ -13,7 +13,9 @@
    },
    "demo": {
       //marker or hat
-      "filterType" : "hat",
+      "filterType" : "marker",
+
+      "markerUrl": "kurento-rect-logo.png",
 
       //mario-wings.png or wizard.png
       "hatUrl": "mario-wings.png",

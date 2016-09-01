@@ -72,6 +72,9 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
   private final JsonObject DEMO_HAT_COORDS = PropertiesManager.getPropertyJson("demo.hatCoords",
       DEFAULT_HAT_COORDS.toString(), JsonObject.class);
 
+  private final String DEMO_MARKER_URL =
+      PropertiesManager.getProperty("demo.markerUrl", "kurento-rect-logo.png");
+
   @Override
   public KmsManager kmsManager() {
     JsonArray kmsUris = getPropertyJson(KurentoRoomServerApp.KMSS_URIS_PROPERTY,
@@ -99,7 +102,13 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
 
     switch (type) {
       case MARKER:
-
+        String markerUrl;
+        if (appServerUrl.endsWith("/")) {
+          markerUrl = appServerUrl + IMG_FOLDER + DEMO_MARKER_URL;
+        } else {
+          markerUrl = appServerUrl + "/" + IMG_FOLDER + DEMO_MARKER_URL;
+        }
+        uc.setMarkerUrl(markerUrl);
         break;
       case HAT:
       default:
