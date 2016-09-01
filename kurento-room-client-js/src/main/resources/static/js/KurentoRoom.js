@@ -799,11 +799,9 @@ function Stream(kurento, local, room, options) {
                 	var video = videoElements[i].video;
                 	video.src = URL.createObjectURL(wrStream);
                 	video.onplay = function() {
-                    	//is ('native-video-' + that.getGlobalID())
-                    	var elementId = this.id;
-                        var videoId = elementId.split("-");
+                        console.log(that.getGlobalID() + ': ' + 'Video playing');
                         $(jq(thumbnailId)).show();
-                        hideSpinner(videoId[2]);
+                        hideSpinner(that.getGlobalID());
                     };
                 }
                 that.room.emitEvent('stream-subscribed', [{
