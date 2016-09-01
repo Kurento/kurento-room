@@ -259,13 +259,13 @@ function Participants() {
         var chatDiv = document.getElementById('chatDiv');
         var messages = $("#messages");
         var updateScroll = true;
-
         if (messages.outerHeight() - chatDiv.scrollTop > chatDiv.offsetHeight) {
         	updateScroll = false;
         }
-        console.log(localParticipant)
-        var localUser = localParticipant.thumbnailId.replace("_webcam", "").replace("video-", "");
-        if (room === roomName && user === localUser) { //me
+
+        var vetext = localParticipant.videoElement.textContent || localParticipant.videoElement.innerText;
+        var localUser = vetext.replace("_webcam", "");
+        if (user === localUser) { //me
 
             var li = document.createElement('li');
             li.className = "list-row list-row--has-primary list-row--has-separator";
@@ -286,18 +286,6 @@ function Participants() {
             li.appendChild(div1);
             li.appendChild(div2);
             ul[0].appendChild(li);
-
-//               <li class="list-row list-row--has-primary list-row--has-separator">
-//                        <div class="list-secondary-tile">
-//                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/images/placeholder/2-square.jpg">
-//                        </div>
-//
-//                        <div class="list-content-tile list-content-tile--two-lines">
-//                            <strong>User 1</strong>
-//                            <span>.............................</span>
-//                        </div>
-//                    </li>
-
 
         } else {//others
 
@@ -321,17 +309,6 @@ function Participants() {
             li.appendChild(div2);
             ul[0].appendChild(li);
             autoOpenChat();
-
-//                 <li class="list-row list-row--has-primary list-row--has-separator">
-//                        <div class="list-primary-tile">
-//                            <img class="list-primary-tile__img" src="http://ui.lumapps.com/images/placeholder/1-square.jpg">
-//                        </div>
-//
-//                        <div class="list-content-tile list-content-tile--two-lines">
-//                            <strong>User 2</strong>
-//                            <span>.............................</span>
-//                        </div>
-//                    </li>
         }
         
         if (updateScroll) {
