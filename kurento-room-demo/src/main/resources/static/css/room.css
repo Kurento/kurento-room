@@ -123,7 +123,7 @@ video {
     /* whatever width you want */
     position: relative;
     float: right;
-    display: table;
+    display: block;
 }
 
 .video:after {
