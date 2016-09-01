@@ -3,15 +3,13 @@
  * @author Raquel Díaz González
  */
 
-kurento_room.controller('loginController', function ($scope, $http, ServiceParticipant, $window, ServiceRoom, LxNotificationService) {
+kurento_room.controller('loginController', function ($scope, $rootScope, $http, ServiceParticipant, $window, ServiceRoom, LxNotificationService) {
 
-   var options;
+   $rootScope.isParticipant = false;
 
-   var contextpath = location.pathname;
-   if (contextpath == '/')
-       contextpath = '';
+   $rootScope.contextpath = (location.pathname == '/') ? '' : location.pathname;
 
-    $http.get(contextpath + '/getAllRooms').
+    $http.get($rootScope.contextpath + '/getAllRooms').
             success(function (data, status, headers, config) {
                 console.log(JSON.stringify(data));
                 $scope.listRooms = data;
@@ -19,7 +17,7 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
             error(function (data, status, headers, config) {
             });
 
-    $http.get(contextpath + '/getClientConfig').
+    $http.get($rootScope.contextpath + '/getClientConfig').
              success(function (data, status, headers, config) {
             	console.log(JSON.stringify(data));
             	$scope.clientConfig = data;
@@ -27,14 +25,14 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
              error(function (data, status, headers, config) {
              });
 
-    $http.get(contextpath + '/getUpdateSpeakerInterval').
+    $http.get($rootScope.contextpath + '/getUpdateSpeakerInterval').
 	    success(function (data, status, headers, config) {
 	        $scope.updateSpeakerInterval = data
 	    }).
 	    error(function (data, status, headers, config) {
 	});
 
-    $http.get(contextpath + '/getThresholdSpeaker').
+    $http.get($rootScope.contextpath + '/getThresholdSpeaker').
     	success(function (data, status, headers, config) {
     		$scope.thresholdSpeaker = data
 		}).
@@ -53,7 +51,7 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
         $scope.userName = room.userName;
         $scope.roomName = room.roomName;
 
-        var wsUri = 'wss://' + location.host + contextpath + '/room';
+        var wsUri = 'wss://' + location.host + $rootScope.contextpath + '/room';
 
         //show loopback stream from server
         var displayPublished = $scope.clientConfig.loopbackRemote || false;
@@ -178,6 +176,8 @@ kurento_room.controller('loginController', function ($scope, $http, ServiceParti
         ServiceRoom.setKurento(kurento);
         ServiceRoom.setRoomName($scope.roomName);
         ServiceRoom.setUserName($scope.userName);
+
+        $rootScope.isParticipant = true;
 
         //redirect to call
         $window.location.href = '#/call';

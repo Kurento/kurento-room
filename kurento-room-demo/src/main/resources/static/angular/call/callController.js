@@ -12,7 +12,7 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
 
     $scope.leaveRoom = function () {
 
-        ServiceRoom.getKurento().close();
+        ServiceRoom.closeKurento();
 
         ServiceParticipant.removeParticipants();
 
@@ -23,10 +23,17 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
     window.onbeforeunload = function () {
     	//not necessary if not connected
     	if (ServiceParticipant.isConnected()) {
-    		ServiceRoom.getKurento().close();
+            ServiceRoom.closeKurento();
     	}
     };
 
+    $scope.$on("$locationChangeStart",function () {
+       console.log("Changed location to: " + document.location);
+       if (ServiceParticipant.isConnected()) {
+           ServiceRoom.closeKurento();
+           ServiceParticipant.removeParticipants();
+       }
+    });
 
     $scope.goFullscreen = function () {
 

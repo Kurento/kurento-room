@@ -40,4 +40,12 @@ kurento_room.service('ServiceRoom', function () {
     this.setUserName = function (value) {
         userName = value;
     };
+
+    this.closeKurento = function () {
+       if (kurento && kurento instanceof KurentoRoom) {
+           kurento.close();
+       } else {
+           console.log('KurentoRoom instance is not set');
+       }
+    };
 });
