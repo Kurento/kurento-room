@@ -35,6 +35,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
 
 import com.google.gson.JsonArray;
 
@@ -105,6 +106,14 @@ public class KurentoRoomServerApp implements JsonRpcConfigurer {
   @Override
   public void registerJsonRpcHandlers(JsonRpcHandlerRegistry registry) {
     registry.addHandler(roomHandler().withPingWatchdog(true), "/room");
+  }
+
+  @Bean
+  public ServletServerContainerFactoryBean createWebSocketContainer() {
+    ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
+    container.setMaxTextMessageBufferSize(1000000); // chars
+    container.setMaxBinaryMessageBufferSize(1000000); // bytes
+    return container;
   }
 
   public static void main(String[] args) throws Exception {
