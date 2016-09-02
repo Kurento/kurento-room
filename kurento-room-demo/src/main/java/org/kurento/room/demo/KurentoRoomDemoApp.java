@@ -18,6 +18,9 @@ package org.kurento.room.demo;
 import static org.kurento.commons.PropertiesManager.getPropertyJson;
 
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.kurento.commons.ConfigFileManager;
 import org.kurento.commons.PropertiesManager;
@@ -30,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
@@ -47,6 +51,7 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
   public final static String KROOMDEMO_CFG_FILENAME = "kurento-room-demo.conf.json";
 
   private static JsonObject DEFAULT_HAT_COORDS = new JsonObject();
+  private static JsonObject DEFAULT_MARKER_URLS = new JsonObject();
 
   static {
     ConfigFileManager.loadConfigFile(KROOMDEMO_CFG_FILENAME);
@@ -54,12 +59,16 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
     DEFAULT_HAT_COORDS.addProperty("offsetYPercent", -1.2F);
     DEFAULT_HAT_COORDS.addProperty("widthPercent", 1.6F);
     DEFAULT_HAT_COORDS.addProperty("heightPercent", 1.6F);
+
+    DEFAULT_MARKER_URLS.addProperty("0", "kurento-rect-logo.png");
   }
 
   private static final String IMG_FOLDER = "img/";
 
-  private final String DEFAULT_APP_SERVER_URL = PropertiesManager.getProperty("app.uri",
+  private final static String DEFAULT_APP_SERVER_URL = PropertiesManager.getProperty("app.uri",
       "https://localhost:8443");
+  private final static String APP_SERVER_URL =
+      System.getProperty("app.server.url", DEFAULT_APP_SERVER_URL);
 
   private final Integer DEMO_KMS_NODE_LIMIT = PropertiesManager.getProperty("demo.kmsLimit", 1000);
   private final String DEMO_AUTH_REGEX = PropertiesManager.getProperty("demo.authRegex");
@@ -72,8 +81,8 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
   private final JsonObject DEMO_HAT_COORDS = PropertiesManager.getPropertyJson("demo.hatCoords",
       DEFAULT_HAT_COORDS.toString(), JsonObject.class);
 
-  private final String DEMO_MARKER_URL =
-      PropertiesManager.getProperty("demo.markerUrl", "kurento-rect-logo.png");
+  private final JsonObject DEMO_MARKER_URLS = PropertiesManager.getPropertyJson("demo.markerUrls",
+      DEFAULT_MARKER_URLS.toString(), JsonObject.class);
 
   @Override
   public KmsManager kmsManager() {
@@ -93,8 +102,6 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
   public JsonRpcUserControl userControl() {
     DemoJsonRpcUserControl uc = new DemoJsonRpcUserControl(roomManager());
 
-    String appServerUrl = System.getProperty("app.server.url", DEFAULT_APP_SERVER_URL);
-
     KmsFilterType type = KmsFilterType.parseType(DEMO_FILTER_TYPE);
     log.info("Configuring demo with filter type: {} (parsed is {})", DEMO_FILTER_TYPE, type);
 
@@ -102,27 +109,37 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
 
     switch (type) {
       case MARKER:
-        String markerUrl;
-        if (appServerUrl.endsWith("/")) {
-          markerUrl = appServerUrl + IMG_FOLDER + DEMO_MARKER_URL;
-        } else {
-          markerUrl = appServerUrl + "/" + IMG_FOLDER + DEMO_MARKER_URL;
+        SortedMap<Integer, String> sortedUrls = new TreeMap<>();
+        for (Entry<String, JsonElement> entry : DEMO_MARKER_URLS.entrySet()) {
+          try {
+            Integer order = Integer.parseInt(entry.getKey());
+            if (order < 0) {
+              throw new Exception("Illegal configuration, marker url index has to be positive");
+            }
+            String url = entry.getValue().getAsString();
+            sortedUrls.put(order, getFullUrl(url));
+          } catch (Exception e) {
+            log.warn("Unable to process marker url [{}] from config file {}", entry,
+                KROOMDEMO_CFG_FILENAME, e);
+          }
         }
-        uc.setMarkerUrl(markerUrl);
+        uc.setMarkerUrls(sortedUrls);
         break;
       case HAT:
       default:
-        String hatUrl;
-        if (appServerUrl.endsWith("/")) {
-          hatUrl = appServerUrl + IMG_FOLDER + DEMO_HAT_URL;
-        } else {
-          hatUrl = appServerUrl + "/" + IMG_FOLDER + DEMO_HAT_URL;
-        }
-        uc.setHatUrl(hatUrl);
+        uc.setHatUrl(getFullUrl(DEMO_HAT_URL));
         uc.setHatCoords(DEMO_HAT_COORDS);
     }
 
     return uc;
+  }
+
+  private static String getFullUrl(String url) {
+    if (APP_SERVER_URL.endsWith("/")) {
+      return APP_SERVER_URL + IMG_FOLDER + url;
+    } else {
+      return APP_SERVER_URL + "/" + IMG_FOLDER + url;
+    }
   }
 
   public static void main(String[] args) throws Exception {

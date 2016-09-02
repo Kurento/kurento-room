@@ -126,42 +126,55 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
     
     var style = {
         hat: {
-            off: "btn--deep-purple md-mood",
-            on: "btn--purple md-face-unlock"
+            "-1": "btn--indigo md-mood",
+            "0": "btn--amber md-face-unlock"
         },
         marker: {
-            off: "btn--deep-purple md-grid-off",
-            on: "btn--purple md-grid-on"
+            "-1": "btn--indigo md-grid-off",
+            "0": "btn--amber md-grid-on",
+            "1": "btn--red md-grid-on"
         }
     };
 
-    $scope.filterIsOn = false;
+    $scope.filterIndex = "-1"; //off
     $scope.filterState;
     $scope.filterStyle;
     updateFilterValues();
 
     function updateFilterValues() {
-        $scope.filterState = $scope.filterIsOn ? "on" : "off";
-        $scope.filterStyle = style[$scope.filter][$scope.filterState];
+        $scope.filterState = parseInt($scope.filterIndex) < 0 ? "off" : "on";
+        $scope.filterStyle = style[$scope.filter][$scope.filterIndex];
     }
 
     $scope.applyFilter = function () {
-        $scope.filterIsOn = !$scope.filterIsOn;
-        updateFilterValues();
-        console.log("Toggle filter " + $scope.filterState);
-
         var reqParams = {};
-        reqParams[$scope.filter] = $scope.filterIsOn;
+        if ($scope.filter === "marker") {
+            reqParams[$scope.filter] = parseInt($scope.filterIndex);
+        } else {
+            if (parseInt($scope.filterIndex) < 0) { //off -> on
+                $scope.filterIndex = "0";
+                reqParams[$scope.filter] = true;
+            } else { //on -> off
+                $scope.filterIndex = "-1";
+                reqParams[$scope.filter] = false;
+            }
+        }
 
         ServiceRoom.getKurento().sendCustomRequest(reqParams, function (error, response) {
             if (error) {
-                console.error("Unable to toggle filter " + $scope.filterState, error);
+                console.error("Unable to toggle filter, currently " +
+                    $scope.filterState, error);
                 LxNotificationService.alert('Error!',
-                    "Unable to toggle filter " + $scope.filterState, 'Ok',
-                    function(answer) {});
+                    "Unable to toggle filter, currently " + $scope.filterState,
+                    'Ok', function(answer) {});
                 return false;
             } else {
-                console.log("Response to filter toggle", response);
+                if ($scope.filter === "marker" && response[$scope.filter] !== undefined) {
+                    $scope.filterIndex = response[$scope.filter] + "";
+                }
+                updateFilterValues();
+                console.log("Toggled filter " + $scope.filterState + " (idx " +
+                    $scope.filterIndex + ")");
             }
         });
 

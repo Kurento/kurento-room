@@ -17,6 +17,7 @@
 package org.kurento.room.demo;
 
 import java.io.IOException;
+import java.util.SortedMap;
 
 import org.kurento.client.FaceOverlayFilter;
 import org.kurento.client.MediaElement;
@@ -32,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.JsonObject;
 
 /**
- * User control that applies a face overlay filter when publishing video.
+ * User control that applies a media filter when publishing video.
  *
  * @author Radu Tom Vlad (rvlad@naevatec.com)
  */
@@ -51,7 +52,7 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
   private float widthPercent;
   private float heightPercent;
 
-  private String markerUrl;
+  private SortedMap<Integer, String> markerUrls;
 
   public DemoJsonRpcUserControl(NotificationRoomManager roomManager) {
     super(roomManager);
@@ -66,9 +67,9 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
     log.info("Hat URL: {}", hatUrl);
   }
 
-  public void setMarkerUrl(String markerUrl) {
-    this.markerUrl = markerUrl;
-    log.info("Marker URL: {}", markerUrl);
+  public void setMarkerUrls(SortedMap<Integer, String> urls) {
+    this.markerUrls = urls;
+    log.info("Marker URL: {}", markerUrls);
   }
 
   public void setHatCoords(JsonObject hatCoords) {
@@ -98,28 +99,14 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
         throw new RuntimeException(
             "Request element '" + filterType.getCustomRequestParam() + "' is missing");
       }
-      boolean filterOn = request.getParams().get(filterType.getCustomRequestParam()).getAsBoolean();
-      String pid = participantRequest.getParticipantId();
-      if (filterOn) {
-        if (transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_FILTER)) {
-          throw new RuntimeException(filterType + " filter already on");
-        }
-        log.info("Applying {} filter to session {}", filterType, pid);
-
-        MediaElement filter = createFilter(pid);
-
-        roomManager.addMediaElement(pid, filter);
-        transaction.getSession().getAttributes().put(SESSION_ATTRIBUTE_FILTER, filter);
-      } else {
-        if (!transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_FILTER)) {
-          throw new RuntimeException("This user has no " + filterType + " filter yet");
-        }
-        log.info("Removing {} filter from session {}", filterType, pid);
-        roomManager.removeMediaElement(pid, (MediaElement) transaction.getSession().getAttributes()
-            .get(SESSION_ATTRIBUTE_FILTER));
-        transaction.getSession().getAttributes().remove(SESSION_ATTRIBUTE_FILTER);
+      switch (filterType) {
+        case MARKER:
+          handleMarkerRequest(transaction, request, participantRequest);
+          break;
+        case HAT:
+        default:
+          handleHatRequest(transaction, request, participantRequest);
       }
-      transaction.sendResponse(new JsonObject());
     } catch (Exception e) {
       log.error("Unable to handle custom request", e);
       try {
@@ -130,22 +117,74 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
     }
   }
 
-  private MediaElement createFilter(String pid) {
-    switch (filterType) {
-      case MARKER:
-        ArMarkerdetector armFilter =
-            new ArMarkerdetector.Builder(roomManager.getPipeline(pid)).build();
-        armFilter.setShowDebugLevel(0);
-        // armFilter.setOverlayText("Huuhaa");
-        armFilter.setOverlayImage(markerUrl);
-        return armFilter;
-      case HAT:
-      default:
-        FaceOverlayFilter fofilter =
-            new FaceOverlayFilter.Builder(roomManager.getPipeline(pid)).build();
-        fofilter.setOverlayedImage(this.hatUrl, this.offsetXPercent, this.offsetYPercent,
-            this.widthPercent, this.heightPercent);
-        return fofilter;
+  private void handleHatRequest(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) throws IOException {
+    boolean filterOn = request.getParams().get(filterType.getCustomRequestParam()).getAsBoolean();
+    String pid = participantRequest.getParticipantId();
+    if (filterOn) {
+      if (transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_FILTER)) {
+        throw new RuntimeException(filterType + " filter already on");
+      }
+      log.info("Applying {} filter to session {}", filterType, pid);
+
+      FaceOverlayFilter filter =
+          new FaceOverlayFilter.Builder(roomManager.getPipeline(pid)).build();
+      filter.setOverlayedImage(this.hatUrl, this.offsetXPercent, this.offsetYPercent,
+          this.widthPercent, this.heightPercent);
+
+      addFilter(transaction, pid, filter);
+    } else {
+      removeFilter(transaction, pid);
     }
+    transaction.sendResponse(new JsonObject());
+  }
+
+  private void handleMarkerRequest(Transaction transaction, Request<JsonObject> request,
+      ParticipantRequest participantRequest) throws IOException {
+    Integer currentUrlIndex =
+        request.getParams().get(filterType.getCustomRequestParam()).getAsInt();
+    String pid = participantRequest.getParticipantId();
+
+    int nextIndex = -1; // disable filter
+    if (currentUrlIndex < markerUrls.firstKey()) {
+      nextIndex = markerUrls.firstKey(); // enable filter using first URL
+    } else if (currentUrlIndex < markerUrls.lastKey()) {
+      nextIndex = markerUrls.tailMap(currentUrlIndex + 1).firstKey();
+    }
+
+    if (nextIndex == -1) {
+      removeFilter(transaction, pid);
+    } else {
+      String url = markerUrls.get(nextIndex);
+      ArMarkerdetector filter;
+      if (transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_FILTER)) {
+        filter = (ArMarkerdetector) transaction.getSession().getAttributes()
+            .get(SESSION_ATTRIBUTE_FILTER);
+        log.info("Reusing {} filter with img {} in session {}", filterType, url, pid);
+      } else {
+        filter = new ArMarkerdetector.Builder(roomManager.getPipeline(pid)).build();
+        log.info("New {} filter with img {} for session {}", filterType, url, pid);
+        addFilter(transaction, pid, filter);
+      }
+      filter.setOverlayImage(markerUrls.get(nextIndex));
+    }
+    JsonObject result = new JsonObject();
+    result.addProperty(filterType.getCustomRequestParam(), nextIndex);
+    transaction.sendResponse(result);
+  }
+
+  private void addFilter(Transaction transaction, String pid, MediaElement filter) {
+    roomManager.addMediaElement(pid, filter);
+    transaction.getSession().getAttributes().put(SESSION_ATTRIBUTE_FILTER, filter);
+  }
+
+  private void removeFilter(Transaction transaction, String pid) {
+    if (!transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_FILTER)) {
+      throw new RuntimeException("This user has no " + filterType + " filter yet");
+    }
+    log.info("Removing {} filter from session {}", filterType, pid);
+    roomManager.removeMediaElement(pid,
+        (MediaElement) transaction.getSession().getAttributes().get(SESSION_ATTRIBUTE_FILTER));
+    transaction.getSession().getAttributes().remove(SESSION_ATTRIBUTE_FILTER);
   }
 }

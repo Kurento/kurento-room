@@ -14,14 +14,12 @@
         </div>
 
         <div id="room-name">{{roomName}}</div>
-        <div class="mb" align="right" style="margin: 1em; padding-bottom: 5px" id="buttonActions"> 
-            <!--eliminado class action de los botones para cambiar el css-->
-            <!--aumentado el tamaño de los iconos con css (room.css)-->
+        <div class="mb" align="right" style="margin: 1em; padding-bottom: 5px" id="buttonActions">
+            <button class="btn btn--xl btn--fab mdi" ng-class="filterStyle" lx-ripple ng-click="applyFilter()" id="filterButton" title="Filter toggle"></button> <!--filter-->
             <button class="btn btn--xl btn--brown btn--fab mdi md-recent-actors" lx-ripple ng-click="disableMainSpeaker()" id="buttonMainSpeaker" title="Main Speaker toggle"></button> <!--disable Main Speaker-->
             <button class="btn btn--xl btn--teal btn--fab mdi md-volume-up" lx-ripple ng-click="onOffVolume()" id="buttonVolume" title="Audio toggle"></button> <!--mute audio-->
             <button class="btn btn--xl btn--grey btn--fab mdi md-videocam" lx-ripple ng-click="onOffVideocam()" id="buttonVideocam" title="Video toggle"></button> <!--mute video-->
             <button class="btn btn--xl btn--blue-grey btn--fab mdi md-not-interested" lx-ripple ng-click="disconnectStream()" id="buttonDisconnect" title="Disconnect media stream"></button> <!--unpublish or unsubscribe media-->
-            <button class="btn btn--xl btn--fab mdi" ng-class="filterStyle" lx-ripple ng-click="applyFilter()" id="filterButton" title="Filter toggle"></button> <!--filter-->
             <button class="btn btn--xl btn--red btn--fab mdi md-call-end " lx-ripple ng-click="leaveRoom()" id="buttonLeaveRoom" title="Leave room"></button> <!--colgar-->
             <button class="btn btn--xl btn--green btn--fab mdi md-fullscreen" lx-ripple ng-click="goFullscreen()" title="Fullscreen"></button> <!--fullscreen-->
             <button class="btn btn--xl btn--blue btn--fab mdi md-chat" lx-ripple ng-click="toggleChat()" title="Chat toggle"></button> <!--chat-->
