@@ -825,8 +825,11 @@ function Stream(kurento, local, room, options) {
 	            wrStream.getVideoTracks().forEach(function (track) {
 	                track.stop && track.stop()
 	            })
-                speechEvent.stop();
         	}
+        }
+
+        if (speechEvent) {
+            speechEvent.stop();
         }
 
         console.log(that.getGlobalID() + ": Stream '" + id + "' unpublished");
@@ -861,6 +864,10 @@ function Stream(kurento, local, room, options) {
 	                track.stop && track.stop()
 	            })
         	}
+        }
+
+        if (speechEvent) {
+            speechEvent.stop();
         }
 
         console.log(that.getGlobalID() + ": Stream '" + id + "' disposed");
