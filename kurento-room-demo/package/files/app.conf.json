@@ -3,7 +3,8 @@
       "uris": ["ws://localhost:8888/kurento", "ws://127.0.0.1:8888/kurento"]
    },
    "app": {
-      "uri": "http://localhost:8080/"
+      //has to accessible from the KMS in order to load filter imgs
+      "uri": "https://localhost:8443/"
    },
    "kurento": {
       "client": {
@@ -12,6 +13,15 @@
       }
    },
    "demo": {
+      //marker or hat
+      "filterType" : "marker",
+
+      //markerdetector img(s) in order of preference
+      "markerUrls": {
+        "0": "kurento-rect-logo.png",
+        "1": "twi-logo.png"
+      },
+
       //mario-wings.png or wizard.png
       "hatUrl": "mario-wings.png",
       "hatCoords": {
@@ -33,7 +43,7 @@
          "andLocal": false
       },
       "authRegex": ".*",
-      "kmsLimit": 10
+      "kmsLimit": 1000
    },
    "updateSpeakerInterval": 1800,
    "thresholdSpeaker": -50
