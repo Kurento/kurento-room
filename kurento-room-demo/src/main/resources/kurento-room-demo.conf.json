@@ -37,7 +37,7 @@
          //"heightPercent": 1.5F
       },
       "loopback" : {
-         "remote": false,
+         "remote": true,
          //matters only when remote is true
          "andLocal": false
       },
