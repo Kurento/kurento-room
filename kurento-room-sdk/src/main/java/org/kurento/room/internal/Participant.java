@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.kurento.room.internal;
 
 import java.util.HashSet;
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.kurento.client.Continuation;
 import org.kurento.client.ErrorEvent;
+import org.kurento.client.Filter;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
@@ -61,7 +63,10 @@ public class Participant {
   private PublisherEndpoint publisher;
   private CountDownLatch endPointLatch = new CountDownLatch(1);
 
-  private final ConcurrentMap<String, SubscriberEndpoint> subscribers = new ConcurrentHashMap<String, SubscriberEndpoint>();
+  private final ConcurrentMap<String, Filter> filters = new ConcurrentHashMap<>();
+
+  private final ConcurrentMap<String, SubscriberEndpoint> subscribers =
+      new ConcurrentHashMap<String, SubscriberEndpoint>();
 
   private volatile boolean streaming = false;
   private volatile boolean closed;
@@ -86,7 +91,8 @@ public class Participant {
   public void createPublishingEndpoint() {
     publisher.createEndpoint(endPointLatch);
     if (getPublisher().getEndpoint() == null) {
-      throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE, "Unable to create publisher endpoint");
+      throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+          "Unable to create publisher endpoint");
     }
   }
 
@@ -103,6 +109,24 @@ public class Participant {
       this.publisher.apply(element);
     } else {
       this.publisher.apply(element, type);
+    }
+  }
+
+  public synchronized Filter getFilterElement(String id) {
+    return filters.get(id);
+  }
+
+  public synchronized void addFilterElement(String id, Filter filter) {
+    filters.put(id, filter);
+    shapePublisherMedia(filter, null);
+  }
+
+  public synchronized void removeFilterElement(String id) {
+    Filter filter = getFilterElement(id);
+
+    filters.remove(id);
+    if (filter != null) {
+      publisher.revert(filter);
     }
   }
 
@@ -155,8 +179,9 @@ public class Participant {
   }
 
   public String preparePublishConnection() {
-    log.info("USER {}: Request to publish video in room {} by "
-        + "initiating connection from server", this.name, this.room.getName());
+    log.info(
+        "USER {}: Request to publish video in room {} by " + "initiating connection from server",
+        this.name, this.room.getName());
 
     String sdpOffer = this.getPublisher().preparePublishConnection();
 
@@ -172,8 +197,8 @@ public class Participant {
         this.room.getName(), sdpType);
     log.trace("USER {}: Publishing Sdp ({}) is {}", this.name, sdpType, sdpString);
 
-    String sdpResponse = this.getPublisher().publish(sdpType, sdpString, doLoopback,
-        loopbackAlternativeSrc, loopbackConnectionType);
+    String sdpResponse = this.getPublisher()
+        .publish(sdpType, sdpString, doLoopback, loopbackAlternativeSrc, loopbackConnectionType);
     this.streaming = true;
 
     log.trace("USER {}: Publishing Sdp ({}) is {}", this.name, sdpType, sdpResponse);
@@ -302,7 +327,8 @@ public class Participant {
       log.warn("PARTICIPANT {}: Trying to mute incoming media from user {}. "
           + "But there is no such subscriber endpoint.", this.name, senderName);
     } else {
-      log.debug("PARTICIPANT {}: Mute subscriber endpoint linked to user {}", this.name, senderName);
+      log.debug("PARTICIPANT {}: Mute subscriber endpoint linked to user {}", this.name,
+          senderName);
       subscriberEndpoint.mute(muteType);
     }
   }
@@ -350,14 +376,13 @@ public class Participant {
    * Returns a {@link SubscriberEndpoint} for the given username. The endpoint is created if not
    * found.
    *
-   * @param remoteName
-   *          name of another user
+   * @param remoteName name of another user
    * @return the endpoint instance
    */
   public SubscriberEndpoint getNewOrExistingSubscriber(String remoteName) {
     SubscriberEndpoint sendingEndpoint = new SubscriberEndpoint(web, this, remoteName, pipeline);
-    SubscriberEndpoint existingSendingEndpoint = this.subscribers.putIfAbsent(remoteName,
-        sendingEndpoint);
+    SubscriberEndpoint existingSendingEndpoint =
+        this.subscribers.putIfAbsent(remoteName, sendingEndpoint);
     if (existingSendingEndpoint != null) {
       sendingEndpoint = existingSendingEndpoint;
       log.trace("PARTICIPANT {}: Already exists a subscriber endpoint to user {}", this.name,
@@ -381,8 +406,8 @@ public class Participant {
   }
 
   public void sendMediaError(ErrorEvent event) {
-    String desc = event.getType() + ": " + event.getDescription() + "(errCode="
-        + event.getErrorCode() + ")";
+    String desc =
+        event.getType() + ": " + event.getDescription() + "(errCode=" + event.getErrorCode() + ")";
     log.warn("PARTICIPANT {}: Media error encountered: {}", name, desc);
     room.sendMediaError(id, desc);
   }

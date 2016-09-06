@@ -51,7 +51,8 @@ public class PublisherEndpoint extends MediaEndpoint {
   private LinkedList<String> elementIds = new LinkedList<String>();
   private boolean connected = false;
 
-  private Map<String, ListenerSubscription> elementsErrorSubscriptions = new HashMap<String, ListenerSubscription>();
+  private Map<String, ListenerSubscription> elementsErrorSubscriptions =
+      new HashMap<String, ListenerSubscription>();
 
   public PublisherEndpoint(boolean web, boolean dataChannels, Participant owner,
       String endpointName, MediaPipeline pipeline) {
@@ -76,7 +77,7 @@ public class PublisherEndpoint extends MediaEndpoint {
 
   /**
    * @return all media elements created for this publisher, except for the main element (
-   *         {@link WebRtcEndpoint})
+   * {@link WebRtcEndpoint})
    */
   public synchronized Collection<MediaElement> getMediaElements() {
     if (passThru != null) {
@@ -92,18 +93,13 @@ public class PublisherEndpoint extends MediaEndpoint {
    * it connects to itself (after applying the intermediate media elements and the
    * {@link PassThrough}) to allow loopback of the media stream.
    *
-   * @param sdpType
-   *          indicates the type of the sdpString (offer or answer)
-   * @param sdpString
-   *          offer or answer from the remote peer
-   * @param doLoopback
-   *          loopback flag
-   * @param loopbackAlternativeSrc
-   *          alternative loopback source
-   * @param loopbackConnectionType
-   *          how to connect the loopback source
+   * @param sdpType                indicates the type of the sdpString (offer or answer)
+   * @param sdpString              offer or answer from the remote peer
+   * @param doLoopback             loopback flag
+   * @param loopbackAlternativeSrc alternative loopback source
+   * @param loopbackConnectionType how to connect the loopback source
    * @return the SDP response (the answer if processing an offer SDP, otherwise is the updated offer
-   *         generated previously by this endpoint)
+   * generated previously by this endpoint)
    */
   public synchronized String publish(SdpType sdpType, String sdpString, boolean doLoopback,
       MediaElement loopbackAlternativeSrc, MediaType loopbackConnectionType) {
@@ -119,13 +115,13 @@ public class PublisherEndpoint extends MediaEndpoint {
     }
     String sdpResponse = null;
     switch (sdpType) {
-      case ANSWER :
+      case ANSWER:
         sdpResponse = processAnswer(sdpString);
         break;
-      case OFFER :
+      case OFFER:
         sdpResponse = processOffer(sdpString);
         break;
-      default :
+      default:
         throw new RoomException(Code.MEDIA_SDP_ERROR_CODE, "Sdp type not supported: " + sdpType);
     }
     gatherCandidates();
@@ -164,11 +160,9 @@ public class PublisherEndpoint extends MediaEndpoint {
    * (a.k.a. media streaming has started), otherwise it is left ready for when the connections
    * between elements will materialize and the streaming begins.
    *
-   * @param shaper
-   *          {@link MediaElement} that will be linked to the end of the chain (e.g. a filter)
+   * @param shaper {@link MediaElement} that will be linked to the end of the chain (e.g. a filter)
    * @return the element's id
-   * @throws RoomException
-   *           if thrown, the media element was not added
+   * @throws RoomException if thrown, the media element was not added
    */
   public String apply(MediaElement shaper) throws RoomException {
     return apply(shaper, null);
@@ -178,14 +172,12 @@ public class PublisherEndpoint extends MediaEndpoint {
    * Same as {@link #apply(MediaElement)}, can specify the media type that will be streamed through
    * the shaper element.
    *
-   * @param shaper
-   *          {@link MediaElement} that will be linked to the end of the chain (e.g. a filter)
-   * @param type
-   *          indicates which type of media will be connected to the shaper ({@link MediaType}), if
-   *          null then the connection is mixed
+   * @param shaper {@link MediaElement} that will be linked to the end of the chain (e.g. a filter)
+   * @param type   indicates which type of media will be connected to the shaper
+   *               ({@link MediaType}), if
+   *               null then the connection is mixed
    * @return the element's id
-   * @throws RoomException
-   *           if thrown, the media element was not added
+   * @throws RoomException if thrown, the media element was not added
    */
   public synchronized String apply(MediaElement shaper, MediaType type) throws RoomException {
     String id = shaper.getId();
@@ -219,16 +211,14 @@ public class PublisherEndpoint extends MediaEndpoint {
    * Removes the media element object found from the media chain structure. The object is released.
    * If the chain is connected, both adjacent remaining elements will be interconnected.
    *
-   * @param shaper
-   *          {@link MediaElement} that will be removed from the chain
-   * @throws RoomException
-   *           if thrown, the media element was not removed
+   * @param shaper {@link MediaElement} that will be removed from the chain
+   * @throws RoomException if thrown, the media element was not removed
    */
   public synchronized void revert(MediaElement shaper) throws RoomException {
     final String elementId = shaper.getId();
     if (!elements.containsKey(elementId)) {
-      throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE, "This endpoint (" + getEndpointName()
-          + ") has no media element with id " + elementId);
+      throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+          "This endpoint (" + getEndpointName() + ") has no media element with id " + elementId);
     }
 
     MediaElement element = elements.remove(elementId);
@@ -273,22 +263,22 @@ public class PublisherEndpoint extends MediaEndpoint {
     if (!elements.isEmpty()) {
       String sinkId = elementIds.peekLast();
       if (!elements.containsKey(sinkId)) {
-        throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE, "This endpoint ("
-            + getEndpointName() + ") has no media element with id " + sinkId
-            + " (should've been connected to the internal ep)");
+        throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+            "This endpoint (" + getEndpointName() + ") has no media element with id " + sinkId
+                + " (should've been connected to the internal ep)");
       }
       sink = elements.get(sinkId);
     } else {
       log.debug("Will mute connection of WebRTC and PassThrough (no other elems)");
     }
     switch (muteType) {
-      case ALL :
+      case ALL:
         internalSinkDisconnect(this.getEndpoint(), sink);
         break;
-      case AUDIO :
+      case AUDIO:
         internalSinkDisconnect(this.getEndpoint(), sink, MediaType.AUDIO);
         break;
-      case VIDEO :
+      case VIDEO:
         internalSinkDisconnect(this.getEndpoint(), sink, MediaType.VIDEO);
         break;
     }
@@ -301,9 +291,9 @@ public class PublisherEndpoint extends MediaEndpoint {
     if (!elements.isEmpty()) {
       String sinkId = elementIds.peekLast();
       if (!elements.containsKey(sinkId)) {
-        throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE, "This endpoint ("
-            + getEndpointName() + ") has no media element with id " + sinkId
-            + " (should've been connected to the internal ep)");
+        throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+            "This endpoint (" + getEndpointName() + ") has no media element with id " + sinkId
+                + " (should've been connected to the internal ep)");
       }
       sink = elements.get(sinkId);
     } else {
@@ -339,16 +329,16 @@ public class PublisherEndpoint extends MediaEndpoint {
 
   private void innerConnect() {
     if (this.getEndpoint() == null) {
-      throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE, "Can't connect null endpoint (ep: "
-          + getEndpointName() + ")");
+      throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+          "Can't connect null endpoint (ep: " + getEndpointName() + ")");
     }
     MediaElement current = this.getEndpoint();
     String prevId = elementIds.peekLast();
     while (prevId != null) {
       MediaElement prev = elements.get(prevId);
       if (prev == null) {
-        throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE, "No media element with id "
-            + prevId + " (ep: " + getEndpointName() + ")");
+        throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+            "No media element with id " + prevId + " (ep: " + getEndpointName() + ")");
       }
       internalSinkConnect(current, prev);
       current = prev;
@@ -378,11 +368,11 @@ public class PublisherEndpoint extends MediaEndpoint {
    * Same as {@link #internalSinkConnect(MediaElement, MediaElement)}, but can specify the type of
    * the media that will be streamed.
    *
-   * @see #internalSinkConnect(MediaElement, MediaElement)
    * @param source
    * @param sink
-   * @param type
-   *          if null, {@link #internalSinkConnect(MediaElement, MediaElement)} will be used instead
+   * @param type   if null, {@link #internalSinkConnect(MediaElement, MediaElement)} will be used
+   *               instead
+   * @see #internalSinkConnect(MediaElement, MediaElement)
    */
   private void internalSinkConnect(final MediaElement source, final MediaElement sink,
       final MediaType type) {
@@ -425,11 +415,11 @@ public class PublisherEndpoint extends MediaEndpoint {
    * Same as {@link #internalSinkDisconnect(MediaElement, MediaElement)}, but can specify the type
    * of the media that will be disconnected.
    *
-   * @see #internalSinkConnect(MediaElement, MediaElement)
    * @param source
    * @param sink
-   * @param type
-   *          if null, {@link #internalSinkConnect(MediaElement, MediaElement)} will be used instead
+   * @param type   if null, {@link #internalSinkConnect(MediaElement, MediaElement)} will be used
+   *               instead
+   * @see #internalSinkConnect(MediaElement, MediaElement)
    */
   private void internalSinkDisconnect(final MediaElement source, final MediaElement sink,
       final MediaType type) {

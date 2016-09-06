@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.kurento.room.internal;
 
 import java.util.Collection;
@@ -26,9 +27,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.kurento.client.Continuation;
 import org.kurento.client.ErrorEvent;
 import org.kurento.client.EventListener;
+import org.kurento.client.Filter;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
+import org.kurento.room.api.FilterUpdater;
 import org.kurento.room.api.RoomHandler;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
@@ -46,7 +49,8 @@ public class Room {
 
   private final static Logger log = LoggerFactory.getLogger(Room.class);
 
-  private final ConcurrentMap<String, Participant> participants = new ConcurrentHashMap<String, Participant>();
+  private final ConcurrentMap<String, Participant> participants =
+      new ConcurrentHashMap<String, Participant>();
   private final String name;
 
   private MediaPipeline pipeline;
@@ -64,6 +68,8 @@ public class Room {
   private Object pipelineReleaseLock = new Object();
   private volatile boolean pipelineReleased = false;
   private boolean destroyKurentoClient;
+
+  private final ConcurrentHashMap<String, String> states = new ConcurrentHashMap<>();
 
   public Room(String roomName, KurentoClient kurentoClient, RoomHandler roomHandler,
       boolean destroyKurentoClient) {
@@ -97,15 +103,16 @@ public class Room {
     }
     for (Participant p : participants.values()) {
       if (p.getName().equals(userName)) {
-        throw new RoomException(Code.EXISTING_USER_IN_ROOM_ERROR_CODE, "User '" + userName
-            + "' already exists in room '" + name + "'");
+        throw new RoomException(Code.EXISTING_USER_IN_ROOM_ERROR_CODE,
+            "User '" + userName + "' already exists in room '" + name + "'");
       }
     }
 
     createPipeline();
 
-    participants.put(participantId, new Participant(participantId, userName, this, getPipeline(),
-        dataChannels, webParticipant));
+    participants.put(participantId,
+        new Participant(participantId, userName, this, getPipeline(), dataChannels,
+            webParticipant));
 
     log.info("ROOM {}: Added participant {}", name, userName);
   }
@@ -147,8 +154,8 @@ public class Room {
 
     Participant participant = participants.get(participantId);
     if (participant == null) {
-      throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE, "User #" + participantId
-          + " not found in room '" + name + "'");
+      throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
+          "User #" + participantId + " not found in room '" + name + "'");
     }
     log.info("PARTICIPANT {}: Leaving room {}", participant.getName(), this.name);
     if (participant.isStreaming()) {
@@ -291,8 +298,9 @@ public class Room {
       pipeline.addErrorListener(new EventListener<ErrorEvent>() {
         @Override
         public void onEvent(ErrorEvent event) {
-          String desc = event.getType() + ": " + event.getDescription() + "(errCode="
-              + event.getErrorCode() + ")";
+          String desc =
+              event.getType() + ": " + event.getDescription() + "(errCode=" + event.getErrorCode()
+                  + ")";
           log.warn("ROOM {}: Pipeline error encountered: {}", name, desc);
           roomHandler.onPipelineError(name, getParticipantIds(), desc);
         }
@@ -319,6 +327,27 @@ public class Room {
           pipelineReleased = true;
         }
       });
+    }
+  }
+
+  public synchronized void updateFilter(FilterUpdater updater) {
+    String filterId = updater.getFilterId();
+    String stateId = updater.getStateId();
+    String state = states.get(stateId);
+    String newState = updater.getNewState(state);
+
+    states.put(stateId, newState);
+
+    for (Participant participant : participants.values()) {
+      Filter filter = participant.getFilterElement(filterId);
+
+      Filter newFilter = updater.updateFilter(filter, newState);
+
+      if (filter == null && newFilter != null) {
+        participant.addFilterElement(filterId, newFilter);
+      } else if (newFilter == null && filter != null) {
+        participant.removeFilterElement(filterId);
+      }
     }
   }
 }
