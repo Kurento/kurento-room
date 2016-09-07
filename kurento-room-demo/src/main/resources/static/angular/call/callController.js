@@ -22,18 +22,18 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
     };
 
     window.onbeforeunload = function () {
-    	//not necessary if not connected
-    	if (ServiceParticipant.isConnected()) {
+        //not necessary if not connected
+        if (ServiceParticipant.isConnected()) {
             ServiceRoom.closeKurento();
-    	}
+        }
     };
 
-    $scope.$on("$locationChangeStart",function () {
-       console.log("Changed location to: " + document.location);
-       if (ServiceParticipant.isConnected()) {
-           ServiceRoom.closeKurento();
-           ServiceParticipant.removeParticipants();
-       }
+    $scope.$on("$locationChangeStart", function () {
+        console.log("Changed location to: " + document.location);
+        if (ServiceParticipant.isConnected()) {
+            ServiceRoom.closeKurento();
+            ServiceParticipant.removeParticipants();
+        }
     });
 
     $scope.goFullscreen = function () {
@@ -44,10 +44,10 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
             Fullscreen.all();
 
     };
-    
+
     $scope.disableMainSpeaker = function (value) {
 
-    	var element = document.getElementById("buttonMainSpeaker");
+        var element = document.getElementById("buttonMainSpeaker");
         if (element.classList.contains("md-person")) { //on
             element.classList.remove("md-person");
             element.classList.add("md-recent-actors");
@@ -88,18 +88,18 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         }
     };
 
-    $scope.disconnectStream = function() {
-    	var localStream = ServiceRoom.getLocalStream();
-    	var participant = ServiceParticipant.getMainParticipant();
-    	if (!localStream || !participant) {
-    		LxNotificationService.alert('Error!', "Not connected yet", 'Ok', function(answer) {
+    $scope.disconnectStream = function () {
+        var localStream = ServiceRoom.getLocalStream();
+        var participant = ServiceParticipant.getMainParticipant();
+        if (!localStream || !participant) {
+            LxNotificationService.alert('Error!', "Not connected yet", 'Ok', function (answer) {
             });
-    		return false;
-    	}
-    	ServiceParticipant.disconnectParticipant(participant);
-    	ServiceRoom.getKurento().disconnectParticipant(participant.getStream());
+            return false;
+        }
+        ServiceParticipant.disconnectParticipant(participant);
+        ServiceRoom.getKurento().disconnectParticipant(participant.getStream());
     }
-    
+
     //chat
     $scope.message;
 
@@ -123,7 +123,7 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
         // run the effect
         $("#effect").toggle(selectedEffect, options, 500);
     };
-    
+
     var style = {
         hat: {
             "-1": "btn--indigo md-mood",
@@ -166,19 +166,29 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
                     $scope.filterState, error);
                 LxNotificationService.alert('Error!',
                     "Unable to toggle filter, currently " + $scope.filterState,
-                    'Ok', function(answer) {});
+                    'Ok', function (answer) {
+                    });
                 return false;
             } else {
-                if ($scope.filter === "marker" && response[$scope.filter] !== undefined) {
-                    $scope.filterIndex = response[$scope.filter] + "";
+                if ($scope.filter === "marker") {
+                    return;
                 }
+
                 updateFilterValues();
                 console.log("Toggled filter " + $scope.filterState + " (idx " +
                     $scope.filterIndex + ")");
             }
         });
-
     };
+
+    ServiceParticipant.addEventListener("marker-filter-status-changed", function (status) {
+        console.error("Filter status changed", status);
+        if ($scope.filter === "marker") {
+            $scope.filterIndex = status;
+            updateFilterValues();
+            $scope.$apply();
+        }
+    });
 });
 
 

@@ -98,4 +98,5 @@ public class ProtocolElements {
   public static final String ICECANDIDATE_SDPMID_PARAM = "sdpMid";
   public static final String ICECANDIDATE_SDPMLINEINDEX_PARAM = "sdpMLineIndex";
 
+  public static final String CUSTOM_NOTIFICATION = "custonNotification";
 }

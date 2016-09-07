@@ -8,16 +8,23 @@ import org.kurento.module.markerdetector.ArMarkerdetector;
 import org.kurento.room.api.UserNotificationService;
 import org.kurento.room.internal.DefaultNotificationRoomHandler;
 import org.kurento.room.internal.Participant;
+import org.kurento.room.internal.ProtocolElements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonObject;
 
 public class DemoNotificationRoomHandler extends DefaultNotificationRoomHandler {
 
   private static final Logger log = LoggerFactory.getLogger(DemoNotificationRoomHandler.class);
   private SortedMap<Integer, String> markerUrls;
 
+  private UserNotificationService notifService;
+
   public DemoNotificationRoomHandler(UserNotificationService notifService) {
     super(notifService);
+
+    this.notifService = notifService;
   }
 
   @Override
@@ -30,6 +37,12 @@ public class DemoNotificationRoomHandler extends DefaultNotificationRoomHandler 
     }
 
     String url = markerUrls.get(newState);
+
+    JsonObject notificationParams = new JsonObject();
+    notificationParams.addProperty("MarkerFilterState", newState);
+
+    notifService.sendNotification(participant.getId(), ProtocolElements.CUSTOM_NOTIFICATION,
+        notificationParams);
 
     if (url == null) {
       log.info("Removing {} filter from participant {}", filterId, participant.getId());
