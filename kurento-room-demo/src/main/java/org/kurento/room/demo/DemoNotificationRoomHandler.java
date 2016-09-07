@@ -44,12 +44,6 @@ public class DemoNotificationRoomHandler extends DefaultNotificationRoomHandler 
     notifService.sendNotification(participant.getId(), ProtocolElements.CUSTOM_NOTIFICATION,
         notificationParams);
 
-    if (url == null) {
-      log.info("Removing {} filter from participant {}", filterId, participant.getId());
-      participant.disableFilterelement(filterId, false);
-      return;
-    }
-
     ArMarkerdetector newFilter;
     Filter filter = participant.getFilterElement(filterId);
 
@@ -62,19 +56,42 @@ public class DemoNotificationRoomHandler extends DefaultNotificationRoomHandler 
       newFilter = (ArMarkerdetector) filter;
     }
 
-    participant.enableFilterelement(filterId);
+    if (url != null) {
+      newFilter.setOverlayImage(url, new Continuation<Void>() {
+        @Override
+        public void onSuccess(Void result) throws Exception {
 
-    newFilter.setOverlayImage(url, new Continuation<Void>() {
-      @Override
-      public void onSuccess(Void result) throws Exception {
+        }
 
-      }
+        @Override
+        public void onError(Throwable cause) throws Exception {
 
-      @Override
-      public void onError(Throwable cause) throws Exception {
+        }
+      });
+      newFilter.setOverlayScale(1.0F, new Continuation<Void>() {
+        @Override
+        public void onSuccess(Void result) throws Exception {
 
-      }
-    });
+        }
+
+        @Override
+        public void onError(Throwable cause) throws Exception {
+
+        }
+      });
+    } else {
+      newFilter.setOverlayScale(0.0001F, new Continuation<Void>() {
+        @Override
+        public void onSuccess(Void result) throws Exception {
+
+        }
+
+        @Override
+        public void onError(Throwable cause) throws Exception {
+
+        }
+      });
+    }
   }
 
   @Override
