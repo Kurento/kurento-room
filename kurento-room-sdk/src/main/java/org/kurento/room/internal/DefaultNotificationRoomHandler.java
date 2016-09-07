@@ -47,8 +47,9 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
     JsonObject notifParams = new JsonObject();
     notifParams.addProperty(ProtocolElements.ROOMCLOSED_ROOM_PARAM, roomName);
     for (UserParticipant participant : participants) {
-      notifService.sendNotification(participant.getParticipantId(),
-          ProtocolElements.ROOMCLOSED_METHOD, notifParams);
+      notifService
+          .sendNotification(participant.getParticipantId(), ProtocolElements.ROOMCLOSED_METHOD,
+              notifParams);
     }
   }
 
@@ -93,8 +94,9 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
     JsonObject params = new JsonObject();
     params.addProperty(ProtocolElements.PARTICIPANTLEFT_NAME_PARAM, userName);
     for (UserParticipant participant : remainingParticipants) {
-      notifService.sendNotification(participant.getParticipantId(),
-          ProtocolElements.PARTICIPANTLEFT_METHOD, params);
+      notifService
+          .sendNotification(participant.getParticipantId(), ProtocolElements.PARTICIPANTLEFT_METHOD,
+              params);
     }
 
     notifService.sendResponse(request, new JsonObject());
@@ -207,8 +209,9 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
     JsonObject params = new JsonObject();
     params.addProperty(ProtocolElements.PARTICIPANTLEFT_NAME_PARAM, userName);
     for (UserParticipant participant : remainingParticipants) {
-      notifService.sendNotification(participant.getParticipantId(),
-          ProtocolElements.PARTICIPANTLEFT_METHOD, params);
+      notifService
+          .sendNotification(participant.getParticipantId(), ProtocolElements.PARTICIPANTLEFT_METHOD,
+              params);
     }
   }
 
@@ -248,4 +251,13 @@ public class DefaultNotificationRoomHandler implements NotificationRoomHandler {
     notifService.sendNotification(participantId, ProtocolElements.MEDIAERROR_METHOD, notifParams);
   }
 
+  @Override
+  public void updateFilter(String roomName, Participant participant, String filterId,
+      String state) {
+  }
+
+  @Override
+  public String getNextFilterState(String filterId, String state) {
+    return null;
+  }
 }

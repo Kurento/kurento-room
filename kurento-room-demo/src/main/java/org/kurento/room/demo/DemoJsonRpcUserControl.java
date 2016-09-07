@@ -23,7 +23,6 @@ import org.kurento.client.FaceOverlayFilter;
 import org.kurento.client.MediaElement;
 import org.kurento.jsonrpc.Transaction;
 import org.kurento.jsonrpc.message.Request;
-import org.kurento.module.markerdetector.ArMarkerdetector;
 import org.kurento.room.NotificationRoomManager;
 import org.kurento.room.api.pojo.ParticipantRequest;
 import org.kurento.room.rpc.JsonRpcUserControl;
@@ -39,8 +38,8 @@ import com.google.gson.JsonObject;
  */
 public class DemoJsonRpcUserControl extends JsonRpcUserControl {
 
-
   private static final String SESSION_ATTRIBUTE_FILTER = "customFilter";
+  private static final String MARKER_ID = "markerFilterId";
 
   private static final Logger log = LoggerFactory.getLogger(DemoJsonRpcUserControl.class);
 
@@ -86,7 +85,7 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
       heightPercent = hatCoords.get("heightPercent").getAsFloat();
     }
     log.info("Hat coords:\n\toffsetXPercent = {}\n\toffsetYPercent = {}"
-        + "\n\twidthPercent = {}\n\theightPercent = {}", offsetXPercent, offsetYPercent,
+            + "\n\twidthPercent = {}\n\theightPercent = {}", offsetXPercent, offsetYPercent,
         widthPercent, heightPercent);
   }
 
@@ -139,37 +138,17 @@ public class DemoJsonRpcUserControl extends JsonRpcUserControl {
     transaction.sendResponse(new JsonObject());
   }
 
-  private void handleMarkerRequest(Transaction transaction, Request<JsonObject> request,
+  private void handleMarkerRequest(final Transaction transaction, Request<JsonObject> request,
       ParticipantRequest participantRequest) throws IOException {
     Integer currentUrlIndex =
         request.getParams().get(filterType.getCustomRequestParam()).getAsInt();
     String pid = participantRequest.getParticipantId();
 
-    int nextIndex = -1; // disable filter
-    if (currentUrlIndex < markerUrls.firstKey()) {
-      nextIndex = markerUrls.firstKey(); // enable filter using first URL
-    } else if (currentUrlIndex < markerUrls.lastKey()) {
-      nextIndex = markerUrls.tailMap(currentUrlIndex + 1).firstKey();
-    }
+    roomManager.updateFilter(roomManager.getRoomManager().getRoomName(pid), MARKER_ID);
 
-    if (nextIndex == -1) {
-      removeFilter(transaction, pid);
-    } else {
-      String url = markerUrls.get(nextIndex);
-      ArMarkerdetector filter;
-      if (transaction.getSession().getAttributes().containsKey(SESSION_ATTRIBUTE_FILTER)) {
-        filter = (ArMarkerdetector) transaction.getSession().getAttributes()
-            .get(SESSION_ATTRIBUTE_FILTER);
-        log.info("Reusing {} filter with img {} in session {}", filterType, url, pid);
-      } else {
-        filter = new ArMarkerdetector.Builder(roomManager.getPipeline(pid)).build();
-        log.info("New {} filter with img {} for session {}", filterType, url, pid);
-        addFilter(transaction, pid, filter);
-      }
-      filter.setOverlayImage(markerUrls.get(nextIndex));
-    }
     JsonObject result = new JsonObject();
-    result.addProperty(filterType.getCustomRequestParam(), nextIndex);
+    // TODO: Change RPC to remove next index requirement
+    // result.addProperty(filterType.getCustomRequestParam(), 0);
     transaction.sendResponse(result);
   }
 

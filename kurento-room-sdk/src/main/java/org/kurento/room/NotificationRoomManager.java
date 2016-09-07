@@ -22,7 +22,6 @@ import java.util.Set;
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.MediaType;
-import org.kurento.room.api.FilterUpdater;
 import org.kurento.room.api.KurentoClientProvider;
 import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.api.MutedMediaType;
@@ -441,8 +440,7 @@ public class NotificationRoomManager {
     return internalManager;
   }
 
-  public void updateFilter(String roomId, FilterUpdater updater) {
-    internalManager.updateFilter(roomId, updater);
+  public void updateFilter(String roomId, String filterId) {
+    internalManager.updateFilter(roomId, filterId);
   }
-
 }

@@ -121,6 +121,30 @@ public class Participant {
     shapePublisherMedia(filter, null);
   }
 
+  public synchronized void disableFilterelement(String filterID, boolean releaseElement) {
+    Filter filter = getFilterElement(filterID);
+
+    if (filter != null) {
+      try {
+        publisher.revert(filter, releaseElement);
+      } catch (RoomException e) {
+        //Ignore error
+      }
+    }
+  }
+
+  public synchronized void enableFilterelement(String filterID) {
+    Filter filter = getFilterElement(filterID);
+
+    if (filter != null) {
+      try {
+        publisher.apply(filter);
+      } catch (RoomException e) {
+        // Ignore exception if element is already used
+      }
+    }
+  }
+
   public synchronized void removeFilterElement(String id) {
     Filter filter = getFilterElement(id);
 
@@ -130,14 +154,23 @@ public class Participant {
     }
   }
 
+  public synchronized void releaseAllFilters() {
+
+    // Check this, mutable array?
+
+    filters.forEach((s, filter) -> removeFilterElement(s));
+  }
+
   public PublisherEndpoint getPublisher() {
     try {
       if (!endPointLatch.await(Room.ASYNC_LATCH_TIMEOUT, TimeUnit.SECONDS)) {
-        throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+        throw new RoomException(
+            Code.MEDIA_ENDPOINT_ERROR_CODE,
             "Timeout reached while waiting for publisher endpoint to be ready");
       }
     } catch (InterruptedException e) {
-      throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
+      throw new RoomException(
+          Code.MEDIA_ENDPOINT_ERROR_CODE,
           "Interrupted while waiting for publisher endpoint to be ready: " + e.getMessage());
     }
     return this.publisher;

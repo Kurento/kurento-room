@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.kurento.room.demo;
 
-import static org.kurento.commons.PropertiesManager.getPropertyJson;
+package org.kurento.room.demo;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -26,15 +25,19 @@ import org.kurento.commons.ConfigFileManager;
 import org.kurento.commons.PropertiesManager;
 import org.kurento.jsonrpc.JsonUtils;
 import org.kurento.room.KurentoRoomServerApp;
+import org.kurento.room.NotificationRoomManager;
 import org.kurento.room.kms.KmsManager;
 import org.kurento.room.rpc.JsonRpcUserControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
+import org.springframework.context.annotation.Bean;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
+import static org.kurento.commons.PropertiesManager.getPropertyJson;
 
 /**
  * Demo application for Kurento Room, extends the Room Server application class. Uses the Room
@@ -65,8 +68,8 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
 
   private static final String IMG_FOLDER = "img/";
 
-  private final static String DEFAULT_APP_SERVER_URL = PropertiesManager.getProperty("app.uri",
-      "https://localhost:8443");
+  private final static String DEFAULT_APP_SERVER_URL =
+      PropertiesManager.getProperty("app.uri", "https://localhost:8443");
   private final static String APP_SERVER_URL =
       System.getProperty("app.server.url", DEFAULT_APP_SERVER_URL);
 
@@ -76,13 +79,13 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
   public final static String DEMO_FILTER_TYPE =
       PropertiesManager.getProperty("demo.filterType", "hat");
 
-  private final String DEMO_HAT_URL = PropertiesManager.getProperty("demo.hatUrl",
-      "mario-wings.png");
-  private final JsonObject DEMO_HAT_COORDS = PropertiesManager.getPropertyJson("demo.hatCoords",
-      DEFAULT_HAT_COORDS.toString(), JsonObject.class);
+  private final String DEMO_HAT_URL =
+      PropertiesManager.getProperty("demo.hatUrl", "mario-wings.png");
+  private final JsonObject DEMO_HAT_COORDS = PropertiesManager
+      .getPropertyJson("demo.hatCoords", DEFAULT_HAT_COORDS.toString(), JsonObject.class);
 
-  private final JsonObject DEMO_MARKER_URLS = PropertiesManager.getPropertyJson("demo.markerUrls",
-      DEFAULT_MARKER_URLS.toString(), JsonObject.class);
+  private final JsonObject DEMO_MARKER_URLS = PropertiesManager
+      .getPropertyJson("demo.markerUrls", DEFAULT_MARKER_URLS.toString(), JsonObject.class);
 
   @Override
   public KmsManager kmsManager() {
@@ -110,19 +113,7 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
     switch (type) {
       case MARKER:
         SortedMap<Integer, String> sortedUrls = new TreeMap<>();
-        for (Entry<String, JsonElement> entry : DEMO_MARKER_URLS.entrySet()) {
-          try {
-            Integer order = Integer.parseInt(entry.getKey());
-            if (order < 0) {
-              throw new Exception("Illegal configuration, marker url index has to be positive");
-            }
-            String url = entry.getValue().getAsString();
-            sortedUrls.put(order, getFullUrl(url));
-          } catch (Exception e) {
-            log.warn("Unable to process marker url [{}] from config file {}", entry,
-                KROOMDEMO_CFG_FILENAME, e);
-          }
-        }
+        getMarkerUrls(sortedUrls);
         uc.setMarkerUrls(sortedUrls);
         break;
       case HAT:
@@ -132,6 +123,42 @@ public class KurentoRoomDemoApp extends KurentoRoomServerApp {
     }
 
     return uc;
+  }
+
+  @Bean
+  public NotificationRoomManager roomManager() {
+    DemoNotificationRoomHandler notificationRoomHandler =
+        new DemoNotificationRoomHandler(notificationService());
+
+    KmsFilterType type = KmsFilterType.parseType(DEMO_FILTER_TYPE);
+
+    switch (type) {
+      case MARKER:
+        SortedMap<Integer, String> sortedUrls = new TreeMap<>();
+        getMarkerUrls(sortedUrls);
+
+        notificationRoomHandler.setMarkerUrls(sortedUrls);
+        break;
+      default:
+    }
+
+    return new NotificationRoomManager(notificationRoomHandler, kmsManager());
+  }
+
+  private void getMarkerUrls(SortedMap<Integer, String> sortedUrls) {
+    for (Entry<String, JsonElement> entry : DEMO_MARKER_URLS.entrySet()) {
+      try {
+        Integer order = Integer.parseInt(entry.getKey());
+        if (order < 0) {
+          throw new Exception("Illegal configuration, marker url index has to be positive");
+        }
+        String url = entry.getValue().getAsString();
+        sortedUrls.put(order, getFullUrl(url));
+      } catch (Exception e) {
+        log.warn("Unable to process marker url [{}] from config file {}", entry,
+            KROOMDEMO_CFG_FILENAME, e);
+      }
+    }
   }
 
   private static String getFullUrl(String url) {

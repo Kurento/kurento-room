@@ -27,11 +27,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.kurento.client.Continuation;
 import org.kurento.client.ErrorEvent;
 import org.kurento.client.EventListener;
-import org.kurento.client.Filter;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaPipeline;
-import org.kurento.room.api.FilterUpdater;
 import org.kurento.room.api.RoomHandler;
 import org.kurento.room.exception.RoomException;
 import org.kurento.room.exception.RoomException.Code;
@@ -69,7 +67,7 @@ public class Room {
   private volatile boolean pipelineReleased = false;
   private boolean destroyKurentoClient;
 
-  private final ConcurrentHashMap<String, String> states = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, String> filterStates = new ConcurrentHashMap<>();
 
   public Room(String roomName, KurentoClient kurentoClient, RoomHandler roomHandler,
       boolean destroyKurentoClient) {
@@ -93,7 +91,7 @@ public class Room {
     return this.pipeline;
   }
 
-  public void join(String participantId, String userName, boolean dataChannels,
+  public synchronized void join(String participantId, String userName, boolean dataChannels,
       boolean webParticipant) throws RoomException {
 
     checkClosed();
@@ -110,9 +108,14 @@ public class Room {
 
     createPipeline();
 
-    participants.put(participantId,
-        new Participant(participantId, userName, this, getPipeline(), dataChannels,
-            webParticipant));
+    Participant participant =
+        new Participant(participantId, userName, this, getPipeline(), dataChannels, webParticipant);
+    participants.put(participantId, participant);
+
+    filterStates.forEach((filterId, state) -> {
+      log.info("Adding filter {}", filterId);
+      roomHandler.updateFilter(name, participant, filterId, state);
+    });
 
     log.info("ROOM {}: Added participant {}", name, userName);
   }
@@ -157,6 +160,8 @@ public class Room {
       throw new RoomException(Code.USER_NOT_FOUND_ERROR_CODE,
           "User #" + participantId + " not found in room '" + name + "'");
     }
+    participant.releaseAllFilters();
+
     log.info("PARTICIPANT {}: Leaving room {}", participant.getName(), this.name);
     if (participant.isStreaming()) {
       this.deregisterPublisher();
@@ -330,24 +335,14 @@ public class Room {
     }
   }
 
-  public synchronized void updateFilter(FilterUpdater updater) {
-    String filterId = updater.getFilterId();
-    String stateId = updater.getStateId();
-    String state = states.get(stateId);
-    String newState = updater.getNewState(state);
+  public synchronized void updateFilter(String filterId) {
+    String state = filterStates.get(filterId);
+    String newState = roomHandler.getNextFilterState(filterId, state);
 
-    states.put(stateId, newState);
+    filterStates.put(filterId, newState);
 
     for (Participant participant : participants.values()) {
-      Filter filter = participant.getFilterElement(filterId);
-
-      Filter newFilter = updater.updateFilter(filter, newState);
-
-      if (filter == null && newFilter != null) {
-        participant.addFilterElement(filterId, newFilter);
-      } else if (newFilter == null && filter != null) {
-        participant.removeFilterElement(filterId);
-      }
+      roomHandler.updateFilter(getName(), participant, filterId, newState);
     }
   }
 }

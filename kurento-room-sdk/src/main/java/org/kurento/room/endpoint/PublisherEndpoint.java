@@ -215,6 +215,11 @@ public class PublisherEndpoint extends MediaEndpoint {
    * @throws RoomException if thrown, the media element was not removed
    */
   public synchronized void revert(MediaElement shaper) throws RoomException {
+    revert (shaper, true);
+  }
+
+  public synchronized void revert(MediaElement shaper, boolean releaseElement) throws
+      RoomException {
     final String elementId = shaper.getId();
     if (!elements.containsKey(elementId)) {
       throw new RoomException(Code.MEDIA_ENDPOINT_ERROR_CODE,
@@ -244,17 +249,19 @@ public class PublisherEndpoint extends MediaEndpoint {
       internalSinkConnect(next, prev);
     }
     elementIds.remove(elementId);
-    element.release(new Continuation<Void>() {
-      @Override
-      public void onSuccess(Void result) throws Exception {
-        log.trace("EP {}: Released media element {}", getEndpointName(), elementId);
-      }
+    if (releaseElement) {
+      element.release(new Continuation<Void>() {
+        @Override
+        public void onSuccess(Void result) throws Exception {
+          log.trace("EP {}: Released media element {}", getEndpointName(), elementId);
+        }
 
-      @Override
-      public void onError(Throwable cause) throws Exception {
-        log.error("EP {}: Failed to release media element {}", getEndpointName(), elementId, cause);
-      }
-    });
+        @Override
+        public void onError(Throwable cause) throws Exception {
+          log.error("EP {}: Failed to release media element {}", getEndpointName(), elementId, cause);
+        }
+      });
+    }
   }
 
   @Override

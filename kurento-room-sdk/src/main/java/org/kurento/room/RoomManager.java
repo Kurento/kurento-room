@@ -31,7 +31,6 @@ import org.kurento.client.MediaPipeline;
 import org.kurento.client.MediaType;
 import org.kurento.client.RtpEndpoint;
 import org.kurento.client.WebRtcEndpoint;
-import org.kurento.room.api.FilterUpdater;
 import org.kurento.room.api.KurentoClientProvider;
 import org.kurento.room.api.KurentoClientSessionInfo;
 import org.kurento.room.api.MutedMediaType;
@@ -902,9 +901,9 @@ public class RoomManager {
         "No participant with id '" + pid + "' was found");
   }
 
-  public void updateFilter(String roomId, FilterUpdater updater) {
+  public void updateFilter(String roomId, String filterId) {
     Room room = rooms.get(roomId);
 
-    room.updateFilter(updater);
+    room.updateFilter(filterId);
   }
 }
