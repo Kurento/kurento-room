@@ -588,6 +588,8 @@ function Stream(kurento, local, room, options) {
         } else {
             parentElement.appendChild(video);
         }
+
+        return video;
     }
 
     this.playThumbnail = function (thumbnailId) {
@@ -607,7 +609,7 @@ function Stream(kurento, local, room, options) {
 
         showSpinner(thumbnailId);
 
-        that.playOnlyVideo(container, thumbnailId);
+        return that.playOnlyVideo(container, thumbnailId);
     }
 
     this.getID = function () {

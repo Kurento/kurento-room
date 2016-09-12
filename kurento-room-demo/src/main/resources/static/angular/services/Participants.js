@@ -19,7 +19,7 @@ function AppParticipant(stream) {
     this.stream = stream;
     this.videoElement;
     this.thumbnailId;
-
+    this.mainVideo;
     var that = this;
 
     this.getStream = function () {
@@ -27,21 +27,23 @@ function AppParticipant(stream) {
     }
 
     this.setMain = function () {
-
-        var mainVideo = document.getElementById("main-video");
-        var oldVideo = mainVideo.firstChild;
-
-        stream.playOnlyVideo("main-video", that.thumbnailId);
-
         that.videoElement.className += " active-video";
+        var mainVideosParent = document.getElementById('main-video');
 
-        if (oldVideo !== null) {
-            mainVideo.removeChild(oldVideo);
+        if (elementExists(that.mainVideo)) {
+            $(that.mainVideo).show();
+        } else {
+            that.mainVideo = stream.playOnlyVideo(mainVideosParent, that.thumbnailId);
         }
     }
 
     this.removeMain = function () {
         $(that.videoElement).removeClass("active-video");
+        if (elementExists(that.mainVideo)) {
+            $(that.mainVideo).hide();
+        } else {
+            console.warn(stream.getGlobalID() + ': no main video element to remove');
+        }
     }
 
     this.remove = function () {
@@ -50,6 +52,10 @@ function AppParticipant(stream) {
                 that.videoElement.parentNode.removeChild(that.videoElement);
             }
         }
+    }
+
+    function elementExists(element) {
+        return element !== undefined && element.id !== undefined && $('#' + element.id).length > 0;
     }
 
     function playVideo() {
