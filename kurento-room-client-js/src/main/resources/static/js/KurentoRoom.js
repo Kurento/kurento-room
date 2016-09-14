@@ -603,9 +603,14 @@ function Stream(kurento, local, room, options) {
 
         var name = document.createElement('div');
         container.appendChild(name);
-        name.appendChild(document.createTextNode(that.getGlobalID()));
+        var userName = that.getGlobalID();
+        if (userName.length >= 16) {
+        	userName = userName.substring(0, 16) + "...";
+        }
+        name.appendChild(document.createTextNode(userName));
         name.id = "name-" + that.getGlobalID();
         name.className = "name";
+        name.title = that.getGlobalID();
 
         showSpinner(thumbnailId);
 
