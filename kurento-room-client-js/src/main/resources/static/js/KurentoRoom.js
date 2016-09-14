@@ -638,7 +638,7 @@ function Stream(kurento, local, room, options) {
                     ideal: 1280
                 },
                 frameRate: {
-                    ideal: 20
+                    ideal: 15
                 }
             }
         };
