@@ -243,6 +243,12 @@ public abstract class MediaEndpoint {
         @Override
         public void onSuccess(WebRtcEndpoint result) throws Exception {
           webEndpoint = result;
+
+          webEndpoint.setMaxVideoRecvBandwidth(600);
+          webEndpoint.setMinVideoRecvBandwidth(300);
+          webEndpoint.setMaxVideoSendBandwidth(600);
+          webEndpoint.setMinVideoSendBandwidth(300);
+
           endpointLatch.countDown();
           log.trace("EP {}: Created a new WebRtcEndpoint", endpointName);
           endpointSubscription = registerElemErrListener(webEndpoint);
