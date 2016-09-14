@@ -20,6 +20,10 @@ body {
     font-family: 'Open Sans', sans-serif;
 }
 
+.roomUrl {
+	margin: 40px auto 30px;
+}
+
 #main-video {
     height: 100%;
     width: 100%;

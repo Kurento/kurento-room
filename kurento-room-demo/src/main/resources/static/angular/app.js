@@ -1,4 +1,4 @@
-var kurento_room = angular.module('kurento_room', ['ngRoute', 'FBAngular', 'lumx']);
+var kurento_room = angular.module('kurento_room', ['ngRoute', 'FBAngular', 'lumx', 'angular-clipboard']);
 
 kurento_room.config(['$routeProvider', function ($routeProvider) {
    $routeProvider
@@ -7,6 +7,10 @@ kurento_room.config(['$routeProvider', function ($routeProvider) {
             controller: 'loginController'
         })
         .when('/login', {
+            templateUrl: 'angular/login/login.html',
+            controller: 'loginController'
+        })
+        .when('/rooms/:existingRoomName', {
             templateUrl: 'angular/login/login.html',
             controller: 'loginController'
         })

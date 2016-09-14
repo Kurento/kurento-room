@@ -120,6 +120,11 @@
 			<artifactId>lumx</artifactId>
 			<version>0.2.50</version>
 		</dependency>
+		<dependency>
+			<groupId>org.webjars.bower</groupId>
+			<artifactId>angular-clipboard</artifactId>
+			<version>1.4.2</version>
+		</dependency>
 	</dependencies>
 
 	<build>
