@@ -228,6 +228,7 @@ function Participants() {
             var participant = participants[index];
             participant.remove();
         }
+        participants = [];
     };
 
     this.getParticipants = function () {
