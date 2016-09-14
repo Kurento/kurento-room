@@ -20,7 +20,7 @@ kurento_room.controller('loginController', function($scope, $rootScope, $http,
     }
 
     $scope.nameValidation = function(name) {
-        return /^[a-zA-Z0-9-._]+$/.test(name);
+        return /^[a-zA-Z0-9]+$/.test(name);
     };
 
     $rootScope.isParticipant = false;

@@ -11,7 +11,7 @@
                 </lx-text-field>
 
                 <span class="text-field-error" ng-if="!nameValidation(room.userName)">Invalid, please use:
-                    <em>a-zA-Z0-9-._</em></span>
+                    <em>a-zA-Z0-9</em></span>
 
                 <div class="grid">
 
@@ -23,7 +23,7 @@
                         </lx-text-field>
 
                         <span class="text-field-error" ng-if="!nameValidation(room.roomName)">Allowed chars:
-                            <em>a-zA-Z0-9-._</em></span>
+                            <em>a-zA-Z0-9</em></span>
                     </div>
 
                     <div class="grid__col6" ng-if="!existingRoomName">
