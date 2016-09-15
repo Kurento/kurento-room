@@ -603,7 +603,7 @@ function Stream(kurento, local, room, options) {
 
         var name = document.createElement('div');
         container.appendChild(name);
-        var userName = that.getGlobalID();
+        var userName = that.getGlobalID().replace('_webcam', '');
         if (userName.length >= 16) {
         	userName = userName.substring(0, 16) + "...";
         }
