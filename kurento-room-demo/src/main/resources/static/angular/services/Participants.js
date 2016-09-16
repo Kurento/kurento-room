@@ -316,7 +316,7 @@ function Participants() {
         }
     };
 
-    this.showError = function ($window, LxNotificationService, e) {
+    this.showError = function ($window, LxNotificationService, e, contextPath) {
         if (displayingRelogin) {
             console.warn('Already displaying an alert that leads to relogin');
             return false;
@@ -325,11 +325,11 @@ function Participants() {
         that.removeParticipants();
         LxNotificationService.alert('Error!', e.error.message, 'Reconnect', function (answer) {
             displayingRelogin = false;
-            $window.location.href = '/';
+            relogin($window, contextPath);
         });
     };
 
-    this.forceClose = function ($window, LxNotificationService, msg) {
+    this.forceClose = function ($window, LxNotificationService, msg, contextPath) {
         if (displayingRelogin) {
             console.warn('Already displaying an alert that leads to relogin');
             return false;
@@ -338,11 +338,11 @@ function Participants() {
         that.removeParticipants();
         LxNotificationService.alert('Warning!', msg, 'Reload', function (answer) {
             displayingRelogin = false;
-            $window.location.href = '/';
+            relogin($window, contextPath);
         });
     };
 
-    this.alertMediaError = function ($window, LxNotificationService, msg, callback) {
+    this.alertMediaError = function ($window, LxNotificationService, msg, contextPath, callback) {
         if (displayingRelogin) {
             console.warn('Already displaying an alert that leads to relogin');
             return false;
@@ -353,13 +353,19 @@ function Participants() {
                 console.log("User agrees upon media error: " + answer);
                 if (answer) {
                     that.removeParticipants();
-                    $window.location.href = '/';
+                    relogin($window, contextPath);
                 }
                 if (typeof callback === "function") {
                     callback(answer);
                 }
             });
     };
+    
+    function relogin($window, contextPath) {
+        //TODO call leaveRoom() in kurento
+        contextPath = contextPath || '/';
+        $window.location.href = contextPath; //'#/login';
+    }
 
     this.streamSpeaking = function (participantId) {
         if (participants[participantId.participantId] != undefined)

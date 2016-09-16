@@ -24,6 +24,8 @@ kurento_room.controller('loginController', function($scope, $rootScope, $http,
     };
 
     $rootScope.isParticipant = false;
+    
+    var contextpath = (location.pathname == '/') ? '' : location.pathname;
 
     $rootScope.contextpath = (location.pathname == '/') ? '' : location.pathname;
 
@@ -54,7 +56,7 @@ kurento_room.controller('loginController', function($scope, $rootScope, $http,
                 error: {
                     message: "Username and room fields are both required"
                 }
-            });
+            }, contextpath);
 
         $scope.userName = room.userName;
         $scope.roomName = room.roomName;
@@ -126,11 +128,11 @@ kurento_room.controller('loginController', function($scope, $rootScope, $http,
                 });
 
                 room.addEventListener("error-room", function(error) {
-                    ServiceParticipant.showError($window, LxNotificationService, error);
+                    ServiceParticipant.showError($window, LxNotificationService, error, contextpath);
                 });
 
                 room.addEventListener("error-media", function(msg) {
-                    ServiceParticipant.alertMediaError($window, LxNotificationService, msg.error, function(answer) {
+                    ServiceParticipant.alertMediaError($window, LxNotificationService, msg.error, contextPath, function(answer) {
                         console.warn("Leave room because of error: " + answer);
                         if (answer) {
                             kurento.close(true);
@@ -145,7 +147,7 @@ kurento_room.controller('loginController', function($scope, $rootScope, $http,
                     } else {
                         kurento.close(true);
                         ServiceParticipant.forceClose($window, LxNotificationService, 'Room ' +
-                            msg.room + ' has been forcibly closed from server');
+                            msg.room + ' has been forcibly closed from server', contextpath);
                     }
                 });
 
@@ -154,7 +156,7 @@ kurento_room.controller('loginController', function($scope, $rootScope, $http,
                     ServiceParticipant.forceClose($window, LxNotificationService,
                         'Lost connection with room "' + msg.room +
                         '". Please try reloading the webpage...');
-                });
+                }, contextpath);
 
                 room.addEventListener("stream-stopped-speaking", function(participantId) {
                     ServiceParticipant.streamStoppedSpeaking(participantId);
@@ -183,7 +185,7 @@ kurento_room.controller('loginController', function($scope, $rootScope, $http,
                         message: "Access not granted to camera and microphone"
                     }
                 });
-            });
+            }, contextpath);
             localStream.init();
         });
 
