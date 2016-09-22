@@ -18,7 +18,7 @@
 
       //markerdetector img(s) in order of preference
       "markerUrls": {
-        "0": "kurento-rect-logo.png",
+        "0": "kurento-rect-logo.png"
       },
 
       //mario-wings.png or wizard.png
