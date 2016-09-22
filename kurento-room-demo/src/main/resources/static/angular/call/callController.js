@@ -182,7 +182,7 @@ kurento_room.controller('callController', function ($scope, $window, ServicePart
     };
 
     ServiceParticipant.addEventListener("marker-filter-status-changed", function (status) {
-        console.error("Filter status changed", status);
+        console.log("Filter status changed", status);
         if ($scope.filter === "marker") {
             $scope.filterIndex = status;
             updateFilterValues();
