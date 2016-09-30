@@ -9,7 +9,6 @@
 	</parent>
 
 	<artifactId>kurento-room</artifactId>
-	<version>6.6.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Kurento Room</name>
