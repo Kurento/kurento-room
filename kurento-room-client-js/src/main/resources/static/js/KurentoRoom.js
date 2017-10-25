@@ -34,7 +34,7 @@ function Room(kurento, options) {
     var participantsSpeaking = [];
     var connected = false;
     var localParticipant;
-    var subscribeToStreams = options.subscribeToStreams || true;
+    var subscribeToStreams = !(options.subscribeToStreams === false);
     var updateSpeakerInterval = options.updateSpeakerInterval || 1500;
     var thresholdSpeaker = options.thresholdSpeaker || -50;
 
