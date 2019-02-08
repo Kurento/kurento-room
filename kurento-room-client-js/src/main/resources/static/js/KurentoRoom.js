@@ -568,7 +568,11 @@ function Stream(kurento, local, room, options) {
         video.autoplay = true;
         video.controls = false;
         if (wrStream) {
-            video.src = URL.createObjectURL(wrStream);
+            try {
+                   video.srcObject = wrStream;
+                 } catch (error) {
+                        video.src = URL.createObjectURL(wrStream);
+                      }
             $(jq(thumbnailId)).show();
             hideSpinner();
         } else
