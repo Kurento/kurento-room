@@ -7,6 +7,9 @@
 
 Copyright © 2013-2016 [Kurento]. Licensed under [Apache 2.0 License].
 
+# DEPRECATION NOTE:
+*This project is no longer maintained. Please use [OpenVidu Project](https://openvidu.io) instead, as it is a programable platform aimed to create room-like applications. It has several demos and tutorials updated with last technologies (Angular, React, Ionic, WebComponents, etc).*
+
 kurento-room
 ============
 
